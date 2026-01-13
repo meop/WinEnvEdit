@@ -115,8 +115,8 @@ csharp_prefer_braces = true:warning
 
 #### Formatting rules ####
 
-# New line preferences
-csharp_new_line_before_open_brace = all
+# New line preferences (K&R style - opening braces on same line)
+csharp_new_line_before_open_brace = none
 csharp_new_line_before_else = true
 csharp_new_line_before_catch = true
 csharp_new_line_before_finally = true

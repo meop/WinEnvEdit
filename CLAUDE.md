@@ -10,32 +10,27 @@ WinEnvEdit is a Windows 11+ environment variable editor built with WinUI 3 and .
 
 ## Build and Run Commands
 
-**IMPORTANT**: All build commands MUST specify a platform (ARM64 or x64). The project does not support AnyCPU builds due to MSIX packaging requirements.
+**IMPORTANT**: All build commands MUST specify a platform (x64 or ARM64). The project does not support AnyCPU builds due to MSIX packaging requirements. Use the platform matching your current system architecture.
 
-### Build for ARM64 (native on development machine)
+### Build (Debug)
 ```bash
-dotnet build WinEnvEdit/WinEnvEdit.csproj -c Debug -p:Platform=ARM64
+dotnet build WinEnvEdit/WinEnvEdit.csproj -c Debug -p:Platform=<PLATFORM>
 ```
+Replace `<PLATFORM>` with `x64` or `ARM64` based on your system.
 
-### Build for x64
+### Run (Debug)
 ```bash
-dotnet build WinEnvEdit/WinEnvEdit.csproj -c Debug -p:Platform=x64
-```
-
-### Build both platforms at once
-```bash
-dotnet build WinEnvEdit/WinEnvEdit.csproj -p:Platform=x64 && dotnet build WinEnvEdit/WinEnvEdit.csproj -p:Platform=ARM64
-```
-
-### Run (Debug) - ARM64
-```bash
-dotnet run --project WinEnvEdit/WinEnvEdit.csproj -p:Platform=ARM64
+dotnet run --project WinEnvEdit/WinEnvEdit.csproj -p:Platform=<PLATFORM>
 ```
 
 ### Publish (Release, trimmed)
 ```bash
-dotnet publish WinEnvEdit/WinEnvEdit.csproj -c Release -p:Platform=ARM64
-dotnet publish WinEnvEdit/WinEnvEdit.csproj -c Release -p:Platform=x64
+dotnet publish WinEnvEdit/WinEnvEdit.csproj -c Release -p:Platform=<PLATFORM>
+```
+
+### Build for both platforms
+```bash
+dotnet build WinEnvEdit/WinEnvEdit.csproj -p:Platform=x64 && dotnet build WinEnvEdit/WinEnvEdit.csproj -p:Platform=ARM64
 ```
 
 ## Technical Architecture
@@ -125,7 +120,7 @@ using WinEnvEdit.ViewModels;
   - Avoid: `var count = Calculate();` (use explicit type if not obvious)
 - **this qualifier**: Do NOT use `this.` unless required for disambiguation (enforced by .editorconfig)
 - **Accessibility modifiers**: Always specify (public, private, etc.) (enforced by .editorconfig)
-- **New lines**: Opening braces on new line (Allman style)
+- **Brace style**: K&R style - opening braces on same line (enforced by .editorconfig)
 
 ### MVVM Architecture
 This application uses the MVVM pattern with CommunityToolkit.Mvvm:
