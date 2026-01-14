@@ -51,12 +51,12 @@
           <AppBarButton Icon="Add"
               ToolTipService.ToolTip="Add (Ctrl+N)"
               Command="{x:Bind ViewModel.AddCommand}"/>
-          <AppBarButton Icon="Permissions"
-              ToolTipService.ToolTip="Restart as Admin (Ctrl+A)"
-              Command="{x:Bind ViewModel.PermissionsCommand}"
-              Visibility="{x:Bind ViewModel.PermissionsButtonVisibility, Mode=OneWay}"/>
         </StackPanel>
       </CommandBar.Content>
+      <AppBarButton Icon="Permissions"
+            ToolTipService.ToolTip="Restart as Admin (Ctrl+A)"
+            Command="{x:Bind ViewModel.PermissionsCommand}"
+            Visibility="{x:Bind ViewModel.PermissionsButtonVisibility, Mode=OneWay}"/>
       <AppBarButton Icon="List"
           ToolTipService.ToolTip="Expand all Paths (Ctrl+P)"
           Command="{x:Bind ViewModel.ToggleExpandAllPathsCommand}"/>
