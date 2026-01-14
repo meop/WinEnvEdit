@@ -1,3 +1,5 @@
+using System.Linq;
+
 using Microsoft.UI.Xaml;
 
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -10,6 +12,7 @@ namespace WinEnvEdit.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject {
   private readonly IEnvironmentService _environmentService;
+  private readonly IAdminService _adminService;
 
   [ObservableProperty]
   private VariableScopeViewModel _systemVariables;
@@ -25,21 +28,27 @@ public partial class MainWindowViewModel : ObservableObject {
   public Visibility ElevateButtonVisibility => IsAdmin ? Visibility.Collapsed : Visibility.Visible;
 
   [ObservableProperty]
+  [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+  [NotifyCanExecuteChangedFor(nameof(ResetCommand))]
   private bool _hasPendingChanges;
 
   [ObservableProperty]
-  private bool _showVolatileVariables = true;
+  private bool _showVolatileVariables;
 
   [ObservableProperty]
   private bool _expandAllPaths;
 
-  public MainWindowViewModel() : this(new EnvironmentService()) {
+  public MainWindowViewModel() : this(new EnvironmentService(), new AdminService()) {
   }
 
-  public MainWindowViewModel(IEnvironmentService environmentService) {
+  public MainWindowViewModel(IEnvironmentService environmentService, IAdminService adminService) {
     _environmentService = environmentService;
-    _systemVariables = new VariableScopeViewModel(VariableScope.System, _environmentService);
-    _userVariables = new VariableScopeViewModel(VariableScope.User, _environmentService);
+    _adminService = adminService;
+    _systemVariables = new VariableScopeViewModel(VariableScope.System, _environmentService, this);
+    _userVariables = new VariableScopeViewModel(VariableScope.User, _environmentService, this);
+
+    // Detect if running as administrator
+    _isAdmin = _adminService.IsAdministrator();
 
     // Load initial data
     LoadVariables();
@@ -55,19 +64,41 @@ public partial class MainWindowViewModel : ObservableObject {
     UserVariables.ShowVolatileVariables = value;
   }
 
+  partial void OnExpandAllPathsChanged(bool value) {
+    // Apply expand/collapse to all path variables
+    foreach (var variable in SystemVariables.Variables.Concat(UserVariables.Variables)) {
+      if (variable.IsPathList) {
+        variable.IsExpanded = value;
+      }
+    }
+  }
+
   private void LoadVariables() {
     SystemVariables.LoadFromRegistry();
     UserVariables.LoadFromRegistry();
+    HasPendingChanges = false;
   }
 
-  [RelayCommand]
+  public void UpdatePendingChangesState() {
+    HasPendingChanges = SystemVariables.HasPendingChanges() || UserVariables.HasPendingChanges();
+  }
+
+  [RelayCommand(CanExecute = nameof(CanSave))]
   private void Save() {
     // TODO: Implement save logic
   }
 
-  [RelayCommand]
+  private bool CanSave() {
+    return HasPendingChanges;
+  }
+
+  [RelayCommand(CanExecute = nameof(CanReset))]
   private void Reset() {
     // TODO: Implement reset logic
+  }
+
+  private bool CanReset() {
+    return HasPendingChanges;
   }
 
   [RelayCommand]
@@ -92,19 +123,17 @@ public partial class MainWindowViewModel : ObservableObject {
 
   [RelayCommand]
   private void Elevate() {
-    // TODO: Implement elevation logic
+    _adminService.RestartAsAdministrator();
   }
 
   [RelayCommand]
   private void ToggleExpandAllPaths() {
     ExpandAllPaths = !ExpandAllPaths;
-    // TODO: Apply expand/collapse to all path variables
   }
 
   [RelayCommand]
   private void ToggleShowVolatileVariables() {
     ShowVolatileVariables = !ShowVolatileVariables;
-    // TODO: Apply filter to variable lists
   }
 
   [RelayCommand]

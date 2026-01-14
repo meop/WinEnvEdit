@@ -11,6 +11,7 @@ namespace WinEnvEdit.ViewModels;
 
 public partial class VariableViewModel : ObservableObject {
   private readonly Action<VariableViewModel>? _deleteCallback;
+  private readonly Action? _changeCallback;
 
   [ObservableProperty]
   private string _name = string.Empty;
@@ -34,9 +35,10 @@ public partial class VariableViewModel : ObservableObject {
 
   public EnvironmentVariable Model { get; init; }
 
-  public VariableViewModel(EnvironmentVariable model, Action<VariableViewModel>? deleteCallback = null) {
+  public VariableViewModel(EnvironmentVariable model, Action<VariableViewModel>? deleteCallback = null, Action? changeCallback = null) {
     Model = model;
     _deleteCallback = deleteCallback;
+    _changeCallback = changeCallback;
     Name = model.Name;
     Value = model.Value;
     IsLocked = model.IsVolatile;
@@ -45,6 +47,16 @@ public partial class VariableViewModel : ObservableObject {
     if (IsPathList) {
       ParsePathsFromValue();
     }
+  }
+
+  partial void OnNameChanged(string value) {
+    Model.Name = value;
+    _changeCallback?.Invoke();
+  }
+
+  partial void OnValueChanged(string value) {
+    Model.Value = value;
+    _changeCallback?.Invoke();
   }
 
   [RelayCommand]

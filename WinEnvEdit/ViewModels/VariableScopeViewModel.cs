@@ -10,6 +10,7 @@ namespace WinEnvEdit.ViewModels;
 
 public partial class VariableScopeViewModel : ObservableObject {
   private readonly IEnvironmentService _environmentService;
+  private readonly MainWindowViewModel? _parentViewModel;
 
   [ObservableProperty]
   private VariableScope _scope;
@@ -23,9 +24,10 @@ public partial class VariableScopeViewModel : ObservableObject {
   [ObservableProperty]
   private ObservableCollection<VariableViewModel> _filteredVariables = [];
 
-  public VariableScopeViewModel(VariableScope scope, IEnvironmentService environmentService) {
+  public VariableScopeViewModel(VariableScope scope, IEnvironmentService environmentService, MainWindowViewModel? parentViewModel = null) {
     _scope = scope;
     _environmentService = environmentService;
+    _parentViewModel = parentViewModel;
   }
 
   partial void OnShowVolatileVariablesChanged(bool value) {
@@ -51,7 +53,7 @@ public partial class VariableScopeViewModel : ObservableObject {
       : _environmentService.GetUserVariables();
 
     foreach (var envVar in envVars.OrderBy(v => v.Name)) {
-      Variables.Add(new VariableViewModel(envVar, RemoveVariable));
+      Variables.Add(new VariableViewModel(envVar, RemoveVariable, () => _parentViewModel?.UpdatePendingChangesState()));
     }
 
     UpdateFilteredVariables();
@@ -68,7 +70,7 @@ public partial class VariableScopeViewModel : ObservableObject {
       IsDeleted = false
     };
 
-    Variables.Add(new VariableViewModel(variable, RemoveVariable));
+    Variables.Add(new VariableViewModel(variable, RemoveVariable, () => _parentViewModel?.UpdatePendingChangesState()));
     UpdateFilteredVariables();
   }
 
@@ -76,5 +78,10 @@ public partial class VariableScopeViewModel : ObservableObject {
     variable.Model.IsDeleted = true;
     Variables.Remove(variable);
     UpdateFilteredVariables();
+    _parentViewModel?.UpdatePendingChangesState();
+  }
+
+  public bool HasPendingChanges() {
+    return Variables.Any(v => v.Model.HasChanges());
   }
 }
