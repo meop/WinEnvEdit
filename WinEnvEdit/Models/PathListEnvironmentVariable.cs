@@ -13,10 +13,10 @@ public class PathListEnvironmentVariable : EnvironmentVariable {
   public bool IsExpanded { get; set; }
 
   /// <summary>
-  /// Synchronizes the Value property from the PathItems collection.
+  /// Synchronizes Value property from PathItems collection.
   /// </summary>
   public void SyncValueFromPaths() {
-    Value = string.Join(";", PathItems.Select(p => p.Path));
+    Value = string.Join(";", PathItems.Select(p => p.PathValue));
   }
 
   /// <summary>
@@ -30,7 +30,7 @@ public class PathListEnvironmentVariable : EnvironmentVariable {
 
     var paths = Value.Split(';', StringSplitOptions.RemoveEmptyEntries);
     foreach (var path in paths) {
-      PathItems.Add(new PathItem { Path = path.Trim() });
+      PathItems.Add(new PathItem { PathValue = path.Trim() });
     }
   }
 }

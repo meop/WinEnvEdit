@@ -1,8 +1,12 @@
+using System;
+
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
 using WinRT.Interop;
+
+using WinEnvEdit.ViewModels;
 
 namespace WinEnvEdit;
 
@@ -13,7 +17,7 @@ public partial class App : Application {
   private Window? _window;
 
   /// <summary>
-  /// Initializes the singleton application object. This is the first line of authored code
+  /// Initializes the singleton application object.  This is the first line of authored code
   /// executed, and as such is the logical equivalent of main() or WinMain().
   /// </summary>
   public App() {

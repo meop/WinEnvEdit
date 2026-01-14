@@ -72,6 +72,66 @@ The solution uses a .slnx file (new Visual Studio solution format), but you can 
 ### DPI Awareness
 The app uses PerMonitorV2 DPI awareness, ensuring proper scaling on multi-monitor setups with different DPI settings.
 
+### WinUI 3 XAML Best Practices
+
+**CRITICAL GOTCHAS** - These issues cause cryptic XAML compiler failures:
+
+#### DataTemplates with x:Bind and x:DataType
+1. **MUST use ResourceDictionary with partial class code-behind**
+   - DataTemplates using `x:Bind` with `x:DataType` CANNOT be placed directly in `Application.Resources`
+   - They MUST be in a separate ResourceDictionary file with a matching partial class code-behind file
+   - Example structure:
+     ```
+     Resources/VariableTemplates.xaml       # Contains DataTemplates
+     Resources/VariableTemplates.xaml.cs    # Partial class: public partial class VariableTemplates : ResourceDictionary
+     ```
+   - This is required for the XAML compiler (XamlCompiler.exe) to generate proper binding code
+
+2. **Merge the ResourceDictionary, not reference in Application.Resources**
+   ```xaml
+   <!-- In App.xaml -->
+   <Application.Resources>
+     <ResourceDictionary>
+       <ResourceDictionary.MergedDictionaries>
+         <ResourceDictionary Source="Resources/VariableTemplates.xaml" />
+       </ResourceDictionary.MergedDictionaries>
+     </ResourceDictionary>
+   </Application.Resources>
+   ```
+
+#### x:Bind with Converters at Window Level
+3. **NEVER use x:Bind with converters when binding to Window properties**
+   - Window is NOT a FrameworkElement, so `SetConverterLookupRoot` fails with compile error
+   - Error: `cannot convert from 'YourApp.MainWindow' to 'Microsoft.UI.Xaml.FrameworkElement'`
+   - **Solution**: Create computed properties in ViewModel that return the desired type directly
+   - Example: Instead of `{x:Bind IsAdmin, Converter={StaticResource BoolToVisibilityInverseConverter}}`
+     Add `public Visibility ElevateButtonVisibility => IsAdmin ? Visibility.Collapsed : Visibility.Visible;`
+     Then use `{x:Bind ViewModel.ElevateButtonVisibility, Mode=OneWay}`
+
+#### x:Bind Best Practices
+4. **Prefer x:Bind over Binding for performance** - compiled bindings are faster
+5. **Bind directly to Window properties when available**
+   - If Window has a ViewModel property, use `{x:Bind ViewModel.Property}`
+   - This is simpler than using DataContext patterns
+6. **Mode specifications**:
+   - `x:Bind` defaults to `Mode=OneTime` (not OneWay like traditional Binding)
+   - Use `Mode=OneWay` for properties that change (observable properties)
+   - Commands default to OneTime which is fine (ICommand instances don't change)
+7. **Always specify x:DataType when using x:Bind in DataTemplates**
+   ```xaml
+   <DataTemplate x:Key="MyTemplate" x:DataType="vm:MyViewModel">
+     <TextBlock Text="{x:Bind PropertyName}" />
+   </DataTemplate>
+   ```
+
+#### DataTemplateSelector Pattern
+8. **Selector class MUST be marked partial** for C#/WinRT compatibility
+   ```csharp
+   public partial class MyTemplateSelector : DataTemplateSelector {
+     protected override DataTemplate SelectTemplateCore(object item) { ... }
+   }
+   ```
+
 ### XAML UI
 The MainWindow uses WinUI 3's MicaBackdrop for a modern Windows 11-style appearance.
 

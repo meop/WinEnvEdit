@@ -1,3 +1,5 @@
+using Microsoft.UI.Xaml;
+
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -18,6 +20,10 @@ public partial class MainWindowViewModel : ObservableObject {
   [ObservableProperty]
   private bool _isAdmin;
 
+  public bool IsNotAdmin => !IsAdmin;
+
+  public Visibility ElevateButtonVisibility => IsAdmin ? Visibility.Collapsed : Visibility.Visible;
+
   [ObservableProperty]
   private bool _hasPendingChanges;
 
@@ -37,6 +43,16 @@ public partial class MainWindowViewModel : ObservableObject {
 
     // Load initial data
     LoadVariables();
+  }
+
+  partial void OnIsAdminChanged(bool value) {
+    OnPropertyChanged(nameof(IsNotAdmin));
+    OnPropertyChanged(nameof(ElevateButtonVisibility));
+  }
+
+  partial void OnShowVolatileVariablesChanged(bool value) {
+    SystemVariables.ShowVolatileVariables = value;
+    UserVariables.ShowVolatileVariables = value;
   }
 
   private void LoadVariables() {

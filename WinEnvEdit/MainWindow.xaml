@@ -5,35 +5,41 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:local="using:WinEnvEdit"
   xmlns:vm="using:WinEnvEdit.ViewModels"
-  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-  mc:Ignorable="d"
   Title="WinEnvEdit">
 
   <Window.SystemBackdrop>
     <MicaBackdrop />
   </Window.SystemBackdrop>
 
-  <Grid>
+  <Grid x:Name="RootGrid">
+    <Grid.Resources>
+      <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+          <ResourceDictionary Source="Resources/VariableTemplates.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+      </ResourceDictionary>
+    </Grid.Resources>
+
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
+
     <CommandBar Grid.Row="0" DefaultLabelPosition="Collapsed" OverflowButtonVisibility="Collapsed" ToolTipService.Placement="Bottom">
       <CommandBar.Content>
         <StackPanel Orientation="Horizontal" Height="48" Padding="0">
-          <AppBarButton Icon="Upload" ToolTipService.ToolTip="Export (Ctrl+E)" Command="{Binding BackupCommand}" />
-          <AppBarButton Icon="Download" ToolTipService.ToolTip="Import (Ctrl+I)" Command="{Binding RestoreCommand}" />
-          <AppBarButton Icon="Refresh" ToolTipService.ToolTip="Reload (Ctrl+R)" Command="{Binding ReloadCommand}" />
-          <AppBarButton Icon="Undo" ToolTipService.ToolTip="Reset (Ctrl+Z)" Command="{Binding ResetCommand}" />
-          <AppBarButton Icon="Save" ToolTipService.ToolTip="Save (Ctrl+S)" Command="{Binding SaveCommand}" />
-          <AppBarButton Icon="Add" ToolTipService.ToolTip="Add (Ctrl+N)" Command="{Binding AddCommand}" />
+          <AppBarButton Icon="Upload" ToolTipService.ToolTip="Export (Ctrl+E)" Command="{x:Bind ViewModel.BackupCommand}" />
+          <AppBarButton Icon="Download" ToolTipService.ToolTip="Import (Ctrl+I)" Command="{x:Bind ViewModel.RestoreCommand}" />
+          <AppBarButton Icon="Refresh" ToolTipService.ToolTip="Refresh (Ctrl+R)" Command="{x:Bind ViewModel.ReloadCommand}" />
+          <AppBarButton Icon="Undo" ToolTipService.ToolTip="Undo (Ctrl+Z)" Command="{x:Bind ViewModel.ResetCommand}" />
+          <AppBarButton Icon="Save" ToolTipService.ToolTip="Save (Ctrl+S)" Command="{x:Bind ViewModel.SaveCommand}" />
+          <AppBarButton Icon="Add" ToolTipService.ToolTip="Add (Ctrl+N)" Command="{x:Bind ViewModel.AddCommand}" />
+          <AppBarButton Icon="Permissions" ToolTipService.ToolTip="Restart as Admin (Ctrl+A)" Command="{x:Bind ViewModel.ElevateCommand}" Visibility="{x:Bind ViewModel.ElevateButtonVisibility, Mode=OneWay}" />
         </StackPanel>
       </CommandBar.Content>
-      <AppBarButton Icon="Permissions" ToolTipService.ToolTip="Admin" Command="{Binding ElevateCommand}" />
-      <AppBarButton Icon="List" ToolTipService.ToolTip="Expand Paths (Ctrl+E)" Command="{Binding ToggleExpandAllPathsCommand}" />
-      <AppBarButton Icon="View" ToolTipService.ToolTip="Show Volatile (Ctrl+H)" Command="{Binding ToggleShowVolatileVariablesCommand}" />
-      <AppBarButton Icon="Help" ToolTipService.ToolTip="About (F1)" Command="{Binding AboutCommand}" />
+      <AppBarButton Icon="List" ToolTipService.ToolTip="Expand All Paths (Ctrl+P)" Command="{x:Bind ViewModel.ToggleExpandAllPathsCommand}" />
+      <AppBarButton Icon="View" ToolTipService.ToolTip="Show Volatile (Ctrl+V)" Command="{x:Bind ViewModel.ToggleShowVolatileVariablesCommand}" />
+      <AppBarButton Icon="Help" ToolTipService.ToolTip="About (F1)" Command="{x:Bind ViewModel.AboutCommand}" />
     </CommandBar>
 
     <Grid Grid.Row="1">
@@ -41,6 +47,7 @@
         <ColumnDefinition Width="1*"/>
         <ColumnDefinition Width="1*"/>
       </Grid.ColumnDefinitions>
+
       <Border Grid.Column="0" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,1,1,0">
         <Grid>
           <Grid.RowDefinitions>
@@ -48,31 +55,17 @@
             <RowDefinition Height="*"/>
           </Grid.RowDefinitions>
           <TextBlock Grid.Row="0" Text="SYSTEM" Style="{StaticResource SubtitleTextBlockStyle}" Margin="16,12,16,8" HorizontalAlignment="Center" />
-          <ListView Grid.Row="1" ItemsSource="{Binding SystemVariables.Variables}">
-            <ListView.ItemTemplate>
-              <DataTemplate>
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Margin="8"
-                        Padding="12">
-                  <Grid>
-                    <Grid.RowDefinitions>
-                      <RowDefinition Height="Auto"/>
-                      <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="{Binding Name}"
-                               Style="{StaticResource SubtitleTextBlockStyle}"
-                               FontWeight="SemiBold" />
-                    <TextBox Grid.Row="1" Text="{Binding Value, Mode=TwoWay}"
-                             Margin="0,8,0,0"
-                             IsReadOnly="{Binding IsLocked}"
-                             TextWrapping="Wrap" />
-                  </Grid>
-                </Border>
-              </DataTemplate>
-            </ListView.ItemTemplate>
+          <ListView Grid.Row="1"
+                    ItemsSource="{x:Bind ViewModel.SystemVariables.FilteredVariables, Mode=OneWay}"
+                    ItemTemplateSelector="{StaticResource VariableTemplateSelector}"
+                    SelectionMode="None">
+            <ListView.ItemContainerStyle>
+              <Style TargetType="ListViewItem">
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="0" />
+              </Style>
+            </ListView.ItemContainerStyle>
           </ListView>
         </Grid>
       </Border>
@@ -84,31 +77,17 @@
             <RowDefinition Height="*"/>
           </Grid.RowDefinitions>
           <TextBlock Grid.Row="0" Text="USER" Style="{StaticResource SubtitleTextBlockStyle}" Margin="16,12,16,8" HorizontalAlignment="Center" />
-          <ListView Grid.Row="1" ItemsSource="{Binding UserVariables.Variables}">
-            <ListView.ItemTemplate>
-              <DataTemplate>
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Margin="8"
-                        Padding="12">
-                  <Grid>
-                    <Grid.RowDefinitions>
-                      <RowDefinition Height="Auto"/>
-                      <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="{Binding Name}"
-                               Style="{StaticResource SubtitleTextBlockStyle}"
-                               FontWeight="SemiBold" />
-                    <TextBox Grid.Row="1" Text="{Binding Value, Mode=TwoWay}"
-                             Margin="0,8,0,0"
-                             IsReadOnly="{Binding IsLocked}"
-                             TextWrapping="Wrap" />
-                  </Grid>
-                </Border>
-              </DataTemplate>
-            </ListView.ItemTemplate>
+          <ListView Grid.Row="1"
+                    ItemsSource="{x:Bind ViewModel.UserVariables.FilteredVariables, Mode=OneWay}"
+                    ItemTemplateSelector="{StaticResource VariableTemplateSelector}"
+                    SelectionMode="None">
+            <ListView.ItemContainerStyle>
+              <Style TargetType="ListViewItem">
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="0" />
+              </Style>
+            </ListView.ItemContainerStyle>
           </ListView>
         </Grid>
       </Border>

@@ -17,9 +17,30 @@ public partial class VariableScopeViewModel : ObservableObject {
   [ObservableProperty]
   private ObservableCollection<VariableViewModel> _variables = [];
 
+  [ObservableProperty]
+  private bool _showVolatileVariables = true;
+
+  [ObservableProperty]
+  private ObservableCollection<VariableViewModel> _filteredVariables = [];
+
   public VariableScopeViewModel(VariableScope scope, IEnvironmentService environmentService) {
     _scope = scope;
     _environmentService = environmentService;
+  }
+
+  partial void OnShowVolatileVariablesChanged(bool value) {
+    UpdateFilteredVariables();
+  }
+
+  partial void OnVariablesChanged(ObservableCollection<VariableViewModel> value) {
+    UpdateFilteredVariables();
+  }
+
+  private void UpdateFilteredVariables() {
+    FilteredVariables.Clear();
+    foreach (var variable in Variables.Where(v => ShowVolatileVariables || !v.IsLocked)) {
+      FilteredVariables.Add(variable);
+    }
   }
 
   public void LoadFromRegistry() {
@@ -30,8 +51,10 @@ public partial class VariableScopeViewModel : ObservableObject {
       : _environmentService.GetUserVariables();
 
     foreach (var envVar in envVars.OrderBy(v => v.Name)) {
-      Variables.Add(new VariableViewModel(envVar));
+      Variables.Add(new VariableViewModel(envVar, RemoveVariable));
     }
+
+    UpdateFilteredVariables();
   }
 
   public void AddVariable(string name, string value, bool isPathList = false) {
@@ -45,11 +68,13 @@ public partial class VariableScopeViewModel : ObservableObject {
       IsDeleted = false
     };
 
-    Variables.Add(new VariableViewModel(variable));
+    Variables.Add(new VariableViewModel(variable, RemoveVariable));
+    UpdateFilteredVariables();
   }
 
   public void RemoveVariable(VariableViewModel variable) {
     variable.Model.IsDeleted = true;
     Variables.Remove(variable);
+    UpdateFilteredVariables();
   }
 }

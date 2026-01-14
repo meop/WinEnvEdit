@@ -10,6 +10,8 @@ using WinEnvEdit.Models;
 namespace WinEnvEdit.ViewModels;
 
 public partial class VariableViewModel : ObservableObject {
+  private readonly Action<VariableViewModel>? _deleteCallback;
+
   [ObservableProperty]
   private string _name = string.Empty;
 
@@ -18,6 +20,8 @@ public partial class VariableViewModel : ObservableObject {
 
   [ObservableProperty]
   private bool _isLocked;
+
+  public bool VisualIsLocked => IsLocked;
 
   [ObservableProperty]
   private bool _isPathList;
@@ -30,8 +34,9 @@ public partial class VariableViewModel : ObservableObject {
 
   public EnvironmentVariable Model { get; init; }
 
-  public VariableViewModel(EnvironmentVariable model) {
+  public VariableViewModel(EnvironmentVariable model, Action<VariableViewModel>? deleteCallback = null) {
     Model = model;
+    _deleteCallback = deleteCallback;
     Name = model.Name;
     Value = model.Value;
     IsLocked = model.IsVolatile;
@@ -49,7 +54,7 @@ public partial class VariableViewModel : ObservableObject {
 
   [RelayCommand]
   private void AddPath() {
-    PathItems.Add(new PathItem { Path = string.Empty });
+    PathItems.Add(new PathItem { PathValue = string.Empty });
     SyncValueFromPaths();
   }
 
@@ -59,18 +64,23 @@ public partial class VariableViewModel : ObservableObject {
     SyncValueFromPaths();
   }
 
+  [RelayCommand]
+  private void Delete() {
+    _deleteCallback?.Invoke(this);
+  }
+
   private void ParsePathsFromValue() {
     PathItems.Clear();
     if (string.IsNullOrWhiteSpace(Value)) return;
 
     var paths = Value.Split(';', StringSplitOptions.RemoveEmptyEntries);
     foreach (var path in paths) {
-      PathItems.Add(new PathItem { Path = path.Trim() });
+      PathItems.Add(new PathItem { PathValue = path.Trim() });
     }
   }
 
   private void SyncValueFromPaths() {
-    Value = string.Join(";", PathItems.Select(p => p.Path));
+    Value = string.Join(";", PathItems.Select(p => p.PathValue));
     Model.Value = Value;
   }
 
