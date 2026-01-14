@@ -26,46 +26,46 @@
     </Grid.RowDefinitions>
 
     <CommandBar Grid.Row="0"
-        DefaultLabelPosition="Collapsed"
-        OverflowButtonVisibility="Collapsed"
-        ToolTipService.Placement="Bottom">
+                DefaultLabelPosition="Collapsed"
+                OverflowButtonVisibility="Collapsed"
+                ToolTipService.Placement="Bottom">
       <CommandBar.Content>
         <StackPanel Orientation="Horizontal"
-            Height="48"
-            Padding="0">
+                    Height="48"
+                    Padding="0">
           <AppBarButton Icon="Download"
-              ToolTipService.ToolTip="Import (Ctrl+I)"
-              Command="{x:Bind ViewModel.ImportCommand}"/>
+                        ToolTipService.ToolTip="Import (Ctrl+I)"
+                        Command="{x:Bind ViewModel.ImportCommand}"/>
           <AppBarButton Icon="Upload"
-              ToolTipService.ToolTip="Export (Ctrl+E)"
-              Command="{x:Bind ViewModel.ExportCommand}"/>
+                        ToolTipService.ToolTip="Export (Ctrl+E)"
+                        Command="{x:Bind ViewModel.ExportCommand}"/>
           <AppBarButton Icon="Refresh"
-              ToolTipService.ToolTip="Refresh (Ctrl+R)"
-              Command="{x:Bind ViewModel.RefreshCommand}"/>
+                        ToolTipService.ToolTip="Refresh (Ctrl+R)"
+                        Command="{x:Bind ViewModel.RefreshCommand}"/>
           <AppBarButton Icon="Undo"
-              ToolTipService.ToolTip="Undo (Ctrl+Z)"
-              Command="{x:Bind ViewModel.UndoCommand}"/>
+                        ToolTipService.ToolTip="Undo (Ctrl+Z)"
+                        Command="{x:Bind ViewModel.UndoCommand}"/>
           <AppBarButton Icon="Save"
-              ToolTipService.ToolTip="Save (Ctrl+S)"
-              Command="{x:Bind ViewModel.SaveCommand}"/>
+                        ToolTipService.ToolTip="Save (Ctrl+S)"
+                        Command="{x:Bind ViewModel.SaveCommand}"/>
           <AppBarButton Icon="Add"
-              ToolTipService.ToolTip="Add (Ctrl+N)"
-              Command="{x:Bind ViewModel.AddCommand}"/>
+                        ToolTipService.ToolTip="Add (Ctrl+N)"
+                        Command="{x:Bind ViewModel.AddCommand}"/>
         </StackPanel>
       </CommandBar.Content>
       <AppBarButton Icon="Permissions"
-            ToolTipService.ToolTip="Restart as Admin (Ctrl+A)"
-            Command="{x:Bind ViewModel.PermissionsCommand}"
-            Visibility="{x:Bind ViewModel.PermissionsButtonVisibility, Mode=OneWay}"/>
+                    ToolTipService.ToolTip="Restart as Admin (Ctrl+A)"
+                    Command="{x:Bind ViewModel.PermissionsCommand}"
+                    Visibility="{x:Bind ViewModel.PermissionsButtonVisibility, Mode=OneWay}"/>
       <AppBarButton Icon="List"
-          ToolTipService.ToolTip="Expand all Paths (Ctrl+P)"
-          Command="{x:Bind ViewModel.ToggleExpandAllPathsCommand}"/>
+                    ToolTipService.ToolTip="Expand all Paths (Ctrl+P)"
+                    Command="{x:Bind ViewModel.ToggleExpandAllPathsCommand}"/>
       <AppBarButton Icon="View"
-          ToolTipService.ToolTip="Show all Volatile (Ctrl+V)"
-          Command="{x:Bind ViewModel.ToggleShowVolatileVariablesCommand}"/>
+                    ToolTipService.ToolTip="Show all Volatile (Ctrl+V)"
+                    Command="{x:Bind ViewModel.ToggleShowVolatileVariablesCommand}"/>
       <AppBarButton Icon="Help"
-          ToolTipService.ToolTip="About (F1)"
-          Command="{x:Bind ViewModel.AboutCommand}"/>
+                    ToolTipService.ToolTip="About (F1)"
+                    Command="{x:Bind ViewModel.AboutCommand}"/>
     </CommandBar>
 
     <Grid Grid.Row="1">
@@ -75,18 +75,18 @@
       </Grid.ColumnDefinitions>
 
       <Border Grid.Column="0"
-          BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
-          BorderThickness="0,1,1,0">
+              BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+              BorderThickness="0,1,1,0">
         <Grid>
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
           </Grid.RowDefinitions>
           <TextBlock Grid.Row="0"
-              Text="SYSTEM"
-              Style="{StaticResource SubtitleTextBlockStyle}"
-              Margin="16,12,16,8"
-              HorizontalAlignment="Center"/>
+                     Text="SYSTEM"
+                     Style="{StaticResource SubtitleTextBlockStyle}"
+                     Margin="16,12,16,8"
+                     HorizontalAlignment="Center"/>
           <ListView Grid.Row="1"
                     ItemsSource="{x:Bind ViewModel.SystemVariables.FilteredVariables, Mode=OneWay}"
                     ItemTemplateSelector="{StaticResource VariableTemplateSelector}"
@@ -94,11 +94,11 @@
             <ListView.ItemContainerStyle>
               <Style TargetType="ListViewItem">
                 <Setter Property="HorizontalContentAlignment"
-                    Value="Stretch"/>
+                        Value="Stretch"/>
                 <Setter Property="Padding"
-                    Value="0"/>
+                        Value="0"/>
                 <Setter Property="Margin"
-                    Value="0"/>
+                        Value="0"/>
               </Style>
             </ListView.ItemContainerStyle>
           </ListView>
@@ -106,18 +106,18 @@
       </Border>
 
       <Border Grid.Column="1"
-          BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
-          BorderThickness="0,1,0,0">
+              BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+              BorderThickness="0,1,0,0">
         <Grid>
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
           </Grid.RowDefinitions>
           <TextBlock Grid.Row="0"
-              Text="USER"
-              Style="{StaticResource SubtitleTextBlockStyle}"
-              Margin="16,12,16,8"
-              HorizontalAlignment="Center"/>
+                     Text="USER"
+                     Style="{StaticResource SubtitleTextBlockStyle}"
+                     Margin="16,12,16,8"
+                     HorizontalAlignment="Center"/>
           <ListView Grid.Row="1"
                     ItemsSource="{x:Bind ViewModel.UserVariables.FilteredVariables, Mode=OneWay}"
                     ItemTemplateSelector="{StaticResource VariableTemplateSelector}"
@@ -125,11 +125,11 @@
             <ListView.ItemContainerStyle>
               <Style TargetType="ListViewItem">
                 <Setter Property="HorizontalContentAlignment"
-                    Value="Stretch"/>
+                        Value="Stretch"/>
                 <Setter Property="Padding"
-                    Value="0"/>
+                        Value="0"/>
                 <Setter Property="Margin"
-                    Value="0"/>
+                        Value="0"/>
               </Style>
             </ListView.ItemContainerStyle>
           </ListView>
