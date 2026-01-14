@@ -13,19 +13,19 @@ public partial class VariableScopeViewModel : ObservableObject {
   private readonly MainWindowViewModel? _parentViewModel;
 
   [ObservableProperty]
-  private VariableScope _scope;
+  public partial VariableScope Scope { get; set; }
 
   [ObservableProperty]
-  private ObservableCollection<VariableViewModel> _variables = [];
+  public partial ObservableCollection<VariableViewModel> Variables { get; set; } = [];
 
   [ObservableProperty]
-  private bool _showVolatileVariables = true;
+  public partial bool ShowVolatileVariables { get; set; } = true;
 
   [ObservableProperty]
-  private ObservableCollection<VariableViewModel> _filteredVariables = [];
+  public partial ObservableCollection<VariableViewModel> FilteredVariables { get; set; } = [];
 
   public VariableScopeViewModel(VariableScope scope, IEnvironmentService environmentService, MainWindowViewModel? parentViewModel = null) {
-    _scope = scope;
+    Scope = scope;
     _environmentService = environmentService;
     _parentViewModel = parentViewModel;
   }

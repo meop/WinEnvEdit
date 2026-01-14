@@ -5,7 +5,7 @@ using Microsoft.UI.Xaml.Data;
 
 namespace WinEnvEdit.Converters;
 
-public class BoolToVisibilityConverter : IValueConverter {
+public partial class BoolToVisibilityConverter : IValueConverter {
   public object Convert(object value, Type targetType, object parameter, string language) {
     return value is bool boolValue && boolValue ? Visibility.Visible : Visibility.Collapsed;
   }
@@ -15,7 +15,7 @@ public class BoolToVisibilityConverter : IValueConverter {
   }
 }
 
-public class BoolToVisibilityInverseConverter : IValueConverter {
+public partial class BoolToVisibilityInverseConverter : IValueConverter {
   public object Convert(object value, Type targetType, object parameter, string language) {
     return value is bool boolValue && boolValue ? Visibility.Collapsed : Visibility.Visible;
   }

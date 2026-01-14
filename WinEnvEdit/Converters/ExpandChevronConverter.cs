@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml.Data;
 
 namespace WinEnvEdit.Converters;
 
-public class ExpandChevronConverter : IValueConverter {
+public partial class ExpandChevronConverter : IValueConverter {
   public object Convert(object value, Type targetType, object parameter, string language) {
     return value is bool isExpanded && isExpanded ? "\uE70E" : "\uE70D";
   }

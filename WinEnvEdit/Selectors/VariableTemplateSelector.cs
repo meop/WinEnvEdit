@@ -5,7 +5,7 @@ using WinEnvEdit.ViewModels;
 
 namespace WinEnvEdit.Selectors;
 
-public class VariableTemplateSelector : DataTemplateSelector {
+public partial class VariableTemplateSelector : DataTemplateSelector {
   public DataTemplate? ReadOnlyTemplate { get; set; }
   public DataTemplate? EditableTemplate { get; set; }
   public DataTemplate? PathListTemplate { get; set; }

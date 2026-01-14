@@ -33,18 +33,18 @@
         <StackPanel Orientation="Horizontal"
             Height="48"
             Padding="0">
-          <AppBarButton Icon="Upload"
-              ToolTipService.ToolTip="Export (Ctrl+E)"
-              Command="{x:Bind ViewModel.BackupCommand}"/>
           <AppBarButton Icon="Download"
               ToolTipService.ToolTip="Import (Ctrl+I)"
-              Command="{x:Bind ViewModel.RestoreCommand}"/>
+              Command="{x:Bind ViewModel.ImportCommand}"/>
+          <AppBarButton Icon="Upload"
+              ToolTipService.ToolTip="Export (Ctrl+E)"
+              Command="{x:Bind ViewModel.ExportCommand}"/>
           <AppBarButton Icon="Refresh"
               ToolTipService.ToolTip="Refresh (Ctrl+R)"
-              Command="{x:Bind ViewModel.ReloadCommand}"/>
+              Command="{x:Bind ViewModel.RefreshCommand}"/>
           <AppBarButton Icon="Undo"
               ToolTipService.ToolTip="Undo (Ctrl+Z)"
-              Command="{x:Bind ViewModel.ResetCommand}"/>
+              Command="{x:Bind ViewModel.UndoCommand}"/>
           <AppBarButton Icon="Save"
               ToolTipService.ToolTip="Save (Ctrl+S)"
               Command="{x:Bind ViewModel.SaveCommand}"/>
@@ -53,8 +53,8 @@
               Command="{x:Bind ViewModel.AddCommand}"/>
           <AppBarButton Icon="Permissions"
               ToolTipService.ToolTip="Restart as Admin (Ctrl+A)"
-              Command="{x:Bind ViewModel.ElevateCommand}"
-              Visibility="{x:Bind ViewModel.ElevateButtonVisibility, Mode=OneWay}"/>
+              Command="{x:Bind ViewModel.PermissionsCommand}"
+              Visibility="{x:Bind ViewModel.PermissionsButtonVisibility, Mode=OneWay}"/>
         </StackPanel>
       </CommandBar.Content>
       <AppBarButton Icon="List"

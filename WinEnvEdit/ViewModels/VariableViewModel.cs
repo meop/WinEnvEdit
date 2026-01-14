@@ -14,24 +14,24 @@ public partial class VariableViewModel : ObservableObject {
   private readonly Action? _changeCallback;
 
   [ObservableProperty]
-  private string _name = string.Empty;
+  public partial string Name { get; set; } = string.Empty;
 
   [ObservableProperty]
-  private string _value = string.Empty;
+  public partial string Value { get; set; } = string.Empty;
 
   [ObservableProperty]
-  private bool _isLocked;
+  public partial bool IsLocked { get; set; }
 
   public bool VisualIsLocked => IsLocked;
 
   [ObservableProperty]
-  private bool _isPathList;
+  public partial bool IsPathList { get; set; }
 
   [ObservableProperty]
-  private bool _isExpanded;
+  public partial bool IsExpanded { get; set; }
 
   [ObservableProperty]
-  private ObservableCollection<PathItem> _pathItems = [];
+  public partial ObservableCollection<PathItem> PathItems { get; set; } = [];
 
   public EnvironmentVariable Model { get; init; }
 
@@ -83,7 +83,9 @@ public partial class VariableViewModel : ObservableObject {
 
   private void ParsePathsFromValue() {
     PathItems.Clear();
-    if (string.IsNullOrWhiteSpace(Value)) return;
+    if (string.IsNullOrWhiteSpace(Value)) {
+      return;
+    }
 
     var paths = Value.Split(';', StringSplitOptions.RemoveEmptyEntries);
     foreach (var path in paths) {

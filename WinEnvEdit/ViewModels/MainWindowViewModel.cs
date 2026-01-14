@@ -15,28 +15,28 @@ public partial class MainWindowViewModel : ObservableObject {
   private readonly IAdminService _adminService;
 
   [ObservableProperty]
-  private VariableScopeViewModel _systemVariables;
+  public partial VariableScopeViewModel SystemVariables { get; set; }
 
   [ObservableProperty]
-  private VariableScopeViewModel _userVariables;
+  public partial VariableScopeViewModel UserVariables { get; set; }
 
   [ObservableProperty]
-  private bool _isAdmin;
+  public partial bool IsAdmin { get; set; }
 
   public bool IsNotAdmin => !IsAdmin;
 
-  public Visibility ElevateButtonVisibility => IsAdmin ? Visibility.Collapsed : Visibility.Visible;
+  public Visibility PermissionsButtonVisibility => IsAdmin ? Visibility.Collapsed : Visibility.Visible;
 
   [ObservableProperty]
+  [NotifyCanExecuteChangedFor(nameof(UndoCommand))]
   [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
-  [NotifyCanExecuteChangedFor(nameof(ResetCommand))]
-  private bool _hasPendingChanges;
+  public partial bool HasPendingChanges { get; set; }
 
   [ObservableProperty]
-  private bool _showVolatileVariables;
+  public partial bool ShowVolatileVariables { get; set; }
 
   [ObservableProperty]
-  private bool _expandAllPaths;
+  public partial bool ExpandAllPaths { get; set; }
 
   public MainWindowViewModel() : this(new EnvironmentService(), new AdminService()) {
   }
@@ -44,11 +44,11 @@ public partial class MainWindowViewModel : ObservableObject {
   public MainWindowViewModel(IEnvironmentService environmentService, IAdminService adminService) {
     _environmentService = environmentService;
     _adminService = adminService;
-    _systemVariables = new VariableScopeViewModel(VariableScope.System, _environmentService, this);
-    _userVariables = new VariableScopeViewModel(VariableScope.User, _environmentService, this);
+    SystemVariables = new VariableScopeViewModel(VariableScope.System, _environmentService, this);
+    UserVariables = new VariableScopeViewModel(VariableScope.User, _environmentService, this);
 
     // Detect if running as administrator
-    _isAdmin = _adminService.IsAdministrator();
+    IsAdmin = _adminService.IsAdministrator();
 
     // Load initial data
     LoadVariables();
@@ -56,7 +56,7 @@ public partial class MainWindowViewModel : ObservableObject {
 
   partial void OnIsAdminChanged(bool value) {
     OnPropertyChanged(nameof(IsNotAdmin));
-    OnPropertyChanged(nameof(ElevateButtonVisibility));
+    OnPropertyChanged(nameof(PermissionsButtonVisibility));
   }
 
   partial void OnShowVolatileVariablesChanged(bool value) {
@@ -79,41 +79,39 @@ public partial class MainWindowViewModel : ObservableObject {
     HasPendingChanges = false;
   }
 
-  public void UpdatePendingChangesState() {
-    HasPendingChanges = SystemVariables.HasPendingChanges() || UserVariables.HasPendingChanges();
-  }
+  public void UpdatePendingChangesState() => HasPendingChanges = SystemVariables.HasPendingChanges() || UserVariables.HasPendingChanges();
 
-  [RelayCommand(CanExecute = nameof(CanSave))]
-  private void Save() {
-    // TODO: Implement save logic
+  private bool CanUndo() {
+    return HasPendingChanges;
   }
 
   private bool CanSave() {
     return HasPendingChanges;
   }
 
-  [RelayCommand(CanExecute = nameof(CanReset))]
-  private void Reset() {
-    // TODO: Implement reset logic
-  }
-
-  private bool CanReset() {
-    return HasPendingChanges;
+  [RelayCommand]
+  private void Import() {
+    // TODO: Implement import logic
   }
 
   [RelayCommand]
-  private void Reload() {
+  private void Export() {
+    // TODO: Implement export logic
+  }
+
+  [RelayCommand]
+  private void Refresh() {
     LoadVariables();
   }
 
-  [RelayCommand]
-  private void Backup() {
-    // TODO: Implement backup logic
+  [RelayCommand(CanExecute = nameof(CanUndo))]
+  private void Undo() {
+    // TODO: Implement reset logic
   }
 
-  [RelayCommand]
-  private void Restore() {
-    // TODO: Implement restore logic
+  [RelayCommand(CanExecute = nameof(CanSave))]
+  private void Save() {
+    // TODO: Implement save logic
   }
 
   [RelayCommand]
@@ -122,7 +120,7 @@ public partial class MainWindowViewModel : ObservableObject {
   }
 
   [RelayCommand]
-  private void Elevate() {
+  private void Permissions() {
     _adminService.RestartAsAdministrator();
   }
 
