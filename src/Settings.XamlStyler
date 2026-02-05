@@ -1,0 +1,27 @@
+{
+  "AttributeOrderingRuleGroups": [
+    "x:Class",
+    "xmlns, xmlns:x",
+    "xmlns:*",
+    "x:Key, x:Name, Name, x:Uid, Uid, Title",
+    "Grid.Row, Grid.RowSpan, Grid.Column, Grid.ColumnSpan, Canvas.Left, Canvas.Top, Canvas.Right, Canvas.Bottom",
+    "Width, Height, MinWidth, MinHeight, MaxWidth, MaxHeight",
+    "Margin, Padding, HorizontalAlignment, VerticalAlignment, HorizontalContentAlignment, VerticalContentAlignment, Panel.ZIndex",
+    "Style, Background, Foreground, Fill, Stroke, StrokeThickness, Opacity, Visibility, FlowDirection, LayoutTransform, RenderTransform, RenderTransformOrigin",
+    "FontFamily, FontSize, FontStretch, FontStyle, FontWeight",
+    "*:*, *",
+    "mc:Ignorable, d:IsDataSource, d:LayoutOverrides, d:IsStaticText"
+  ],
+  "AttributesIndentation": 2,
+  "AttributesIndentationStyle": "Mixed",
+  "AttributesTolerance": 2,
+  "IndentSize": 2,
+  "KeepFirstAttributeOnSameLine": true,
+  "MaxAttributesPerLine": 1,
+  "NewlineExemptionElements": "RadialGradientBrush, GradientStop, LinearGradientBrush, ScaleTransform, SkewTransform, RotateTransform, TranslateTransform, Trigger, Condition, Setter",
+  "OrderAttributesByName": false,
+  "PutEndingBracketOnNewLine": false,
+  "PutQuotationsInNewLines": false,
+  "RemoveEndingTagOfEmptyElement": true,
+  "SpaceBeforeClosingSlash": true
+}

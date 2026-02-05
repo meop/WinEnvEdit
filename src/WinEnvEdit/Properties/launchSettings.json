@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "WinEnvEdit (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "WinEnvEdit (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

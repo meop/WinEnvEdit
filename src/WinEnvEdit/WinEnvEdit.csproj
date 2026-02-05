@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationManifest>App.manifest</ApplicationManifest>
+    <AssemblyName>WinEnvEdit</AssemblyName>
+    <Description>Modern Windows Environment Editor</Description>
+    <EnableMsixTooling>false</EnableMsixTooling>
+    <LangVersion>Preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <OutputType>WinExe</OutputType>
+    <Platforms>ARM64;x64</Platforms>
+    <PublishAot>false</PublishAot>
+    <PublishTrimmed>false</PublishTrimmed>
+    <RuntimeIdentifiers>win-arm64;win-x64</RuntimeIdentifiers>
+    <SupportedOSPlatformVersion>10.0.22000.0</SupportedOSPlatformVersion>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <UseWinUI>true</UseWinUI>
+    <Version>1.0.0.0</Version>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WinUISDKReferences>false</WinUISDKReferences>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <SelfContained>false</SelfContained>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <SelfContained>true</SelfContained>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\SplashScreen.scale-200.png" />
+    <Content Include="Assets\LockScreenLogo.scale-200.png" />
+    <Content Include="Assets\Square150x150Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+    <Content Include="Assets\StoreLogo.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260101001" />
+    <PackageReference Include="Tomlyn" Version="0.20.0" />
+  </ItemGroup>
+
+  <Target Name="RunXamlStyler" BeforeTargets="BeforeBuild">
+    <Exec Command="dotnet tool run xstyler --directory . --recursive --config ../Settings.XamlStyler" />
+    <Exec Command="powershell -NoProfile -File ../Settings.XamlStyler.Fixes.ps1" />
+  </Target>
+</Project>
