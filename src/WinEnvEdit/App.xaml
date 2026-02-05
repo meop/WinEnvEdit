@@ -1,0 +1,281 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Application x:Class="WinEnvEdit.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="using:WinEnvEdit.Converters">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+        <ResourceDictionary Source="Resources/VariableTemplates.xaml" />
+      </ResourceDictionary.MergedDictionaries>
+
+      <!--  Override ContentDialog default max width (default is 548)  -->
+      <x:Double x:Key="ContentDialogMaxWidth">800</x:Double>
+
+      <!--  Shared dialog content width for consistent sizing  -->
+      <x:Double x:Key="DialogContentWidth">640</x:Double>
+
+      <!--  Thickness values used throughout the app  -->
+      <Thickness x:Key="StandardBorderThickness">1</Thickness>
+
+      <!--  Converters used in templates and bindings  -->
+      <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+      <converters:BoolToVisibilityInverseConverter x:Key="BoolToVisibilityInverseConverter" />
+      <converters:ExpandChevronConverter x:Key="ExpandChevronConverter" />
+      <converters:PathExistsToBrushConverter x:Key="PathExistsToBrushConverter" />
+      <converters:BoolToErrorBrushConverter x:Key="BoolToErrorBrushConverter" />
+
+      <!--  FontIcon default style for Segoe Fluent Icons  -->
+      <Style TargetType="FontIcon">
+        <Setter Property="FontFamily" Value="Segoe Fluent Icons" />
+      </Style>
+
+      <!--  CommandBar Icon Button style  -->
+      <Style x:Key="CommandBarIconButton"
+             BasedOn="{StaticResource DefaultAppBarButtonStyle}"
+             TargetType="AppBarButton">
+        <Setter Property="IsCompact" Value="True" />
+      </Style>
+
+      <!--  Style for CommandBar icons  -->
+      <Style x:Key="CommandBarIconStyle" TargetType="FontIcon">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontWeight" Value="Normal" />
+      </Style>
+
+      <!--  Style for header icons  -->
+      <Style x:Key="HeaderIconStyle" TargetType="FontIcon">
+        <Setter Property="FontSize" Value="18" />
+      </Style>
+
+      <!--  Style for small icons in lists  -->
+      <Style x:Key="LabelIconStyle" TargetType="FontIcon">
+        <Setter Property="FontSize" Value="16" />
+      </Style>
+
+      <!--  Style for tiny icons (12px)  -->
+      <Style x:Key="ValueIconStyle" TargetType="FontIcon">
+        <Setter Property="FontSize" Value="14" />
+      </Style>
+
+      <!--  Transparent icon button style for headers/panels  -->
+      <Style x:Key="TransparentIconButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="3" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="18" />
+      </Style>
+
+      <!--  Transparent icon button style for variable cards  -->
+      <Style x:Key="VariableIconButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="3" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="IsTabStop" Value="True" />
+      </Style>
+
+      <!--  Variable text box style  -->
+      <Style x:Key="VariableTextBoxStyle" TargetType="TextBox">
+        <Setter Property="Margin" Value="0,4,0,0" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="AcceptsReturn" Value="False" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="IsTabStop" Value="True" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+      </Style>
+
+      <!--  Dialog TextBox Style - constrains width to prevent overflow  -->
+      <Style x:Key="DialogTextBoxStyle"
+             BasedOn="{StaticResource VariableTextBoxStyle}"
+             TargetType="TextBox">
+        <Setter Property="MaxWidth" Value="600" />
+      </Style>
+
+      <!--  Path List Item TextBox Style  -->
+      <Style x:Key="PathListTextBoxStyle"
+             BasedOn="{StaticResource VariableTextBoxStyle}"
+             TargetType="TextBox">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+      </Style>
+
+      <!--  Path List Remove Button Style  -->
+      <Style x:Key="PathListRemoveButtonStyle"
+             BasedOn="{StaticResource VariableIconButton}"
+             TargetType="Button">
+        <Setter Property="Margin" Value="4,0,0,0" />
+        <Setter Property="Padding" Value="4" />
+      </Style>
+
+      <!--  Path List Expand Button Style  -->
+      <Style x:Key="PathListExpandButtonStyle"
+             BasedOn="{StaticResource VariableIconButton}"
+             TargetType="Button">
+        <Setter Property="Margin" Value="2,0" />
+      </Style>
+
+      <!--  Variable name text block style  -->
+      <Style x:Key="VariableNameStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="0,4" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+      </Style>
+
+      <!--  Header border style for System/User panels  -->
+      <Style x:Key="PanelHeaderBorder" TargetType="Border">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Margin" Value="4" />
+        <Setter Property="Padding" Value="6" />
+      </Style>
+
+      <!--  Header text style  -->
+      <Style x:Key="PanelHeaderStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="0,4" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+      </Style>
+
+      <!--  ListView item container style  -->
+      <Style x:Key="ListViewItemStyle" TargetType="ListViewItem">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0" />
+      </Style>
+
+      <!--  ListView style for variable lists  -->
+      <Style x:Key="VariableListViewStyle" TargetType="ListView">
+        <Setter Property="SelectionMode" Value="None" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource ListViewItemStyle}" />
+        <Setter Property="ItemTemplateSelector" Value="{StaticResource VariableTemplateSelector}" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="TabNavigation" Value="Local" />
+      </Style>
+
+      <!--  Panel container grid style  -->
+      <Style x:Key="PanelContainerGrid" TargetType="Grid">
+        <Setter Property="Background" Value="Transparent" />
+      </Style>
+
+      <!--  Panel border style  -->
+      <Style x:Key="PanelBorder" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{ThemeResource DividerStrokeColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="0,1,1,0" />
+      </Style>
+
+      <!--  Centered title template for ContentDialog  -->
+      <DataTemplate x:Key="CenteredTitleTemplate">
+        <Grid Width="{StaticResource DialogContentWidth}">
+          <TextBlock HorizontalAlignment="Center"
+                     FontWeight="SemiBold"
+                     Text="{Binding}" />
+        </Grid>
+      </DataTemplate>
+
+      <!--  Standard ContentDialog style with fixed size, centered  -->
+      <Style x:Key="StandardContentDialogStyle" TargetType="ContentDialog">
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="MaxWidth" Value="2000" />
+      </Style>
+
+      <!--  StackPanel style for dialog content with standard spacing  -->
+      <Style x:Key="DialogContentPanel" TargetType="StackPanel">
+        <Setter Property="Spacing" Value="12" />
+        <Setter Property="Width" Value="{StaticResource DialogContentWidth}" />
+        <Setter Property="MinHeight" Value="360" />
+      </Style>
+
+      <!--  TextBlock style for dialog labels  -->
+      <Style x:Key="DialogLabelStyle" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="SemiBold" />
+      </Style>
+
+      <!--  Error message TextBlock style  -->
+      <Style x:Key="ErrorMessageStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{ThemeResource SystemFillColorCriticalBrush}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Margin" Value="0,2,0,0" />
+      </Style>
+
+      <!--  CommandBar style to enforce consistent height  -->
+      <Style x:Key="StandardCommandBarStyle" TargetType="CommandBar">
+        <Setter Property="Height" Value="48" />
+        <Setter Property="DefaultLabelPosition" Value="Collapsed" />
+        <Setter Property="OverflowButtonVisibility" Value="Collapsed" />
+        <Setter Property="Background" Value="Transparent" />
+      </Style>
+
+      <!--  SearchBox style  -->
+      <Style x:Key="StandardSearchBoxStyle" TargetType="AutoSuggestBox">
+        <Setter Property="Width" Value="350" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="AutoSuggestBox.TextBoxStyle">
+          <Setter.Value>
+            <Style TargetType="TextBox">
+              <Setter Property="HorizontalContentAlignment" Value="Left" />
+              <Setter Property="TextAlignment" Value="Left" />
+            </Style>
+          </Setter.Value>
+        </Setter>
+      </Style>
+
+      <!--  Style for error details in dialogs  -->
+      <Style x:Key="DialogErrorDetailStyle" TargetType="TextBox">
+        <Setter Property="IsReadOnly" Value="True" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="AcceptsReturn" Value="True" />
+        <Setter Property="MaxHeight" Value="200" />
+        <Setter Property="Margin" Value="0,12,0,0" />
+      </Style>
+
+      <!--  Style for error header text in dialogs  -->
+      <Style x:Key="DialogErrorHeaderStyle" TargetType="TextBlock">
+        <Setter Property="TextWrapping" Value="Wrap" />
+      </Style>
+
+      <!--  Variable card border style  -->
+      <Style x:Key="VariableCardBorder" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="{StaticResource StandardBorderThickness}" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Margin" Value="4" />
+        <Setter Property="Padding" Value="6" />
+        <Setter Property="ContextFlyout">
+          <Setter.Value>
+            <MenuFlyout>
+              <MenuFlyoutItem Command="{Binding CopyDataCommand}" Text="Copy">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                  <KeyboardAccelerator Key="C" Modifiers="Control" />
+                </MenuFlyoutItem.KeyboardAccelerators>
+              </MenuFlyoutItem>
+              <MenuFlyoutItem Command="{Binding PasteDataCommand}" Text="Paste">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                  <KeyboardAccelerator Key="V" Modifiers="Control" />
+                </MenuFlyoutItem.KeyboardAccelerators>
+              </MenuFlyoutItem>
+              <MenuFlyoutSeparator Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityInverseConverter}}" />
+              <MenuFlyoutItem Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityInverseConverter}}"
+                              Command="{Binding ToggleTypeCommand}"
+                              Text="Toggle type">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                  <KeyboardAccelerator Key="T" Modifiers="Control" />
+                </MenuFlyoutItem.KeyboardAccelerators>
+              </MenuFlyoutItem>
+            </MenuFlyout>
+          </Setter.Value>
+        </Setter>
+      </Style>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

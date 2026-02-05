@@ -1,0 +1,229 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary x:Class="WinEnvEdit.Resources.VariableTemplates"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:converters="using:WinEnvEdit.Converters"
+                    xmlns:local="using:WinEnvEdit"
+                    xmlns:markup="using:WinEnvEdit.Extensions"
+                    xmlns:selectors="using:WinEnvEdit.Selectors"
+                    xmlns:vm="using:WinEnvEdit.ViewModels">
+
+  <!--  Read-Only Variable Template  -->
+  <DataTemplate x:Key="ReadOnlyTemplate">
+    <Border Style="{StaticResource VariableCardBorder}">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Style="{StaticResource VariableNameStyle}"
+                   Text="{Binding Name}" />
+
+        <!--
+          TextCommandBarFlyout used on all TextBoxes: provides native cut/copy/paste/select-all
+          that preserves focus and selection. Custom MenuFlyout breaks both. See PATTERNS.md → TextBox Context Menu Pattern.
+        -->
+        <TextBox Grid.Row="1"
+                 Style="{StaticResource VariableTextBoxStyle}"
+                 IsReadOnly="True"
+                 Text="{Binding Data, Mode=OneWay}">
+          <TextBox.ContextFlyout>
+            <TextCommandBarFlyout />
+          </TextBox.ContextFlyout>
+        </TextBox>
+      </Grid>
+    </Border>
+  </DataTemplate>
+
+  <!--  Editable Variable Template  -->
+  <DataTemplate x:Key="EditableTemplate">
+    <Border Style="{StaticResource VariableCardBorder}">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+
+          <TextBlock Grid.Column="0"
+                     Style="{StaticResource VariableNameStyle}"
+                     Text="{Binding Name}" />
+
+          <Button Grid.Column="1"
+                  Style="{StaticResource VariableIconButton}"
+                  Command="{Binding RemoveCommand}"
+                  ToolTipService.ToolTip="Remove">
+            <FontIcon Style="{StaticResource LabelIconStyle}" Glyph="{Binding IconGlyph, Mode=OneWay}" />
+          </Button>
+        </Grid>
+
+        <TextBox Grid.Row="1"
+                 Style="{StaticResource VariableTextBoxStyle}"
+                 Text="{Binding Data, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+          <TextBox.ContextFlyout>
+            <TextCommandBarFlyout />
+          </TextBox.ContextFlyout>
+        </TextBox>
+
+        <TextBlock Grid.Row="2"
+                   Style="{StaticResource ErrorMessageStyle}"
+                   Visibility="{Binding HasDataError, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
+                   Text="{Binding DataErrorMessage, Mode=OneWay}" />
+      </Grid>
+    </Border>
+  </DataTemplate>
+
+  <!--  Path-List Variable Template  -->
+  <DataTemplate x:Key="PathListTemplate">
+    <Border Style="{StaticResource VariableCardBorder}">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+
+          <TextBlock Grid.Column="0"
+                     Style="{StaticResource VariableNameStyle}"
+                     Text="{Binding Name}" />
+
+          <Button Grid.Column="1"
+                  Style="{StaticResource PathListExpandButtonStyle}"
+                  Command="{Binding ToggleExpandCommand}"
+                  ToolTipService.ToolTip="{Binding ExpandTooltip, Mode=OneWay}">
+            <FontIcon Style="{StaticResource LabelIconStyle}" Glyph="{Binding IsExpanded, Converter={StaticResource ExpandChevronConverter}}" />
+          </Button>
+
+          <Button Grid.Column="2"
+                  Style="{StaticResource VariableIconButton}"
+                  Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityInverseConverter}}"
+                  Command="{Binding RemoveCommand}"
+                  ToolTipService.ToolTip="Remove">
+            <FontIcon Style="{StaticResource LabelIconStyle}" Glyph="{Binding IconGlyph, Mode=OneWay}" />
+          </Button>
+        </Grid>
+
+        <TextBox Grid.Row="1"
+                 Style="{StaticResource VariableTextBoxStyle}"
+                 Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityInverseConverter}}"
+                 BorderBrush="{Binding HasInvalidPath, Converter={StaticResource BoolToErrorBrushConverter}, Mode=OneWay}"
+                 BorderThickness="{StaticResource StandardBorderThickness}"
+                 IsReadOnly="{Binding VisualIsLocked}"
+                 Text="{Binding Data, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+          <TextBox.ContextFlyout>
+            <TextCommandBarFlyout />
+          </TextBox.ContextFlyout>
+        </TextBox>
+
+        <TextBlock Grid.Row="1"
+                   Style="{StaticResource ErrorMessageStyle}"
+                   Visibility="{Binding HasDataError, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
+                   Text="{Binding DataErrorMessage, Mode=OneWay}" />
+
+        <Grid Grid.Row="1"
+              Margin="0"
+              Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+
+          <!--  All three drag properties are required together for reorder to work. See PATTERNS.md → Drag and Drop Reordering Pattern.  -->
+          <ListView Grid.Row="0"
+                    Padding="0"
+                    AllowDrop="True"
+                    CanDragItems="True"
+                    CanReorderItems="True"
+                    IsTabStop="False"
+                    ItemsSource="{Binding PathItems}"
+                    SelectionMode="None"
+                    TabNavigation="Local">
+            <ListView.ItemContainerStyle>
+              <Style TargetType="ListViewItem">
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="MinHeight" Value="0" />
+                <Setter Property="Margin" Value="0,4,0,0" />
+              </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+              <DataTemplate>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+
+                  <TextBox Grid.Column="0"
+                           Style="{StaticResource PathListTextBoxStyle}"
+                           BorderBrush="{Binding Exists, Converter={StaticResource PathExistsToBrushConverter}, Mode=OneWay}"
+                           BorderThickness="{StaticResource StandardBorderThickness}"
+                           IsReadOnly="{Binding IsReadOnly}"
+                           Text="{Binding PathValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox.ContextFlyout>
+                      <TextCommandBarFlyout />
+                    </TextBox.ContextFlyout>
+                  </TextBox>
+
+                  <FontIcon Grid.Column="1"
+                            Margin="9,0,1,0"
+                            Style="{StaticResource ValueIconStyle}"
+                            Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVisibilityInverseConverter}}"
+                            Glyph="{markup:Glyph Name=GripperBarHorizontal}"
+                            ToolTipService.ToolTip="Drag (Row)" />
+
+                  <Button Grid.Column="2"
+                          Style="{StaticResource PathListRemoveButtonStyle}"
+                          Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVisibilityInverseConverter}}"
+                          Command="{Binding RemoveCommand}"
+                          ToolTipService.ToolTip="Remove (Row)">
+                    <FontIcon Style="{StaticResource ValueIconStyle}" Glyph="{markup:Glyph Name=RemoveFrom}" />
+                  </Button>
+                </Grid>
+              </DataTemplate>
+            </ListView.ItemTemplate>
+          </ListView>
+
+          <Grid Grid.Row="1"
+                Margin="0,4,0,0"
+                Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityInverseConverter}}">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" />
+
+            <Button Grid.Column="1"
+                    Style="{StaticResource PathListRemoveButtonStyle}"
+                    Command="{Binding AddPathCommand}"
+                    ToolTipService.ToolTip="Add (Row)">
+              <FontIcon Style="{StaticResource ValueIconStyle}" Glyph="{markup:Glyph Name=AddTo}" />
+            </Button>
+          </Grid>
+        </Grid>
+      </Grid>
+    </Border>
+  </DataTemplate>
+
+  <!--  Template Selector  -->
+  <selectors:VariableTemplateSelector x:Key="VariableTemplateSelector"
+                                      EditableTemplate="{StaticResource EditableTemplate}"
+                                      PathListTemplate="{StaticResource PathListTemplate}"
+                                      ReadOnlyTemplate="{StaticResource ReadOnlyTemplate}" />
+</ResourceDictionary>
