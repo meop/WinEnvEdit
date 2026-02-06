@@ -18,5 +18,5 @@ public interface IEnvironmentService {
   /// Saves a batch of variables to registry.
   /// Uses PowerShell with runas if system variables are present.
   /// </summary>
-  public Task SaveVariablesAsync(IEnumerable<EnvironmentVariable> variables);
+  public Task SaveVariables(IEnumerable<EnvironmentVariable> variables);
 }

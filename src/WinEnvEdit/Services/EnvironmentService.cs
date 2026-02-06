@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Threading.Tasks;
 
 using Microsoft.Win32;
@@ -29,7 +30,7 @@ public partial class EnvironmentService : IEnvironmentService {
     return GetAndSortVariables(userVars.Concat(systemVars), volatileUserVars.Concat(volatileSystemVars));
   }
 
-  public async Task SaveVariablesAsync(IEnumerable<EnvironmentVariable> variables) {
+  public async Task SaveVariables(IEnumerable<EnvironmentVariable> variables) {
     var varsList = variables.ToList();
 
     if (varsList.Count == 0) {
@@ -199,7 +200,7 @@ public partial class EnvironmentService : IEnvironmentService {
     var variables = new List<EnvironmentVariable>();
 
     try {
-      var currentUserSid = System.Security.Principal.WindowsIdentity.GetCurrent()?.User?.Value;
+      var currentUserSid = WindowsIdentity.GetCurrent()?.User?.Value;
       if (string.IsNullOrEmpty(currentUserSid)) {
         return variables;
       }

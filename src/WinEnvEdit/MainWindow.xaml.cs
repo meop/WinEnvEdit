@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -10,6 +12,7 @@ using Microsoft.UI.Xaml.Media;
 using Windows.ApplicationModel.DataTransfer;
 
 using WinEnvEdit.Helpers;
+using WinEnvEdit.Services;
 using WinEnvEdit.ViewModels;
 
 using WinRT.Interop;
@@ -23,10 +26,10 @@ public sealed partial class MainWindow : Window {
   public MainWindowViewModel ViewModel { get; }
 
   public MainWindow() {
-    var environmentService = new Services.EnvironmentService();
-    var fileService = new Services.FileService();
-    var stateSnapshotService = new Services.StateSnapshotService();
-    var undoRedoService = new Services.UndoRedoService();
+    var environmentService = new EnvironmentService();
+    var fileService = new FileService();
+    var stateSnapshotService = new StateSnapshotService();
+    var undoRedoService = new UndoRedoService();
     ViewModel = new MainWindowViewModel(environmentService, this, fileService, stateSnapshotService, undoRedoService);
     InitializeComponent();
 
@@ -34,11 +37,39 @@ public sealed partial class MainWindow : Window {
     hwnd = WindowNative.GetWindowHandle(this);
     wndProcDelegate = WndProc;
     SetWindowSubclass(hwnd, wndProcDelegate, 0, IntPtr.Zero);
+
+    // Set window icon
+    SetWindowIcon();
+  }
+
+  private void SetWindowIcon() {
+    var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
+    var appWindow = AppWindow.GetFromWindowId(windowId);
+
+    // Try multiple possible locations for the icon
+    string[] possiblePaths = [
+      System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico"),
+      System.IO.Path.Combine(AppContext.BaseDirectory, "app.ico"),
+      System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "", "Assets", "app.ico")
+    ];
+
+    foreach (var path in possiblePaths) {
+      if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path)) {
+        appWindow.SetIcon(path);
+        break;
+      }
+    }
   }
 
   private void SearchButton_Click(object sender, RoutedEventArgs e) {
-    ViewModel.IsSearchVisible = true;
-    SearchBox.Focus(FocusState.Programmatic);
+    // Toggle visibility if search box is already visible and empty
+    if (ViewModel.IsSearchVisible && string.IsNullOrEmpty(ViewModel.SearchText)) {
+      ViewModel.IsSearchVisible = false;
+    }
+    else {
+      ViewModel.IsSearchVisible = true;
+      SearchBox.Focus(FocusState.Programmatic);
+    }
   }
 
   // Only hide on blur when search text is empty — keeps the filter visible

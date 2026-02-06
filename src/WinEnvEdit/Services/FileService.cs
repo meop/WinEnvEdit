@@ -30,7 +30,7 @@ public class FileService : IFileService {
     return $"{product}{fileExtension}";
   }
 
-  public async Task ExportToFileAsync(string filePath, IEnumerable<EnvironmentVariable> variables) {
+  public async Task ExportToFile(string filePath, IEnumerable<EnvironmentVariable> variables) {
     var model = variables
       .Where(v => !v.IsRemoved && !v.IsVolatile)
       .GroupBy(v => v.Scope.ToString())
@@ -71,7 +71,7 @@ public class FileService : IFileService {
     return string.Join("\n", result).TrimEnd() + "\n";
   }
 
-  public async Task<IEnumerable<EnvironmentVariable>> ImportFromFileAsync(string filePath) {
+  public async Task<IEnumerable<EnvironmentVariable>> ImportFromFile(string filePath) {
     var content = await File.ReadAllTextAsync(filePath);
     var model = Toml.ToModel(content);
     var result = new List<EnvironmentVariable>();
@@ -94,7 +94,9 @@ public class FileService : IFileService {
                 Data = data,
                 Type = type,
                 Scope = scope,
-                IsAdded = true
+                IsAdded = false,
+                IsRemoved = false,
+                IsVolatile = false
               });
             }
           }

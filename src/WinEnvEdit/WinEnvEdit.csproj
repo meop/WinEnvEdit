@@ -2,6 +2,7 @@
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationManifest>App.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AssemblyName>WinEnvEdit</AssemblyName>
     <Description>Modern Windows Environment Editor</Description>
     <EnableMsixTooling>false</EnableMsixTooling>
@@ -35,13 +36,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Assets\SplashScreen.scale-200.png" />
-    <Content Include="Assets\LockScreenLogo.scale-200.png" />
-    <Content Include="Assets\Square150x150Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Content Include="Assets\StoreLogo.png" />
-    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+    <Content Include="Assets\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -54,8 +51,4 @@
     <PackageReference Include="Tomlyn" Version="0.20.0" />
   </ItemGroup>
 
-  <Target Name="RunXamlStyler" BeforeTargets="BeforeBuild">
-    <Exec Command="dotnet tool run xstyler --directory . --recursive --config ../Settings.XamlStyler" />
-    <Exec Command="powershell -NoProfile -File ../Settings.XamlStyler.Fixes.ps1" />
-  </Target>
 </Project>

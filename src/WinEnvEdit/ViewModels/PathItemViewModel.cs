@@ -1,42 +1,43 @@
-using System.IO;
-
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using WinEnvEdit.Validation;
+
 namespace WinEnvEdit.ViewModels;
 
-public partial class PathItemViewModel(string pathValue, VariableViewModel parentViewModel) : ObservableObject {
-  private readonly VariableViewModel parent = parentViewModel;
+public partial class PathItemViewModel : ObservableObject {
+  private readonly VariableViewModel parent;
+  private bool isInitializing = true;
+
+  public PathItemViewModel(string pathValue, VariableViewModel parentViewModel) {
+    parent = parentViewModel;
+    PathValue = pathValue;
+    Exists = !VariableValidator.LooksLikePath(pathValue) || VariableValidator.IsValidPath(pathValue);
+    isInitializing = false;
+  }
 
   [ObservableProperty]
-  [NotifyPropertyChangedFor(nameof(Exists))]
-  public partial string PathValue { get; set; } = pathValue;
+  public partial string PathValue { get; set; }
 
-  public bool Exists => !ShouldValidate || IsValidPath(PathValue);
+  [ObservableProperty]
+  public partial bool Exists { get; set; }
 
   public bool IsReadOnly => parent.VisualIsLocked;
 
-  public bool ShouldValidate => parent.EnablePathValidation;
-
   partial void OnPathValueChanged(string value) {
+    if (isInitializing) {
+      return;
+    }
     parent.SyncDataFromPaths();
+    UpdateExists();
   }
+
+  /// <summary>
+  /// Updates the Exists property based on current PathValue.
+  /// Validation applies if the value looks like a filesystem path.
+  /// </summary>
+  public void UpdateExists() => Exists = !VariableValidator.LooksLikePath(PathValue) || VariableValidator.IsValidPath(PathValue);
 
   [RelayCommand]
   private void Remove() => parent.RemovePath(this);
-
-  private static bool IsValidPath(string path) {
-    if (string.IsNullOrWhiteSpace(path)) {
-      return false;
-    }
-
-    try {
-      // Environment variables in path (e.g. %SystemRoot%) need expansion to check existence
-      var expanded = System.Environment.ExpandEnvironmentVariables(path);
-      return Directory.Exists(expanded) || File.Exists(expanded);
-    }
-    catch {
-      return false;
-    }
-  }
 }

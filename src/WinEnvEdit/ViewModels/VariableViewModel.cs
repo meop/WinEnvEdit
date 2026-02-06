@@ -3,13 +3,14 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 using Microsoft.Win32;
+
+using Windows.ApplicationModel.DataTransfer;
 
 using WinEnvEdit.Extensions;
 using WinEnvEdit.Models;
@@ -22,6 +23,7 @@ public partial class VariableViewModel : ObservableObject {
   private readonly Action? changeCallback;
   private readonly Action<VariableViewModel>? refreshCallback;
   private bool isParsing;
+  private bool isSyncingFromPaths;
 
   [ObservableProperty]
   public partial string Name { get; set; } = string.Empty;
@@ -53,11 +55,28 @@ public partial class VariableViewModel : ObservableObject {
   [ObservableProperty]
   public partial ObservableCollection<PathItemViewModel> PathItems { get; set; }
 
+  // For non-path-list variables (String type), tracks if the Data value is a valid path
   [ObservableProperty]
   [NotifyPropertyChangedFor(nameof(HasInvalidPath))]
-  public partial bool EnablePathValidation { get; set; } = true;
+  public partial bool DataPathExists { get; set; } = true;
 
-  public bool HasInvalidPath => EnablePathValidation && PathItems.Any(p => !p.Exists);
+  public bool HasInvalidPath {
+    get {
+      if (IsPathList) {
+        return PathItems.Any(p => !p.Exists);
+      }
+      // For non-path-list variables, check if the entire Data is a valid path
+      return !DataPathExists;
+    }
+  }
+
+  /// <summary>
+  /// Updates DataPathExists based on current Data value. Called when Data changes for non-path-list variables.
+  /// Only validates if Data looks like a filesystem path.
+  /// </summary>
+  public void UpdateDataPathExists() {
+    DataPathExists = !VariableValidator.LooksLikePath(Data) || VariableValidator.IsValidPath(Data);
+  }
 
   public EnvironmentVariable Model { get; init; }
 
@@ -73,8 +92,13 @@ public partial class VariableViewModel : ObservableObject {
     PathItems = [];
 
     if (IsPathList) {
-      ParsePathsFromData();
+      // Subscribe BEFORE parsing so items get PropertyChanged subscribed
       PathItems.CollectionChanged += OnPathItemsCollectionChanged;
+      ParsePathsFromData();
+    }
+    else {
+      // For non-path-list variables, check if Data is a valid path
+      UpdateDataPathExists();
     }
   }
 
@@ -120,6 +144,16 @@ public partial class VariableViewModel : ObservableObject {
     DataErrorMessage = result.IsValid ? string.Empty : result.ErrorMessage;
     Model.Data = value;
     changeCallback?.Invoke();
+
+    // If Data was changed externally (e.g., collapsed TextBox), sync PathItems
+    // Skip if we're currently syncing from paths (to avoid infinite loop)
+    if (IsPathList && !isSyncingFromPaths) {
+      RefreshPathsFromData();
+    }
+    else if (!IsPathList) {
+      // For non-path-list variables, update path existence check
+      UpdateDataPathExists();
+    }
   }
 
   [RelayCommand]
@@ -176,20 +210,9 @@ public partial class VariableViewModel : ObservableObject {
   }
 
   [RelayCommand]
-  private void CopyData() {
-    var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-    dataPackage.SetText($"{Name}={Data}");
-    Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
-  }
-
-  [RelayCommand]
-  private async Task PasteDataAsync() {
-    if (IsLocked) {
-      return; // Can't paste into locked (volatile) variables
-    }
-
-    var dataPackageView = Windows.ApplicationModel.DataTransfer.Clipboard.GetContent();
-    if (!dataPackageView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text)) {
+  private async Task PasteData() {
+    var dataPackageView = Clipboard.GetContent();
+    if (!dataPackageView.Contains(StandardDataFormats.Text)) {
       return;
     }
 
@@ -216,7 +239,6 @@ public partial class VariableViewModel : ObservableObject {
     try {
       PathItems.Clear();
       if (string.IsNullOrWhiteSpace(Data)) {
-        UpdatePathValidationState();
         return;
       }
 
@@ -225,7 +247,7 @@ public partial class VariableViewModel : ObservableObject {
         PathItems.Add(new PathItemViewModel(path.Trim(), this));
       }
 
-      UpdatePathValidationState();
+      UpdateAllPathExists();
     }
     finally {
       isParsing = false;
@@ -233,36 +255,61 @@ public partial class VariableViewModel : ObservableObject {
   }
 
   public void SyncDataFromPaths() {
-    Data = string.Join(";", PathItems.Select(p => p.PathValue));
-    Model.Data = Data;
+    isSyncingFromPaths = true;
+    try {
+      Data = string.Join(";", PathItems.Select(p => p.PathValue));
+      Model.Data = Data;
+    }
+    finally {
+      isSyncingFromPaths = false;
+    }
   }
 
-  private void UpdatePathValidationState() =>
-    // Determine if path validation should be enabled based on first path
-    EnablePathValidation = PathItems.Count > 0 && LooksLikeValidPath(PathItems[0].PathValue);
-
-  private static bool LooksLikeValidPath(string path) {
-    if (string.IsNullOrWhiteSpace(path)) {
-      return false;
+  /// <summary>
+  /// Refreshes PathItems to match current Data value.
+  /// Used during registry refresh when Data is updated externally.
+  /// </summary>
+  public void RefreshPathsFromData() {
+    if (!IsPathList) {
+      return;
     }
 
-    var trimmed = path.Trim();
+    var newPaths = string.IsNullOrWhiteSpace(Data)
+      ? []
+      : Data.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
 
-    // Check for drive letter + colon pattern (e.g., "C:\", "D:")
-    if (DriveLetterRegex().IsMatch(trimmed)) {
-      return true;
+    // Update existing items or add/remove as needed
+    for (var i = 0; i < newPaths.Count; i++) {
+      if (i < PathItems.Count) {
+        // Update existing item if value changed
+        if (PathItems[i].PathValue != newPaths[i]) {
+          PathItems[i].PathValue = newPaths[i];
+        }
+        else {
+          // Value same, but still refresh Exists in case file system changed
+          PathItems[i].UpdateExists();
+        }
+      }
+      else {
+        // Add new item
+        PathItems.Add(new PathItemViewModel(newPaths[i], this));
+      }
     }
 
-    // Check for environment variable macro pattern (e.g., "%SystemRoot%", "%USERPROFILE%\go")
-    if (EnvVarMacroRegex().IsMatch(trimmed)) {
-      return true;
+    // Remove extra items
+    while (PathItems.Count > newPaths.Count) {
+      PathItems.RemoveAt(PathItems.Count - 1);
     }
 
-    return false;
+    UpdateAllPathExists();
   }
 
-  [GeneratedRegex(@"^[A-Za-z]:")]
-  private static partial Regex DriveLetterRegex();
-  [GeneratedRegex(@"^%")]
-  private static partial Regex EnvVarMacroRegex();
+  /// <summary>
+  /// Re-evaluates Exists on all path items.
+  /// </summary>
+  private void UpdateAllPathExists() {
+    foreach (var pathItem in PathItems) {
+      pathItem.UpdateExists();
+    }
+  }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace WinEnvEdit.Validation;
@@ -22,6 +23,53 @@ public static class VariableValidator {
     (data => data!.Length <= MaxValueLength, $"cannot exceed {MaxValueLength} characters"),
     (data => !data!.Contains('\0'), "cannot contain null characters"),
   ];
+
+  /// <summary>
+  /// Returns true if the value looks like a filesystem path (drive letter or %MACRO%).
+  /// </summary>
+  public static bool LooksLikePath(string value) {
+    if (string.IsNullOrWhiteSpace(value)) {
+      return false;
+    }
+
+    var trimmed = value.Trim();
+
+    // Drive letter pattern: single letter followed by colon (e.g., "C:\", "D:")
+    if (trimmed.Length >= 2 && char.IsAsciiLetter(trimmed[0]) && trimmed[1] == ':') {
+      return true;
+    }
+
+    // Environment variable macro: %LETTERS% (e.g., "%SystemRoot%", "%USERPROFILE%\go")
+    if (trimmed.Length >= 3 && trimmed[0] == '%') {
+      for (var i = 1; i < trimmed.Length; i++) {
+        if (trimmed[i] == '%') {
+          return i > 1;
+        }
+        if (!char.IsAsciiLetter(trimmed[i])) {
+          break;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /// <summary>
+  /// Returns true if the path exists on disk (after expanding environment variables).
+  /// </summary>
+  public static bool IsValidPath(string path) {
+    if (string.IsNullOrWhiteSpace(path)) {
+      return false;
+    }
+    try {
+      // Environment variables in path (e.g. %SystemRoot%) need expansion to check existence
+      var expanded = Environment.ExpandEnvironmentVariables(path);
+      return Directory.Exists(expanded) || File.Exists(expanded);
+    }
+    catch {
+      return false;
+    }
+  }
 
   public static ValidationResult ValidateName(string name) {
     foreach (var (rule, errorMessage) in nameValidationRules) {
