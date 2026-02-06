@@ -49,7 +49,7 @@ If in doubt, present options and let the user decide.
 ## Build & Test Workflow
 
 1. Make code changes
-2. Run `dotnet format src/WinEnvEdit/WinEnvEdit.csproj --no-restore`
+2. Run `./src/Scripts/Format.ps1`
 3. Build and test if required
 4. Stop - DO NOT create git commits automatically
 

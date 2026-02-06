@@ -47,7 +47,7 @@ dotnet_naming_style.begins_with_underscore.required_prefix = _
 dotnet_naming_style.begins_with_underscore.capitalization = camel_case
 
 # Async methods should end with Async
-dotnet_naming_rule.async_method_should_be_ends_with_async.severity = warning
+dotnet_naming_rule.async_method_should_be_ends_with_async.severity = none
 dotnet_naming_rule.async_method_should_be_ends_with_async.symbols = async_method
 dotnet_naming_rule.async_method_should_be_ends_with_async.style = ends_with_async
 

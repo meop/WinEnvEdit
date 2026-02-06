@@ -11,7 +11,7 @@ Guidance for Claude Code when working with this repository.
 **Standard Workflow** (Claude detects host platform and targets it):
 ```bash
 # Format code first
-dotnet format src/WinEnvEdit/WinEnvEdit.csproj --no-restore
+./src/Scripts/Format.ps1
 
 # Build solution (main + test projects)
 dotnet build -c Debug -p:Platform=<Platform>
@@ -19,8 +19,17 @@ dotnet build -c Debug -p:Platform=<Platform>
 # Run unit tests
 dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -p:Platform=<Platform> --no-build
 
-# Run the application
+# Run application
 bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
+```
+
+**Release Build**:
+```bash
+# Build Release (self-contained, bundles .NET runtime)
+dotnet build -c Release -p:Platform=<Platform>
+
+# Run Release directly
+bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 ```
 
 **Release Build**:
@@ -36,7 +45,7 @@ bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 (single quotes required — Git Bash swallows `$Env:` if double-quoted). Maps `AMD64` → `x64`, `ARM64` → `ARM64`.
 
 **Key Rules**:
-- **Format code first**: `dotnet format src/WinEnvEdit/WinEnvEdit.csproj --no-restore`
+- **Format code first**: `./src/Scripts/Format.ps1`
 - **Build solution**: Includes both main and test projects
 - **Run tests after build**: Verify code quality and catch regressions
 - 2-space indentation, LF line endings (enforced by `.editorconfig`)
@@ -45,6 +54,11 @@ bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 - No inline initializers with `[ObservableProperty]` - initialize in constructor
 - Never use `x:Bind` in ResourceDictionary files - use `{Binding}` instead
 - **Tests are part of every change**: Every fix or feature must include an assessment of test impact. Create, update, or remove tests as needed — do not wait to be asked. If something genuinely can't be unit tested (OS APIs, clipboard, no seam), note why and move on.
+- **Git safety**: Read-only git commands (`status`, `diff`, `log`, `fetch`) are fine without permission. **Never** run destructive or state-changing commands without explicit user request:
+  - No automatic commits (`git commit`) - only when user explicitly asks
+  - No `git push`, `git reset`, `git checkout -- <file>`, `git clean`, `git stash drop`
+  - No `git rebase` or `git merge` on shared branches
+  - See [AGENTS.md](AGENTS.md) for full git safety rules
 
 ---
 
@@ -96,7 +110,13 @@ Ensure you have:
 
 ```
 src/
+├── Scripts/                        # Utility scripts
+│   ├── Format.ps1                  # Format C# and XAML code
+│   ├── Icon.ps1                    # Generate app icons from source PNG
+│   ├── Settings.XamlStyler          # XAML formatter configuration
+│   └── Settings.XamlStyler.Fixes.ps1  # Fix XAML line endings
 ├── WinEnvEdit/                      # Main application project
+│   ├── Assets/                     # App icons and images
 │   ├── Models/                      # Data models (EnvironmentVariable, etc.)
 │   ├── ViewModels/                  # ViewModels with [ObservableProperty]
 │   ├── Views/                       # XAML resources and templates
@@ -135,7 +155,7 @@ dotnet build -c Debug -p:Platform=<Platform>
 
 **Format code before building** (required for code quality):
 ```bash
-dotnet format src/WinEnvEdit/WinEnvEdit.csproj --no-restore
+./src/Scripts/Format.ps1
 ```
 
 **Run unit tests after building**:
@@ -149,7 +169,7 @@ dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -p:Platform=<Platform> 
 
 ```bash
 # Format code first
-dotnet format src/WinEnvEdit/WinEnvEdit.csproj --no-restore
+./src/Scripts/Format.ps1
 
 # Build Debug (main + test projects)
 dotnet build -c Debug -p:Platform=<Platform>
@@ -174,7 +194,7 @@ bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
 
 ```bash
 # Format code first
-dotnet format src/WinEnvEdit/WinEnvEdit.csproj --no-restore
+./src/Scripts/Format.ps1
 
 # Build Release (main + test projects)
 dotnet build -c Release -p:Platform=<Platform>
@@ -207,7 +227,9 @@ When using Visual Studio, the solution contains two projects:
 5. **Debug mode** (F5): Runs the application with debugger attached
 6. **Release builds**: Self-contained with .NET runtime bundled
 
-**Note**: Format code with `dotnet format src/WinEnvEdit/WinEnvEdit.csproj --no-restore` before committing.
+**Note**: Format code with `./src/Scripts/Format.ps1` before committing.
+
+**Unpackaged Apps**: Since the app runs unpackaged (WindowsPackageType=None), window and taskbar icons are set programmatically in `MainWindow.xaml.cs`. Asset files are copied to the output directory via the .csproj configuration.
 
 ---
 
@@ -217,9 +239,9 @@ When using Visual Studio, the solution contains two projects:
 
 Claude should automatically format code after modifications:
 
-**C# files**:
+**C# files** (run combined script):
 ```bash
-dotnet format src/WinEnvEdit/WinEnvEdit.csproj --no-restore
+./src/Scripts/Format.ps1
 ```
 
 **XAML files**: Follow `.editorconfig` rules (2-space indentation, LF line endings). Ensure consistent attribute alignment matching existing patterns.
@@ -283,6 +305,16 @@ using WinEnvEdit.ViewModels;
 ## Development Workflow
 
 ### Common Tasks
+
+#### Generate App Icons
+
+To regenerate app icons from a source PNG:
+
+```bash
+./src/Scripts/Icon.ps1 -SourcePath ~/path/to/source.png
+```
+
+This generates all required icon sizes (square, wide, splash, store, lock screen) from a single source image.
 
 #### Add a New Value Converter
 
@@ -687,6 +719,20 @@ dialog.Opened += (s, e) => {
 
 ## Troubleshooting
 
+### No Icons Displayed in App or Taskbar
+
+**Problem**: Window title bar icon and taskbar icon don't appear when running unpackaged app.
+
+**Solution**: For unpackaged apps (WindowsPackageType=None), icons are set programmatically:
+- Window icon is set in `MainWindow.xaml.cs` via `SetWindowIcon()` method
+- Taskbar icon is registered via `SetAppUserModelID()` P/Invoke call
+- Asset files must be copied to output directory (configured in .csproj)
+
+If icons still don't appear, ensure:
+1. Asset files exist in `WinEnvEdit/Assets/` folder
+2. .csproj includes `Content` items with `CopyToOutputDirectory` set
+3. `SetWindowIcon()` is called in `MainWindow` constructor
+
 ### Build Fails with "Platform not specified"
 
 **Cause**: Missing or wrong platform specification in build command.
@@ -722,7 +768,7 @@ dialog.Opened += (s, e) => {
 
 ### Formatting Fails or Doesn't Match `.editorconfig`
 
-**Solution**: Run `dotnet format src/WinEnvEdit/WinEnvEdit.csproj --no-restore`. Claude runs this automatically after C# changes.
+**Solution**: Run `./src/Scripts/Format.ps1`. Claude runs this automatically after C# changes.
 
 ### XAML Attributes Not Aligned Consistently
 
@@ -814,7 +860,7 @@ This document covers the essentials for working with WinEnvEdit. Key takeaways:
 - ✓ App runs as a standard .exe (no MSIX deployment needed)
 - ✓ Debug builds are fast but require .NET SDK
 - ✓ Release builds are self-contained (bundle .NET runtime)
-- ✓ Auto-format C# after changes
+- ✓ Auto-format code with `./src/Scripts/Format.ps1` after changes
 - ✓ Use 2-space indentation everywhere
 - ✓ Initialize observable properties in constructors
 - ✓ Use `{Binding}` in ResourceDictionaries, `x:Bind` in Window XAML
