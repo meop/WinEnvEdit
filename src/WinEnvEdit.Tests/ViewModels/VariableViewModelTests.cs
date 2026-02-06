@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
 using FluentAssertions;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Win32;
 
-using WinEnvEdit.Models;
 using WinEnvEdit.Tests.Helpers;
 using WinEnvEdit.ViewModels;
 
@@ -371,38 +364,7 @@ public class VariableViewModelTests {
 
   #endregion
 
-  #region EnablePathValidation Tests
-
-  [TestMethod]
-  public void Constructor_WithDrivePath_EnablesValidation() {
-    // Arrange
-    var systemDrive = Environment.GetEnvironmentVariable("SystemDrive") ?? "C:";
-    var model = EnvironmentVariableBuilder.Default()
-      .WithName("PATH")
-      .WithData(Path.Combine(systemDrive, "Windows"))
-      .Build();
-
-    // Act
-    var viewModel = new VariableViewModel(model, null, null);
-
-    // Assert
-    viewModel.EnablePathValidation.Should().BeTrue();
-  }
-
-  [TestMethod]
-  public void Constructor_WithEnvironmentVariable_EnablesValidation() {
-    // Arrange
-    var model = EnvironmentVariableBuilder.Default()
-      .WithName("PATH")
-      .WithData("%SystemRoot%")
-      .Build();
-
-    // Act
-    var viewModel = new VariableViewModel(model, null, null);
-
-    // Assert
-    viewModel.EnablePathValidation.Should().BeTrue();
-  }
+  #region HasInvalidPath Tests
 
   [TestMethod]
   public void HasInvalidPath_WithInvalidPaths_ReturnsTrue() {
@@ -421,40 +383,122 @@ public class VariableViewModelTests {
   }
 
   [TestMethod]
-  public void Constructor_WithRelativePath_DisablesValidation() {
-    // Arrange
+  public void HasInvalidPath_PathList_WithNonPathFirstEntry_AndInvalidSecondEntry_ReturnsTrue() {
+    // Arrange - "aa" is not a path, but "X:\fake" is and doesn't exist
     var model = EnvironmentVariableBuilder.Default()
       .WithName("PATH")
-      .WithData("relative\\path")
+      .WithData("aa;X:\\fake")
       .WithType(RegistryValueKind.ExpandString)
+      .Build();
+    var viewModel = new VariableViewModel(model, null, null);
+
+    // Act & Assert
+    viewModel.HasInvalidPath.Should().BeTrue("second entry looks like a filesystem path and doesn't exist");
+  }
+
+  [TestMethod]
+  public void HasInvalidPath_PathList_WithNonPathEntries_ReturnsFalse() {
+    // Arrange - Neither entry looks like a path
+    var model = EnvironmentVariableBuilder.Default()
+      .WithName("PATH")
+      .WithData("aa;bb")
+      .WithType(RegistryValueKind.ExpandString)
+      .Build();
+    var viewModel = new VariableViewModel(model, null, null);
+
+    // Act & Assert
+    viewModel.HasInvalidPath.Should().BeFalse("no entries look like filesystem paths");
+  }
+
+  [TestMethod]
+  public void HasInvalidPath_NonPathList_WithNonPathValue_ReturnsFalse() {
+    // Arrange - "some_text" is not a path-like value
+    var model = EnvironmentVariableBuilder.Default()
+      .WithName("MY_VAR")
+      .WithData("some_text")
+      .WithType(RegistryValueKind.String)
       .Build();
 
     // Act
     var viewModel = new VariableViewModel(model, null, null);
 
     // Assert
-    viewModel.EnablePathValidation.Should().BeFalse();
+    viewModel.HasInvalidPath.Should().BeFalse("value doesn't look like a filesystem path");
   }
 
   #endregion
 
-  #region ToggleExpandCommand Tests
+  #region Non-PathList Path Validation Tests
 
   [TestMethod]
-  public void HasInvalidPath_WhenValidationDisabled_ReturnsFalse() {
+  public void DataPathExists_NonPathList_WithValidPath_ReturnsTrue() {
     // Arrange
+    var systemRoot = Environment.GetEnvironmentVariable("SystemRoot") ?? "C:\\Windows";
     var model = EnvironmentVariableBuilder.Default()
-      .WithName("PATH")
-      .WithData("X:\\NonExistent\\Path")
+      .WithName("MY_PATH")
+      .WithData(systemRoot)
+      .WithType(RegistryValueKind.String) // Not ExpandString, so not a path list
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
-    viewModel.EnablePathValidation = false;
 
     // Act
-    var hasInvalid = viewModel.HasInvalidPath;
+    var viewModel = new VariableViewModel(model, null, null);
 
     // Assert
-    hasInvalid.Should().BeFalse();
+    viewModel.DataPathExists.Should().BeTrue();
+    viewModel.HasInvalidPath.Should().BeFalse();
+  }
+
+  [TestMethod]
+  public void DataPathExists_NonPathList_WithInvalidPath_ReturnsFalse() {
+    // Arrange
+    var model = EnvironmentVariableBuilder.Default()
+      .WithName("MY_PATH")
+      .WithData("X:\\NonExistent\\Path\\That\\Does\\Not\\Exist")
+      .WithType(RegistryValueKind.String) // Not ExpandString, so not a path list
+      .Build();
+
+    // Act
+    var viewModel = new VariableViewModel(model, null, null);
+
+    // Assert
+    viewModel.DataPathExists.Should().BeFalse();
+    viewModel.HasInvalidPath.Should().BeTrue();
+  }
+
+  [TestMethod]
+  public void DataPathExists_NonPathList_WhenDataChanges_Updates() {
+    // Arrange
+    var systemRoot = Environment.GetEnvironmentVariable("SystemRoot") ?? "C:\\Windows";
+    var model = EnvironmentVariableBuilder.Default()
+      .WithName("MY_PATH")
+      .WithData(systemRoot)
+      .WithType(RegistryValueKind.String)
+      .Build();
+    var viewModel = new VariableViewModel(model, null, null);
+    viewModel.DataPathExists.Should().BeTrue();
+
+    // Act
+    viewModel.Data = "X:\\NonExistent\\Path";
+
+    // Assert
+    viewModel.DataPathExists.Should().BeFalse();
+    viewModel.HasInvalidPath.Should().BeTrue();
+  }
+
+  [TestMethod]
+  public void DataPathExists_NonPathList_WithEnvironmentVariable_ExpandsAndChecks() {
+    // Arrange - %SystemRoot% should expand to C:\Windows
+    var model = EnvironmentVariableBuilder.Default()
+      .WithName("MY_PATH")
+      .WithData("%SystemRoot%")
+      .WithType(RegistryValueKind.String)
+      .Build();
+
+    // Act
+    var viewModel = new VariableViewModel(model, null, null);
+
+    // Assert
+    viewModel.DataPathExists.Should().BeTrue("environment variable should be expanded and path checked");
   }
 
   #endregion
@@ -674,30 +718,6 @@ public class VariableViewModelTests {
 
     // Assert
     callbackVariable.Should().Be(viewModel);
-  }
-
-  #endregion
-
-  #region CopyDataCommand Tests
-
-  [TestMethod]
-  public void CopyDataCommand_SetsClipboardContent() {
-    // Arrange
-    var model = EnvironmentVariableBuilder.Default()
-      .WithName("TEST")
-      .WithData("test_value")
-      .Build();
-    var viewModel = new VariableViewModel(model, null, null);
-
-    // Act - Note: This test may not work in headless environment
-    try {
-      viewModel.CopyDataCommand.Execute(null);
-    }
-    catch {
-      // Clipboard operations may fail in test environment
-    }
-
-    // Assert - If no exception, operation completed
   }
 
   #endregion

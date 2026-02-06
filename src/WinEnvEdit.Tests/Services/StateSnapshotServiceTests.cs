@@ -1,11 +1,7 @@
-using System.Linq;
-
 using FluentAssertions;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Win32;
 
-using WinEnvEdit.Models;
 using WinEnvEdit.Services;
 using WinEnvEdit.Tests.Helpers;
 

@@ -1,12 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-
 using FluentAssertions;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Win32;
 
 using WinEnvEdit.Models;
@@ -17,29 +10,29 @@ namespace WinEnvEdit.Tests.Services;
 
 [TestClass]
 public class FileServiceTests : IDisposable {
-  private readonly string _testDirectory;
-  private readonly FileService _fileService;
+  private readonly string testDirectory;
+  private readonly FileService fileService;
 
   public FileServiceTests() {
-    _testDirectory = Path.Combine(Path.GetTempPath(), $"WinEnvEdit_Tests_{Guid.NewGuid()}");
-    Directory.CreateDirectory(_testDirectory);
-    _fileService = new FileService();
+    testDirectory = Path.Combine(Path.GetTempPath(), $"WinEnvEdit_Tests_{Guid.NewGuid()}");
+    Directory.CreateDirectory(testDirectory);
+    fileService = new FileService();
   }
 
   public void Dispose() {
     try {
-      if (Directory.Exists(_testDirectory)) {
-        Directory.Delete(_testDirectory, recursive: true);
+      if (Directory.Exists(testDirectory)) {
+        Directory.Delete(testDirectory, recursive: true);
       }
     }
     catch {
     }
   }
 
-  #region ExportToFileAsync Tests
+  #region ExportToFile Tests
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ExportToFileAsync_ExportsVariablesCorrectly() {
+  public async Task ExportToFile_ExportsVariablesCorrectly() {
     // Arrange
     var variables = new List<EnvironmentVariable> {
       EnvironmentVariableBuilder.Default()
@@ -55,10 +48,10 @@ public class FileServiceTests : IDisposable {
         .WithType(RegistryValueKind.ExpandString)
         .Build(),
     };
-    var filePath = Path.Combine(_testDirectory, "test_export.toml");
+    var filePath = Path.Combine(testDirectory, "test_export.toml");
 
     // Act
-    await _fileService.ExportToFileAsync(filePath, variables);
+    await fileService.ExportToFile(filePath, variables);
 
     // Assert
     File.Exists(filePath).Should().BeTrue();
@@ -75,7 +68,7 @@ public class FileServiceTests : IDisposable {
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ExportToFileAsync_ExcludesRemovedVariables() {
+  public async Task ExportToFile_ExcludesRemovedVariables() {
     // Arrange
     var variables = new List<EnvironmentVariable> {
       EnvironmentVariableBuilder.Default()
@@ -88,10 +81,10 @@ public class FileServiceTests : IDisposable {
         .WithIsRemoved(true)
         .Build(),
     };
-    var filePath = Path.Combine(_testDirectory, "test_export.toml");
+    var filePath = Path.Combine(testDirectory, "test_export.toml");
 
     // Act
-    await _fileService.ExportToFileAsync(filePath, variables);
+    await fileService.ExportToFile(filePath, variables);
 
     // Assert
     var content = await File.ReadAllTextAsync(filePath);
@@ -100,7 +93,7 @@ public class FileServiceTests : IDisposable {
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ExportToFileAsync_ExcludesVolatileVariables() {
+  public async Task ExportToFile_ExcludesVolatileVariables() {
     // Arrange
     var variables = new List<EnvironmentVariable> {
       EnvironmentVariableBuilder.Default()
@@ -113,10 +106,10 @@ public class FileServiceTests : IDisposable {
         .WithIsVolatile(true)
         .Build(),
     };
-    var filePath = Path.Combine(_testDirectory, "test_export.toml");
+    var filePath = Path.Combine(testDirectory, "test_export.toml");
 
     // Act
-    await _fileService.ExportToFileAsync(filePath, variables);
+    await fileService.ExportToFile(filePath, variables);
 
     // Assert
     var content = await File.ReadAllTextAsync(filePath);
@@ -125,7 +118,7 @@ public class FileServiceTests : IDisposable {
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ExportToFileAsync_WithMultiStringType_ExportsCorrectly() {
+  public async Task ExportToFile_WithMultiStringType_ExportsCorrectly() {
     // Arrange
     var variables = new List<EnvironmentVariable> {
       EnvironmentVariableBuilder.Default()
@@ -134,10 +127,10 @@ public class FileServiceTests : IDisposable {
         .WithType(RegistryValueKind.MultiString)
         .Build(),
     };
-    var filePath = Path.Combine(_testDirectory, "test_export.toml");
+    var filePath = Path.Combine(testDirectory, "test_export.toml");
 
     // Act
-    await _fileService.ExportToFileAsync(filePath, variables);
+    await fileService.ExportToFile(filePath, variables);
 
     // Assert
     var content = await File.ReadAllTextAsync(filePath);
@@ -146,7 +139,7 @@ public class FileServiceTests : IDisposable {
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ExportToFileAsync_WithDWordType_ExportsCorrectly() {
+  public async Task ExportToFile_WithDWordType_ExportsCorrectly() {
     // Arrange
     var variables = new List<EnvironmentVariable> {
       EnvironmentVariableBuilder.Default()
@@ -155,10 +148,10 @@ public class FileServiceTests : IDisposable {
         .WithType(RegistryValueKind.DWord)
         .Build(),
     };
-    var filePath = Path.Combine(_testDirectory, "test_export.toml");
+    var filePath = Path.Combine(testDirectory, "test_export.toml");
 
     // Act
-    await _fileService.ExportToFileAsync(filePath, variables);
+    await fileService.ExportToFile(filePath, variables);
 
     // Assert
     var content = await File.ReadAllTextAsync(filePath);
@@ -167,7 +160,7 @@ public class FileServiceTests : IDisposable {
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ExportToFileAsync_FormatsWithEmptyLinesBetweenArrays() {
+  public async Task ExportToFile_FormatsWithEmptyLinesBetweenArrays() {
     // Arrange
     var variables = new List<EnvironmentVariable> {
       EnvironmentVariableBuilder.Default()
@@ -179,10 +172,10 @@ public class FileServiceTests : IDisposable {
         .WithData("value2")
         .Build(),
     };
-    var filePath = Path.Combine(_testDirectory, "test_export.toml");
+    var filePath = Path.Combine(testDirectory, "test_export.toml");
 
     // Act
-    await _fileService.ExportToFileAsync(filePath, variables);
+    await fileService.ExportToFile(filePath, variables);
 
     // Assert
     var content = await File.ReadAllTextAsync(filePath);
@@ -197,7 +190,7 @@ public class FileServiceTests : IDisposable {
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ExportToFileAsync_FileEndsWithNewline() {
+  public async Task ExportToFile_FileEndsWithNewline() {
     // Arrange
     var variables = new List<EnvironmentVariable> {
       EnvironmentVariableBuilder.Default()
@@ -205,10 +198,10 @@ public class FileServiceTests : IDisposable {
         .WithData("value1")
         .Build(),
     };
-    var filePath = Path.Combine(_testDirectory, "test_export.toml");
+    var filePath = Path.Combine(testDirectory, "test_export.toml");
 
     // Act
-    await _fileService.ExportToFileAsync(filePath, variables);
+    await fileService.ExportToFile(filePath, variables);
 
     // Assert
     var content = await File.ReadAllTextAsync(filePath);
@@ -217,10 +210,10 @@ public class FileServiceTests : IDisposable {
 
   #endregion
 
-  #region ImportFromFileAsync Tests
+  #region ImportFromFile Tests
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ImportFromFileAsync_ImportsVariablesCorrectly() {
+  public async Task ImportFromFile_ImportsVariablesCorrectly() {
     // Arrange
     var content = @"[[User]]
 name = ""USER_VAR1""
@@ -237,11 +230,11 @@ name = ""SYSTEM_VAR1""
 data = ""system_value1""
 type = ""DWord""
 ";
-    var filePath = Path.Combine(_testDirectory, "test_import.toml");
+    var filePath = Path.Combine(testDirectory, "test_import.toml");
     await File.WriteAllTextAsync(filePath, content);
 
     // Act
-    var variables = (await _fileService.ImportFromFileAsync(filePath)).ToList();
+    var variables = (await fileService.ImportFromFile(filePath)).ToList();
 
     // Assert
     variables.Count.Should().Be(3);
@@ -251,36 +244,36 @@ type = ""DWord""
     userVar1!.Data.Should().Be("user_value1");
     userVar1.Scope.Should().Be(VariableScope.User);
     userVar1.Type.Should().Be(RegistryValueKind.String);
-    userVar1.IsAdded.Should().BeTrue();
+    userVar1.IsAdded.Should().BeFalse();
 
     var userVar2 = variables.FirstOrDefault(v => v.Name == "USER_VAR2");
     userVar2.Should().NotBeNull();
     userVar2!.Data.Should().Be("user_value2");
     userVar2.Scope.Should().Be(VariableScope.User);
     userVar2.Type.Should().Be(RegistryValueKind.ExpandString);
-    userVar2.IsAdded.Should().BeTrue();
+    userVar2.IsAdded.Should().BeFalse();
 
     var systemVar1 = variables.FirstOrDefault(v => v.Name == "SYSTEM_VAR1");
     systemVar1.Should().NotBeNull();
     systemVar1!.Data.Should().Be("system_value1");
     systemVar1.Scope.Should().Be(VariableScope.System);
     systemVar1.Type.Should().Be(RegistryValueKind.DWord);
-    systemVar1.IsAdded.Should().BeTrue();
+    systemVar1.IsAdded.Should().BeFalse();
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ImportFromFileAsync_WithMultiStringType_ImportsCorrectly() {
+  public async Task ImportFromFile_WithMultiStringType_ImportsCorrectly() {
     // Arrange
     var content = @"[[User]]
 name = ""MULTI_VAR""
 data = ""value1;value2;value3""
 type = ""MultiString""
 ";
-    var filePath = Path.Combine(_testDirectory, "test_import.toml");
+    var filePath = Path.Combine(testDirectory, "test_import.toml");
     await File.WriteAllTextAsync(filePath, content);
 
     // Act
-    var variables = (await _fileService.ImportFromFileAsync(filePath)).ToList();
+    var variables = (await fileService.ImportFromFile(filePath)).ToList();
 
     // Assert
     variables.Count.Should().Be(1);
@@ -289,18 +282,18 @@ type = ""MultiString""
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ImportFromFileAsync_WithDefaultStringType_ImportsCorrectly() {
+  public async Task ImportFromFile_WithDefaultStringType_ImportsCorrectly() {
     // Arrange
     var content = @"[[User]]
 name = ""STRING_VAR""
 data = ""string_value""
 type = ""String""
 ";
-    var filePath = Path.Combine(_testDirectory, "test_import.toml");
+    var filePath = Path.Combine(testDirectory, "test_import.toml");
     await File.WriteAllTextAsync(filePath, content);
 
     // Act
-    var variables = (await _fileService.ImportFromFileAsync(filePath)).ToList();
+    var variables = (await fileService.ImportFromFile(filePath)).ToList();
 
     // Assert
     variables.Count.Should().Be(1);
@@ -309,7 +302,7 @@ type = ""String""
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ImportFromFileAsync_SkipsEmptyNames() {
+  public async Task ImportFromFile_SkipsEmptyNames() {
     // Arrange
     var content = @"[[User]]
 name = """"
@@ -321,11 +314,11 @@ name = ""VALID_VAR""
 data = ""valid_value""
 type = ""String""
 ";
-    var filePath = Path.Combine(_testDirectory, "test_import.toml");
+    var filePath = Path.Combine(testDirectory, "test_import.toml");
     await File.WriteAllTextAsync(filePath, content);
 
     // Act
-    var variables = (await _fileService.ImportFromFileAsync(filePath)).ToList();
+    var variables = (await fileService.ImportFromFile(filePath)).ToList();
 
     // Assert
     variables.Count.Should().Be(1);
@@ -333,7 +326,7 @@ type = ""String""
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ImportFromFileAsync_RoundTripMaintainsData() {
+  public async Task ImportFromFile_RoundTripMaintainsData() {
     // Arrange
     var originalVariables = new List<EnvironmentVariable> {
       EnvironmentVariableBuilder.Default()
@@ -349,12 +342,12 @@ type = ""String""
         .WithType(RegistryValueKind.ExpandString)
         .Build(),
     };
-    var exportPath = Path.Combine(_testDirectory, "test_export.toml");
-    var importPath = Path.Combine(_testDirectory, "test_import.toml");
+    var exportPath = Path.Combine(testDirectory, "test_export.toml");
+    var importPath = Path.Combine(testDirectory, "test_import.toml");
 
     // Act
-    await _fileService.ExportToFileAsync(exportPath, originalVariables);
-    var importedVariables = (await _fileService.ImportFromFileAsync(exportPath)).ToList();
+    await fileService.ExportToFile(exportPath, originalVariables);
+    var importedVariables = (await fileService.ImportFromFile(exportPath)).ToList();
 
     // Assert
     importedVariables.Count.Should().Be(originalVariables.Count);
@@ -369,18 +362,18 @@ type = ""String""
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ImportFromFileAsync_HandlesMissingType() {
+  public async Task ImportFromFile_HandlesMissingType() {
     // Arrange
     var content = @"[[User]]
 name = ""NO_TYPE_VAR""
 data = ""value""
 type = ""String""
 ";
-    var filePath = Path.Combine(_testDirectory, "test_import.toml");
+    var filePath = Path.Combine(testDirectory, "test_import.toml");
     await File.WriteAllTextAsync(filePath, content);
 
     // Act
-    var variables = (await _fileService.ImportFromFileAsync(filePath)).ToList();
+    var variables = (await fileService.ImportFromFile(filePath)).ToList();
 
     // Assert
     variables.Count.Should().Be(1);
@@ -388,21 +381,21 @@ type = ""String""
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ImportFromFileAsync_WithEmptyFile_ReturnsEmptyList() {
+  public async Task ImportFromFile_WithEmptyFile_ReturnsEmptyList() {
     // Arrange
     var content = string.Empty;
-    var filePath = Path.Combine(_testDirectory, "test_import.toml");
+    var filePath = Path.Combine(testDirectory, "test_import.toml");
     await File.WriteAllTextAsync(filePath, content);
 
     // Act
-    var variables = (await _fileService.ImportFromFileAsync(filePath)).ToList();
+    var variables = (await fileService.ImportFromFile(filePath)).ToList();
 
     // Assert
     variables.Should().BeEmpty();
   }
 
   [TestMethod]
-  public async System.Threading.Tasks.Task ImportFromFileAsync_WithInvalidSection_IgnoresInvalidSection() {
+  public async Task ImportFromFile_WithInvalidSection_IgnoresInvalidSection() {
     // Arrange
     var content = @"[[InvalidSection]]
 name = ""SHOULD_IGNORE""
@@ -414,11 +407,11 @@ name = ""VALID_VAR""
 data = ""valid_value""
 type = ""String""
 ";
-    var filePath = Path.Combine(_testDirectory, "test_import.toml");
+    var filePath = Path.Combine(testDirectory, "test_import.toml");
     await File.WriteAllTextAsync(filePath, content);
 
     // Act
-    var variables = (await _fileService.ImportFromFileAsync(filePath)).ToList();
+    var variables = (await fileService.ImportFromFile(filePath)).ToList();
 
     // Assert
     variables.Count.Should().Be(1);

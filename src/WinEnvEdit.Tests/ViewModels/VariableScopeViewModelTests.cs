@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 using FluentAssertions;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Win32;
 
 using Moq;
@@ -113,6 +108,126 @@ public class VariableScopeViewModelTests {
     viewModel.Variables.Should().BeEmpty();
   }
 
+  [TestMethod]
+  public void LoadFromRegistry_WithNoChanges_DoesNotClearVariables() {
+    // Arrange - Load initial state
+    var testVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("value1").WithScope(VariableScope.User).Build(),
+      EnvironmentVariableBuilder.Default().WithName("VAR2").WithData("value2").WithScope(VariableScope.User).Build(),
+    };
+    envServiceMock.Setup(s => s.GetVariables()).Returns(testVars);
+    viewModel.LoadFromRegistry();
+    var originalVariables = viewModel.Variables.ToList();
+
+    // Act - Load again with same data
+    viewModel.LoadFromRegistry();
+
+    // Assert - Should be same ViewModel instances (not cleared/recreated)
+    viewModel.Variables.Should().HaveCount(2);
+    viewModel.Variables[0].Should().BeSameAs(originalVariables[0], "no changes detected, should not recreate ViewModels");
+    viewModel.Variables[1].Should().BeSameAs(originalVariables[1], "no changes detected, should not recreate ViewModels");
+  }
+
+  [TestMethod]
+  public void LoadFromRegistry_WithChangedData_RecreatesVariables() {
+    // Arrange - Load initial state
+    var testVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("value1").WithScope(VariableScope.User).Build(),
+    };
+    envServiceMock.Setup(s => s.GetVariables()).Returns(testVars);
+    viewModel.LoadFromRegistry();
+    var originalVariable = viewModel.Variables[0];
+
+    // Act - Load again with changed data
+    var changedVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("value2").WithScope(VariableScope.User).Build(),
+    };
+    envServiceMock.Setup(s => s.GetVariables()).Returns(changedVars);
+    viewModel.LoadFromRegistry();
+
+    // Assert - Should be new ViewModel instance
+    viewModel.Variables.Should().HaveCount(1);
+    viewModel.Variables[0].Should().NotBeSameAs(originalVariable, "data changed, should recreate ViewModel");
+    viewModel.Variables[0].Data.Should().Be("value2");
+  }
+
+  #endregion
+
+  #region RestoreFromVariables Tests
+
+  [TestMethod]
+  public void RestoreFromVariables_WithNoChanges_DoesNotClearVariables() {
+    // Arrange - Create initial variables
+    var initialVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("value1").WithScope(VariableScope.User).Build(),
+      EnvironmentVariableBuilder.Default().WithName("VAR2").WithData("value2").WithScope(VariableScope.User).Build(),
+    };
+    viewModel.RestoreFromVariables(initialVars);
+    var originalVariables = viewModel.Variables.ToList();
+
+    // Act - Restore with same data
+    var sameVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("value1").WithScope(VariableScope.User).Build(),
+      EnvironmentVariableBuilder.Default().WithName("VAR2").WithData("value2").WithScope(VariableScope.User).Build(),
+    };
+    viewModel.RestoreFromVariables(sameVars);
+
+    // Assert - Should be same ViewModel instances (not cleared/recreated)
+    viewModel.Variables.Should().HaveCount(2);
+    viewModel.Variables[0].Should().BeSameAs(originalVariables[0], "no changes detected, should not recreate ViewModels");
+    viewModel.Variables[1].Should().BeSameAs(originalVariables[1], "no changes detected, should not recreate ViewModels");
+  }
+
+  [TestMethod]
+  public void RestoreFromVariables_WithAddedVariable_AddsVariable() {
+    // Arrange - Create initial variables
+    var initialVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("value1").WithScope(VariableScope.User).Build(),
+    };
+    viewModel.RestoreFromVariables(initialVars);
+
+    // Act - Restore with added variable
+    var expandedVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("value1").WithScope(VariableScope.User).Build(),
+      EnvironmentVariableBuilder.Default().WithName("VAR2").WithData("value2").WithScope(VariableScope.User).Build(),
+    };
+    viewModel.RestoreFromVariables(expandedVars);
+
+    // Assert - Should have both variables
+    viewModel.Variables.Should().HaveCount(2);
+    viewModel.Variables.Should().Contain(v => v.Name == "VAR1");
+    viewModel.Variables.Should().Contain(v => v.Name == "VAR2");
+  }
+
+  [TestMethod]
+  public void RestoreFromVariables_PreservesExpandState() {
+    // Arrange - Create path-list variable
+    var initialVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default()
+        .WithName("PATH")
+        .WithData("C:\\Windows;C:\\Temp")
+        .WithType(RegistryValueKind.ExpandString)
+        .WithScope(VariableScope.User)
+        .Build(),
+    };
+    viewModel.RestoreFromVariables(initialVars);
+    viewModel.Variables[0].IsExpanded = true;
+
+    // Act - Restore with changed data but same name
+    var changedVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default()
+        .WithName("PATH")
+        .WithData("C:\\Windows;C:\\NewPath")
+        .WithType(RegistryValueKind.ExpandString)
+        .WithScope(VariableScope.User)
+        .Build(),
+    };
+    viewModel.RestoreFromVariables(changedVars);
+
+    // Assert - Expand state should be preserved
+    viewModel.Variables[0].IsExpanded.Should().BeTrue("expand state should be preserved across restoration");
+  }
+
   #endregion
 
   #region AddVariable Tests
@@ -123,7 +238,7 @@ public class VariableScopeViewModelTests {
     var initialCount = viewModel.Variables.Count;
 
     // Act
-    viewModel.AddVariable("NEW_VAR", "value", Microsoft.Win32.RegistryValueKind.String);
+    viewModel.AddVariable("NEW_VAR", "value", RegistryValueKind.String);
 
     // Assert
     viewModel.Variables.Count.Should().Be(initialCount + 1);
@@ -143,7 +258,7 @@ public class VariableScopeViewModelTests {
     viewModel.LoadFromRegistry();
 
     // Act
-    viewModel.AddVariable("EXISTING", "new_value", Microsoft.Win32.RegistryValueKind.String);
+    viewModel.AddVariable("EXISTING", "new_value", RegistryValueKind.String);
 
     // Assert
     var existingVar = viewModel.Variables.FirstOrDefault(v => v.Name == "EXISTING");
@@ -163,7 +278,7 @@ public class VariableScopeViewModelTests {
     viewModel.LoadFromRegistry();
 
     // Act
-    viewModel.AddVariable("EXISTING", "same_value", Microsoft.Win32.RegistryValueKind.String);
+    viewModel.AddVariable("EXISTING", "same_value", RegistryValueKind.String);
 
     // Assert
     viewModel.Variables.Count.Should().Be(1);
@@ -180,7 +295,7 @@ public class VariableScopeViewModelTests {
     viewModel.Variables[0].Model.IsRemoved = true;
 
     // Act
-    viewModel.AddVariable("DELETED", "new_value", Microsoft.Win32.RegistryValueKind.String);
+    viewModel.AddVariable("DELETED", "new_value", RegistryValueKind.String);
 
     // Assert
     var restoredVar = viewModel.Variables.FirstOrDefault(v => v.Name == "DELETED");
@@ -201,7 +316,7 @@ public class VariableScopeViewModelTests {
     viewModel.LoadFromRegistry();
 
     // Act
-    viewModel.AddVariable("VOLATILE", "new_value", Microsoft.Win32.RegistryValueKind.String);
+    viewModel.AddVariable("VOLATILE", "new_value", RegistryValueKind.String);
 
     // Assert
     var volatileVar = viewModel.Variables.FirstOrDefault(v => v.Name == "VOLATILE");
@@ -219,7 +334,7 @@ public class VariableScopeViewModelTests {
     viewModel.LoadFromRegistry();
 
     // Act
-    viewModel.AddVariable("EXISTING_VAR", "new_value", Microsoft.Win32.RegistryValueKind.String);
+    viewModel.AddVariable("EXISTING_VAR", "new_value", RegistryValueKind.String);
 
     // Assert
     viewModel.Variables.Count.Should().Be(1);
@@ -237,7 +352,7 @@ public class VariableScopeViewModelTests {
     viewModel.LoadFromRegistry();
 
     // Act
-    viewModel.AddVariable("M_VAR", "value", Microsoft.Win32.RegistryValueKind.String);
+    viewModel.AddVariable("M_VAR", "value", RegistryValueKind.String);
 
     // Assert
     viewModel.Variables[0].Name.Should().Be("A_VAR");
@@ -252,7 +367,7 @@ public class VariableScopeViewModelTests {
   [TestMethod]
   public void RemoveVariable_NewlyAdded_RemovesFromCollection() {
     // Arrange
-    viewModel.AddVariable("NEW_VAR", "value", Microsoft.Win32.RegistryValueKind.String);
+    viewModel.AddVariable("NEW_VAR", "value", RegistryValueKind.String);
     var initialCount = viewModel.Variables.Count;
 
     // Act
@@ -412,7 +527,7 @@ public class VariableScopeViewModelTests {
   [TestMethod]
   public void CleanupAfterSave_ClearsIsAddedFlags() {
     // Arrange
-    viewModel.AddVariable("NEW_VAR", "value", Microsoft.Win32.RegistryValueKind.String);
+    viewModel.AddVariable("NEW_VAR", "value", RegistryValueKind.String);
     var newVar = viewModel.Variables.First(v => v.Name == "NEW_VAR");
 
     // Act

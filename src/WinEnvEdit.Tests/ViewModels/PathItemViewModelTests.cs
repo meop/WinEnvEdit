@@ -1,12 +1,7 @@
-using System;
-using System.IO;
-
 using FluentAssertions;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Win32;
 
-using WinEnvEdit.Models;
 using WinEnvEdit.Tests.Helpers;
 using WinEnvEdit.ViewModels;
 
@@ -49,13 +44,13 @@ public class PathItemViewModelTests {
   }
 
   [TestMethod]
-  public void Constructor_WithEmptyPath_SetsExistsToFalse() {
+  public void Constructor_WithEmptyPath_SetsExistsToTrue() {
     // Act
     var pathItem = new PathItemViewModel(string.Empty, parentViewModel);
 
     // Assert
     pathItem.PathValue.Should().Be(string.Empty);
-    pathItem.Exists.Should().BeFalse();
+    pathItem.Exists.Should().BeTrue("empty path doesn't look like a path, so validation is skipped");
   }
 
   #endregion
@@ -130,29 +125,21 @@ public class PathItemViewModelTests {
   }
 
   [TestMethod]
-  public void Exists_EmptyPath_ReturnsFalse() {
+  public void Exists_EmptyPath_ReturnsTrue() {
     // Act
     var pathItem = new PathItemViewModel(string.Empty, parentViewModel);
 
     // Assert
-    pathItem.Exists.Should().BeFalse();
+    pathItem.Exists.Should().BeTrue("empty path doesn't look like a path, so validation is skipped");
   }
 
   [TestMethod]
-  public void Exists_WhenValidationDisabled_ReturnsTrue() {
-    // Arrange
-    var model = EnvironmentVariableBuilder.Default()
-      .WithName("TEST")
-      .WithData("value")
-      .Build();
-    var parent = new VariableViewModel(model, null, null);
-    parent.EnablePathValidation = false;
+  public void Exists_WhenPathNotPathLike_ReturnsTrue() {
+    // Arrange - "relative\path" doesn't look like a path, so validation is skipped
+    var pathItem = new PathItemViewModel("relative\\path", parentViewModel);
 
-    // Act
-    var pathItem = new PathItemViewModel("X:\\NonExistent\\Path", parent);
-
-    // Assert
-    pathItem.Exists.Should().BeTrue("validation is disabled");
+    // Act & Assert
+    pathItem.Exists.Should().BeTrue("validation is skipped when entry doesn't look like a path");
   }
 
   [TestMethod]

@@ -1,9 +1,6 @@
-using System;
-
 using FluentAssertions;
 
 using Microsoft.UI.Xaml;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using WinEnvEdit.Converters;
 using WinEnvEdit.Extensions;
@@ -114,26 +111,31 @@ public class ExpandChevronConverterTests {
   }
 }
 
-// PathExistsToBrushConverter and BoolToErrorBrushConverter are not tested here.
-// Both converters return SolidColorBrush which is a WinRT type requiring a running
-// WinUI application context to construct. The converter logic itself is trivial
-// (single conditional returning a brush or Transparent).
+// BoolToBorderBrushConverter and BoolToBorderBrushInverseConverter return SolidColorBrush
+// which is a WinRT type requiring a running WinUI application context to construct.
+// The converter logic itself is trivial, so we only test ConvertBack and the inverse constructor.
 
 [TestClass]
-public class PathExistsToBrushConverterTests {
+public class BoolToBorderBrushConverterTests {
   [TestMethod]
   public void ConvertBack_ThrowsNotImplemented() {
-    var converter = new PathExistsToBrushConverter();
+    var converter = new BoolToBorderBrushConverter();
     Action act = () => converter.ConvertBack(null!, typeof(bool), null!, string.Empty);
     act.Should().Throw<NotImplementedException>();
   }
 }
 
 [TestClass]
-public class BoolToErrorBrushConverterTests {
+public class BoolToBorderBrushInverseConverterTests {
+  [TestMethod]
+  public void Constructor_SetsInvertToTrue() {
+    var converter = new BoolToBorderBrushInverseConverter();
+    converter.Invert.Should().BeTrue();
+  }
+
   [TestMethod]
   public void ConvertBack_ThrowsNotImplemented() {
-    var converter = new BoolToErrorBrushConverter();
+    var converter = new BoolToBorderBrushInverseConverter();
     Action act = () => converter.ConvertBack(null!, typeof(bool), null!, string.Empty);
     act.Should().Throw<NotImplementedException>();
   }

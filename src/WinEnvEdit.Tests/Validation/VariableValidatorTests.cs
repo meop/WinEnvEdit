@@ -1,7 +1,5 @@
 using FluentAssertions;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using WinEnvEdit.Validation;
 
 namespace WinEnvEdit.Tests.Validation;

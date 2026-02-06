@@ -1,9 +1,5 @@
-using System.Collections.Generic;
-using System.Linq;
-
 using FluentAssertions;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Win32;
 
 using WinEnvEdit.Models;
@@ -226,11 +222,11 @@ public class UndoRedoServiceTests {
 
     // Act
     service.PushState(initial); // Push "ExternalChange" state? 
-    // Wait, if Reset made a copy, changing initial[0] doesn't change service internal state.
-    // But PushState takes the modified object.
-    
+                                // Wait, if Reset made a copy, changing initial[0] doesn't change service internal state.
+                                // But PushState takes the modified object.
+
     // Let's test that Undo returns the COPY of what was pushed/reset, not reference.
-    
+
     var restored = service.Undo(); // Should return the state from Reset (Initial)
 
     // Assert
