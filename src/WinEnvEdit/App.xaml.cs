@@ -41,11 +41,11 @@ public partial class App : Application {
     var displayArea = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
 
     // Define 16:9 resolutions in order of preference
-    (int Width, int Height)[] resolutions = [
+    var resolutions = new (int Width, int Height)[] {
       (Width: 1920, Height: 1080),
       (Width: 1600, Height: 900),
       (Width: WindowConstants.MinWindowWidth, Height: WindowConstants.MinWindowHeight)
-    ];
+    };
 
     // Get AppWindow and set minimum size constraints
     var appWindow = AppWindow.GetFromWindowId(windowId);

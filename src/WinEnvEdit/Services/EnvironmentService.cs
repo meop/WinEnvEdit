@@ -27,7 +27,15 @@ public partial class EnvironmentService : IEnvironmentService {
     var volatileUserVars = GetVolatileUserVariables();
     var volatileSystemVars = GetVolatileSystemVariables();
 
-    return GetAndSortVariables(userVars.Concat(systemVars), volatileUserVars.Concat(volatileSystemVars));
+    var persistent = new List<EnvironmentVariable>();
+    persistent.AddRange(userVars);
+    persistent.AddRange(systemVars);
+
+    var volatileVars = new List<EnvironmentVariable>();
+    volatileVars.AddRange(volatileUserVars);
+    volatileVars.AddRange(volatileSystemVars);
+
+    return GetAndSortVariables(persistent, volatileVars);
   }
 
   public async Task SaveVariables(IEnumerable<EnvironmentVariable> variables) {

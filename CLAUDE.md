@@ -44,21 +44,14 @@ bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 **Note**: `<Platform>` is auto-detected via `powershell -c 'Write-Output $Env:PROCESSOR_ARCHITECTURE'`
 (single quotes required — Git Bash swallows `$Env:` if double-quoted). Maps `AMD64` → `x64`, `ARM64` → `ARM64`.
 
-**Key Rules**:
-- **Format code first**: `./src/Scripts/Format.ps1`
-- **Build solution**: Includes both main and test projects
-- **Run tests after build**: Verify code quality and catch regressions
-- 2-space indentation, LF line endings (enforced by `.editorconfig`)
-- Using statements: System → Third-party → Project (with blank lines)
-- Private fields: `_fieldName`, Interfaces: `IInterfaceName`, Async: `MethodAsync()`
-- No inline initializers with `[ObservableProperty]` - initialize in constructor
-- Never use `x:Bind` in ResourceDictionary files - use `{Binding}` instead
-- **Tests are part of every change**: Every fix or feature must include an assessment of test impact. Create, update, or remove tests as needed — do not wait to be asked. If something genuinely can't be unit tested (OS APIs, clipboard, no seam), note why and move on.
-- **Git safety**: Read-only git commands (`status`, `diff`, `log`, `fetch`) are fine without permission. **Never** run destructive or state-changing commands without explicit user request:
-  - No automatic commits (`git commit`) - only when user explicitly asks
-  - No `git push`, `git reset`, `git checkout -- <file>`, `git clean`, `git stash drop`
-  - No `git rebase` or `git merge` on shared branches
-  - See [AGENTS.md](AGENTS.md) for full git safety rules
+**Key Rules (In Priority Order)**:
+1.  **Var Usage (Primary)**: Always use `var` for local variables. This takes precedence over modern syntax if they conflict (e.g., prefer `var x = new List<T>();` over `List<T> x = [];`).
+2.  **Naming Conventions**: No underscores for private fields (`camelCase`). No `Async` suffix for asynchronous methods.
+3.  **Using Statements**: Always prefer `using` directives at the top. Order: System → Third-party → Project (with blank lines). No fully qualified names unless needed for ambiguity.
+4.  **Modern C# Expressions**: Use `=>` for simple members, collection expressions `[]` when target type is known (but see Var priority), and target-typed `new()`.
+5.  **Initialization**: Simple types inline; complex types (`ObservableCollection`) in constructors (see [PATTERNS.md](PATTERNS.md)).
+6.  **Formatting**: 2-space indentation, LF line endings, `./src/Scripts/Format.ps1`.
+7.  **Tests**: Tests are part of every change. No skipped tests (`Assert.Inconclusive`).
 
 ---
 
@@ -273,10 +266,14 @@ using WinEnvEdit.ViewModels;
 - **Indentation**: 2 spaces (enforced by `.editorconfig`)
 - **Namespaces**: File-scoped (`namespace WinEnvEdit;`)
 - **Braces**: K&R style - opening brace on same line, always use braces even for single-line statements
-- **var keyword**: Use when type is obvious from initialization
-  - ✓ `var viewModel = new MainWindowViewModel();`
-  - ✓ `var path = GetPath();`
-  - ✗ `var count = Calculate();` (use explicit type if unclear)
+- **var keyword**: Use `var` as much as possible for local variables.
+- **Async naming**: Do NOT use the `Async` postfix for asynchronous methods.
+- **Field naming**: Private fields should use `camelCase` with no prefix (no underscores).
+- **Qualified names**: Avoid fully qualified names (e.g., `System.IO.Path`). Add a `using` directive at the top of the file and use the short name instead. Only use qualified names when necessary to resolve ambiguity.
+- **Modern Expressions**: Prefer modern C# expressions to align with IDE/Roslyn analyzers:
+  - Use expression-bodied members (`=>`) for properties and methods that only return a single expression.
+  - Use collection expressions (`[...]`) for array and list initializations.
+  - Use pattern matching (`is`, `switch`) where it improves readability.
 - **this qualifier**: Do NOT use unless needed for disambiguation
 - **Accessibility modifiers**: Always explicit (public, private, etc.)
 - **Trailing commas**: Use in multi-line initializers
@@ -295,7 +292,7 @@ using WinEnvEdit.ViewModels;
 | Private fields  | camelCase (no prefix) | `fieldName`                  |
 | Properties      | PascalCase          | `WindowSize`                 |
 | Methods         | PascalCase          | `GetPath()`, `SaveChanges()` |
-| Async methods   | `Async` suffix       | `LoadDataAsync()`            |
+| Async methods   | PascalCase (no suffix)| `LoadData()`                 |
 | Interfaces      | `I` prefix          | `IEnvironmentService`        |
 | Local variables | camelCase           | `isDirty`, `itemCount`       |
 | Classes/Types   | PascalCase           | `EnvironmentVariable`        |
@@ -459,23 +456,26 @@ This application uses **MVVM with CommunityToolkit.Mvvm**:
 
 #### ObservableProperty Pattern
 
-❌ **WRONG** - Inline initializers can cause NullReferenceException:
+❌ **WRONG** - Complex types or collections with inline initializers:
 ```csharp
 [ObservableProperty]
 public partial ObservableCollection<Item> Items { get; set; } = [];
 ```
 
-✅ **CORRECT** - Initialize in constructor:
+✅ **CORRECT** - Collections/Complex types in constructor; Simple types can be inline:
 ```csharp
+[ObservableProperty]
+public partial string Name { get; set; } = string.Empty; // Simple type is OK
+
 [ObservableProperty]
 public partial ObservableCollection<Item> Items { get; set; }
 
 public MyViewModel() {
-  Items = [];
+  Items = []; // Complex type initialized in constructor
 }
 ```
 
-**Why**: The source generator creates property change handlers that fire during initialization. If dependent properties aren't initialized yet, you'll get a NullReferenceException.
+**Why**: The source generator creates property change handlers that fire during initialization. If dependent properties or complex collections are accessed before the object is fully constructed, it can cause a `NullReferenceException`. Simple data types are safe as they are usually initialized before any complex logic fires.
 
 #### RelayCommand Pattern
 
@@ -692,6 +692,7 @@ For detailed WinUI 3 patterns and implementations, see **[PATTERNS.md](PATTERNS.
 - **Incremental Refresh** - Use O(N) reconciliation for ObservableCollections
 - **Async System Notifications** - Run WM_SETTINGCHANGE on background threads
 - **CommandBar Stability** - Enforce explicit heights to prevent layout jumps
+- **ObservableProperty Initialization** - Move complex/collection initialization to constructors (see [PATTERNS.md](PATTERNS.md))
 
 **Common Gotchas**:
 

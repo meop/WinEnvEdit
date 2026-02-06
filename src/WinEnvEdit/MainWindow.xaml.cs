@@ -47,11 +47,11 @@ public sealed partial class MainWindow : Window {
     var appWindow = AppWindow.GetFromWindowId(windowId);
 
     // Try multiple possible locations for the icon
-    string[] possiblePaths = [
+    var possiblePaths = new[] {
       System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico"),
       System.IO.Path.Combine(AppContext.BaseDirectory, "app.ico"),
       System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "", "Assets", "app.ico")
-    ];
+    };
 
     foreach (var path in possiblePaths) {
       if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path)) {

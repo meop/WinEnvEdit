@@ -74,9 +74,8 @@ public partial class VariableViewModel : ObservableObject {
   /// Updates DataPathExists based on current Data value. Called when Data changes for non-path-list variables.
   /// Only validates if Data looks like a filesystem path.
   /// </summary>
-  public void UpdateDataPathExists() {
+  public void UpdateDataPathExists() =>
     DataPathExists = !VariableValidator.LooksLikePath(Data) || VariableValidator.IsValidPath(Data);
-  }
 
   public EnvironmentVariable Model { get; init; }
 
@@ -131,8 +130,7 @@ public partial class VariableViewModel : ObservableObject {
     }
   }
 
-  private void UpdateIsLocked() =>
-    IsLocked = Model.IsVolatile;
+  private void UpdateIsLocked() => IsLocked = Model.IsVolatile;
 
   partial void OnNameChanged(string value) {
     Model.Name = value;

@@ -393,6 +393,35 @@ Use a consistent Style that locks the height and label behavior.
 
 ---
 
+## ObservableProperty Initialization Pattern
+
+Initialize complex `[ObservableProperty]` types in the constructor rather than inline.
+
+### Problem
+Initializing complex types (like `ObservableCollection`) or properties with `[NotifyPropertyChangedFor]` dependencies inline can cause `NullReferenceException` or unexpected behavior in WinUI 3. This happens because the source-generated property change handlers fire during the object's initialization phase, potentially accessing dependent objects that haven't been instantiated yet.
+
+### Solution
+Initialize simple types inline if desired, but always move complex types and dependent properties to the constructor.
+
+```csharp
+[ObservableProperty]
+public partial string Name { get; set; } = string.Empty; // Simple types are safe inline
+
+[ObservableProperty]
+public partial ObservableCollection<Item> Items { get; set; }
+
+public MyViewModel() {
+    Items = []; // Complex types MUST be in constructor
+}
+```
+
+### Key Points
+- Prevents race conditions during WinUI 3 / MVVM Toolkit source generation.
+- Simple types (`bool`, `int`, `string`) are safe for inline initialization.
+- Collections and objects with `[NotifyPropertyChangedFor]` MUST use constructor initialization.
+
+---
+
 ## Additional Resources
 
 - [Microsoft Learn: Data template selection](https://learn.microsoft.com/en-us/windows/apps/develop/ui/controls/data-template-selector)

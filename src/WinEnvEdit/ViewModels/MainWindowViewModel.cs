@@ -91,6 +91,7 @@ public partial class MainWindowViewModel : ObservableObject {
     this.fileService = fileService;
     this.stateService = stateService;
     this.undoRedoService = undoRedoService;
+
     SystemVariables = new VariableScopeViewModel(VariableScope.System, environmentService, this);
     UserVariables = new VariableScopeViewModel(VariableScope.User, environmentService, this);
 
@@ -188,24 +189,21 @@ public partial class MainWindowViewModel : ObservableObject {
     // Preserve existing volatile variables (they're not in the file)
     var systemVolatile = SystemVariables.Variables
       .Where(v => v.Model.IsVolatile)
-      .Select(v => v.Model)
-      .ToList();
+      .Select(v => v.Model);
     var userVolatile = UserVariables.Variables
       .Where(v => v.Model.IsVolatile)
-      .Select(v => v.Model)
-      .ToList();
+      .Select(v => v.Model);
 
     // Combine imported vars with volatile vars, then sort by name
-    var systemImported = importedVars
-      .Where(v => v.Scope == VariableScope.System)
-      .Concat(systemVolatile)
-      .OrderBy(v => v.Name)
-      .ToList();
-    var userImported = importedVars
-      .Where(v => v.Scope == VariableScope.User)
-      .Concat(userVolatile)
-      .OrderBy(v => v.Name)
-      .ToList();
+    var systemImported = new List<EnvironmentVariable>();
+    systemImported.AddRange(importedVars.Where(v => v.Scope == VariableScope.System));
+    systemImported.AddRange(systemVolatile);
+    systemImported = [.. systemImported.OrderBy(v => v.Name)];
+
+    var userImported = new List<EnvironmentVariable>();
+    userImported.AddRange(importedVars.Where(v => v.Scope == VariableScope.User));
+    userImported.AddRange(userVolatile);
+    userImported = [.. userImported.OrderBy(v => v.Name)];
 
     // Use unified restoration for minimal UI updates
     SystemVariables.RestoreFromVariables(systemImported);

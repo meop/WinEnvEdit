@@ -21,36 +21,39 @@ using WinEnvEdit.Validation;
 
 namespace WinEnvEdit.ViewModels;
 
-public partial class VariableScopeViewModel(VariableScope scope, IEnvironmentService environmentService, MainWindowViewModel? parentViewModel = null) : ObservableObject {
-
+public partial class VariableScopeViewModel : ObservableObject {
   private const int DialogLabelWidth = 80;
+  private readonly IEnvironmentService environmentService;
+  private readonly MainWindowViewModel? parentViewModel;
 
   [ObservableProperty]
-  public partial VariableScope Scope { get; set; } = scope;
+  public partial VariableScope Scope { get; set; }
 
   [ObservableProperty]
-  public partial ObservableCollection<VariableViewModel> Variables { get; set; } = [];
+  public partial ObservableCollection<VariableViewModel> Variables { get; set; }
 
   [ObservableProperty]
   public partial bool ShowVolatileVariables { get; set; } = false;
 
   [ObservableProperty]
-  public partial ObservableCollection<VariableViewModel> FilteredVariables { get; set; } = [];
+  public partial ObservableCollection<VariableViewModel> FilteredVariables { get; set; }
 
   [ObservableProperty]
   public partial string SearchText { get; set; } = string.Empty;
 
-  partial void OnSearchTextChanged(string value) {
-    UpdateFilteredVariables();
+  public VariableScopeViewModel(VariableScope scope, IEnvironmentService environmentService, MainWindowViewModel? parentViewModel = null) {
+    Scope = scope;
+    this.environmentService = environmentService;
+    this.parentViewModel = parentViewModel;
+    Variables = [];
+    FilteredVariables = [];
   }
 
-  partial void OnShowVolatileVariablesChanged(bool value) {
-    UpdateFilteredVariables();
-  }
+  partial void OnSearchTextChanged(string value) => UpdateFilteredVariables();
 
-  partial void OnVariablesChanged(ObservableCollection<VariableViewModel> value) {
-    UpdateFilteredVariables();
-  }
+  partial void OnShowVolatileVariablesChanged(bool value) => UpdateFilteredVariables();
+
+  partial void OnVariablesChanged(ObservableCollection<VariableViewModel> value) => UpdateFilteredVariables();
 
   public void UpdateFilteredVariables(VariableViewModel? changedVariable = null) {
     if (FilteredVariables is null || Variables is null) {
@@ -108,7 +111,7 @@ public partial class VariableScopeViewModel(VariableScope scope, IEnvironmentSer
       var targetVar = targetList[i];
       if (i < FilteredVariables.Count) {
         if (FilteredVariables[i] == targetVar) {
-          // Already at the right position. 
+          // Already at the right position.
           // If this is the specific variable that changed, force a Replace notification to refresh template.
           if (targetVar == changedVariable) {
             FilteredVariables[i] = targetVar;
@@ -142,8 +145,7 @@ public partial class VariableScopeViewModel(VariableScope scope, IEnvironmentSer
     }
   }
 
-  public void RefreshVariable(VariableViewModel variable) =>
-    UpdateFilteredVariables(variable);
+  public void RefreshVariable(VariableViewModel variable) => UpdateFilteredVariables(variable);
 
   public void LoadFromRegistry() {
     var allVars = environmentService.GetVariables();
@@ -329,8 +331,7 @@ public partial class VariableScopeViewModel(VariableScope scope, IEnvironmentSer
   /// <summary>
   /// Gets all variable models for this scope.
   /// </summary>
-  public IEnumerable<EnvironmentVariable> GetAllVariables() =>
-    Variables.Select(v => v.Model);
+  public IEnumerable<EnvironmentVariable> GetAllVariables() => Variables.Select(v => v.Model);
 
   /// <summary>
   /// Removes variables marked as removed and clears IsAdded flags after a successful save.
@@ -348,7 +349,7 @@ public partial class VariableScopeViewModel(VariableScope scope, IEnvironmentSer
   }
 
   [RelayCommand]
-  private async Task AddAsync() {
+  private async Task Add() {
     if (parentViewModel?.XamlRoot is null) {
       return;
     }
