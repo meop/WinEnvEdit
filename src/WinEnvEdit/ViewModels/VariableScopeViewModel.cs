@@ -12,6 +12,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 
+using Windows.ApplicationModel.DataTransfer;
+
 using WinEnvEdit.Helpers;
 using WinEnvEdit.Models;
 using WinEnvEdit.Services;
@@ -144,6 +146,22 @@ public partial class VariableScopeViewModel(VariableScope scope, IEnvironmentSer
     UpdateFilteredVariables(variable);
 
   public void LoadFromRegistry() {
+    var allVars = environmentService.GetVariables();
+    var newVars = allVars.Where(v => v.Scope == Scope).OrderBy(v => v.Name).ToList();
+    RestoreFromVariables(newVars);
+  }
+
+  /// <summary>
+  /// Restores Variables collection from a list of EnvironmentVariable models.
+  /// Uses O(N) reconciliation to minimize UI updates (only adds/removes/updates what changed).
+  /// Used by Refresh, Import, Undo, and Redo to avoid scrollbar bounce.
+  /// </summary>
+  public void RestoreFromVariables(List<EnvironmentVariable> newVars) {
+    // Fast path: if nothing changed, skip update entirely to avoid scroll bounce
+    if (!HasVariablesChanged(newVars)) {
+      return;
+    }
+
     // Preserve UI state (expand/collapse) for existing variables
     var expandedStateMap = Variables
       .Where(v => v.IsPathList)
@@ -155,10 +173,7 @@ public partial class VariableScopeViewModel(VariableScope scope, IEnvironmentSer
 
     Variables.Clear();
 
-    var allVars = environmentService.GetVariables();
-    var scopedVars = allVars.Where(v => v.Scope == Scope).ToList();
-
-    foreach (var envVar in scopedVars.OrderBy(v => v.Name)) {
+    foreach (var envVar in newVars) {
       var viewModel = new VariableViewModel(envVar, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
 
       // Restore expand/collapse state if it existed before
@@ -170,6 +185,43 @@ public partial class VariableScopeViewModel(VariableScope scope, IEnvironmentSer
     }
 
     UpdateFilteredVariables();
+  }
+
+  /// <summary>
+  /// Checks if new variables differ from current Variables collection.
+  /// Returns true if any changes detected (add, remove, or modification).
+  /// Supports both sorted (Refresh) and unsorted (Import/Undo/Redo) inputs.
+  /// </summary>
+  private bool HasVariablesChanged(List<EnvironmentVariable> newVars) {
+    // Quick count check
+    if (Variables.Count != newVars.Count) {
+      return true;
+    }
+
+    // Create lookup by name for current variables
+    var currentByName = Variables.ToDictionary(
+      v => v.Model.Name,
+      v => v.Model,
+      StringComparer.OrdinalIgnoreCase
+    );
+
+    // Check each new variable
+    foreach (var newVar in newVars) {
+      if (!currentByName.TryGetValue(newVar.Name, out var current)) {
+        return true; // Variable added
+      }
+
+      // Compare all relevant fields
+      if (current.Data != newVar.Data ||
+          current.Type != newVar.Type ||
+          current.IsAdded != newVar.IsAdded ||
+          current.IsRemoved != newVar.IsRemoved ||
+          current.IsVolatile != newVar.IsVolatile) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   public void AddVariable(string name, string value, RegistryValueKind type) {
@@ -411,15 +463,15 @@ public partial class VariableScopeViewModel(VariableScope scope, IEnvironmentSer
   private void CopyAll() {
     var lines = FilteredVariables.Where(v => !v.Model.IsVolatile).Select(v => $"{v.Name}={v.Data}");
     var text = string.Join(Environment.NewLine, lines);
-    var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+    var dataPackage = new DataPackage();
     dataPackage.SetText(text);
-    Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+    Clipboard.SetContent(dataPackage);
   }
 
   [RelayCommand]
-  private async Task PasteAllAsync() {
-    var clipboardContent = Windows.ApplicationModel.DataTransfer.Clipboard.GetContent();
-    if (!clipboardContent.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text)) {
+  private async Task PasteAll() {
+    var clipboardContent = Clipboard.GetContent();
+    if (!clipboardContent.Contains(StandardDataFormats.Text)) {
       return;
     }
 

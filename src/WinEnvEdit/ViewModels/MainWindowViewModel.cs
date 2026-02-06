@@ -116,7 +116,7 @@ public partial class MainWindowViewModel : ObservableObject {
   private IEnumerable<EnvironmentVariable> AllVariables() =>
     SystemVariables.GetAllVariables().Concat(UserVariables.GetAllVariables());
 
-  private async Task<bool> ShowConfirmationDialogAsync(string title, string message, string primaryButtonText = "Okay") {
+  private async Task<bool> ShowConfirmationDialog(string title, string message, string primaryButtonText = "Okay") {
     if (window.Content.XamlRoot == null) {
       return false;
     }
@@ -136,6 +136,7 @@ public partial class MainWindowViewModel : ObservableObject {
   }
 
   private void LoadVariables() {
+    // LoadFromRegistry now uses incremental updates - only changes what's different
     SystemVariables.LoadFromRegistry();
     UserVariables.LoadFromRegistry();
 
@@ -166,7 +167,7 @@ public partial class MainWindowViewModel : ObservableObject {
   [RelayCommand]
   private async Task Import() {
     if (HasPendingChanges) {
-      if (!await ShowConfirmationDialogAsync("Import", "Discard all unsaved changes first?")) {
+      if (!await ShowConfirmationDialog("Import", "This will discard all unsaved changes")) {
         return;
       }
     }
@@ -182,35 +183,44 @@ public partial class MainWindowViewModel : ObservableObject {
       return;
     }
 
-    var importedVars = (await fileService.ImportFromFileAsync(file.Path)).ToList();
+    var importedVars = (await fileService.ImportFromFile(file.Path)).ToList();
 
-    // Get imported variable names per scope
-    var importedSystemNames = importedVars
+    // Preserve existing volatile variables (they're not in the file)
+    var systemVolatile = SystemVariables.Variables
+      .Where(v => v.Model.IsVolatile)
+      .Select(v => v.Model)
+      .ToList();
+    var userVolatile = UserVariables.Variables
+      .Where(v => v.Model.IsVolatile)
+      .Select(v => v.Model)
+      .ToList();
+
+    // Combine imported vars with volatile vars, then sort by name
+    var systemImported = importedVars
       .Where(v => v.Scope == VariableScope.System)
-      .Select(v => v.Name)
-      .ToHashSet(StringComparer.OrdinalIgnoreCase);
-    var importedUserNames = importedVars
+      .Concat(systemVolatile)
+      .OrderBy(v => v.Name)
+      .ToList();
+    var userImported = importedVars
       .Where(v => v.Scope == VariableScope.User)
-      .Select(v => v.Name)
-      .ToHashSet(StringComparer.OrdinalIgnoreCase);
+      .Concat(userVolatile)
+      .OrderBy(v => v.Name)
+      .ToList();
 
-    // Remove variables not in imported file (mark as removed)
-    SystemVariables.RemoveVariablesNotIn(importedSystemNames);
-    UserVariables.RemoveVariablesNotIn(importedUserNames);
+    // Use unified restoration for minimal UI updates
+    SystemVariables.RestoreFromVariables(systemImported);
+    UserVariables.RestoreFromVariables(userImported);
 
-    // Add/update variables from imported file
-    foreach (var importedVar in importedVars) {
-      if (importedVar.Scope == VariableScope.System) {
-        SystemVariables.AddVariable(importedVar.Name, importedVar.Data, importedVar.Type);
-      }
-      else {
-        UserVariables.AddVariable(importedVar.Name, importedVar.Data, importedVar.Type);
-      }
-    }
+    // Update state after import
+    stateService.CaptureSnapshot(AllVariables());
+    undoRedoService.Reset(AllVariables());
+    CanUndoState = false;
+    CanRedoState = false;
+    HasPendingChanges = false;
   }
 
   [RelayCommand]
-  private async Task ExportAsync() {
+  private async Task Export() {
     var hwnd = WindowNative.GetWindowHandle(window);
     var savePicker = new FileSavePicker();
     InitializeWithWindow.Initialize(savePicker, hwnd);
@@ -224,13 +234,13 @@ public partial class MainWindowViewModel : ObservableObject {
     }
 
     var allVars = AllVariables().Where(v => !v.IsRemoved && !v.IsVolatile);
-    await fileService.ExportToFileAsync(file.Path, allVars);
+    await fileService.ExportToFile(file.Path, allVars);
   }
 
   [RelayCommand]
   private async Task Refresh() {
     if (HasPendingChanges) {
-      if (!await ShowConfirmationDialogAsync("Refresh", "Discard all unsaved changes first?")) {
+      if (!await ShowConfirmationDialog("Refresh", "This will discard all unsaved changes")) {
         return;
       }
     }
@@ -249,14 +259,12 @@ public partial class MainWindowViewModel : ObservableObject {
         ? "System"
         : "User";
 
-    var message = $"Persist all {scope} changes to the Windows Registry?";
-
-    if (!await ShowConfirmationDialogAsync("Save", message)) {
+    if (!await ShowConfirmationDialog("Save", $"This will persist all {scope} changes to the Windows Registry")) {
       return;
     }
 
     try {
-      await environmentService.SaveVariablesAsync(changedVars);
+      await environmentService.SaveVariables(changedVars);
 
       SystemVariables.CleanupAfterSave();
       UserVariables.CleanupAfterSave();
@@ -318,38 +326,21 @@ public partial class MainWindowViewModel : ObservableObject {
     isRestoringState = true;
 
     try {
-      // Preserve expand/collapse state — same pattern as LoadFromRegistry
-      var systemExpandMap = SystemVariables.Variables
-        .Where(v => v.IsPathList)
-        .ToDictionary(v => v.Model.Name, v => v.IsExpanded, StringComparer.OrdinalIgnoreCase);
-      var userExpandMap = UserVariables.Variables
-        .Where(v => v.IsPathList)
-        .ToDictionary(v => v.Model.Name, v => v.IsExpanded, StringComparer.OrdinalIgnoreCase);
+      var restoredList = restoredVariables.ToList();
+      var systemRestoredVars = restoredList.Where(v => v.Scope == VariableScope.System).ToList();
+      var userRestoredVars = restoredList.Where(v => v.Scope == VariableScope.User).ToList();
 
-      SystemVariables.Variables.Clear();
-      UserVariables.Variables.Clear();
+      // Check if each pane has changes and only update those that do
+      var systemChanged = HasScopeChanged(SystemVariables, systemRestoredVars);
+      var userChanged = HasScopeChanged(UserVariables, userRestoredVars);
 
-      // Rebuild ViewModels from restored models
-      foreach (var variable in restoredVariables) {
-        if (variable.Scope == VariableScope.System) {
-          var viewModel = new VariableViewModel(variable, SystemVariables.RemoveVariable, () => UpdatePendingChangesState(), SystemVariables.UpdateFilteredVariables);
-          if (viewModel.IsPathList && systemExpandMap.TryGetValue(variable.Name, out var wasExpanded)) {
-            viewModel.IsExpanded = wasExpanded;
-          }
-          SystemVariables.Variables.Add(viewModel);
-        }
-        else {
-          var viewModel = new VariableViewModel(variable, UserVariables.RemoveVariable, () => UpdatePendingChangesState(), UserVariables.UpdateFilteredVariables);
-          if (viewModel.IsPathList && userExpandMap.TryGetValue(variable.Name, out var wasExpanded)) {
-            viewModel.IsExpanded = wasExpanded;
-          }
-          UserVariables.Variables.Add(viewModel);
-        }
+      if (systemChanged) {
+        RestoreScopeVariables(SystemVariables, systemRestoredVars);
       }
 
-      // Update filtered views
-      SystemVariables.UpdateFilteredVariables();
-      UserVariables.UpdateFilteredVariables();
+      if (userChanged) {
+        RestoreScopeVariables(UserVariables, userRestoredVars);
+      }
 
       // Update pending changes state
       UpdatePendingChangesState();
@@ -359,8 +350,38 @@ public partial class MainWindowViewModel : ObservableObject {
     }
   }
 
+  private bool HasScopeChanged(VariableScopeViewModel scopeViewModel, List<EnvironmentVariable> restoredVariables) {
+    var currentVariables = scopeViewModel.Variables.Select(v => v.Model).ToList();
+
+    if (currentVariables.Count != restoredVariables.Count) {
+      return true;
+    }
+
+    // Compare variables in order (both should be sorted by name)
+    for (var i = 0; i < currentVariables.Count; i++) {
+      if (!AreVariablesEqual(currentVariables[i], restoredVariables[i])) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private static bool AreVariablesEqual(EnvironmentVariable a, EnvironmentVariable b) =>
+    string.Equals(a.Name, b.Name, StringComparison.OrdinalIgnoreCase) &&
+    a.Data == b.Data &&
+    a.Type == b.Type &&
+    a.IsAdded == b.IsAdded &&
+    a.IsRemoved == b.IsRemoved &&
+    a.IsVolatile == b.IsVolatile;
+
+  private void RestoreScopeVariables(VariableScopeViewModel scopeViewModel, List<EnvironmentVariable> restoredVariables) {
+    // Use unified restoration for minimal UI updates
+    scopeViewModel.RestoreFromVariables(restoredVariables);
+  }
+
   [RelayCommand]
-  private async Task AboutAsync() {
+  private async Task About() {
     var assembly = Assembly.GetExecutingAssembly();
     var product = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? string.Empty;
     var description = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? string.Empty;
@@ -373,10 +394,14 @@ public partial class MainWindowViewModel : ObservableObject {
     var descriptionGrid = DialogHelper.CreateLabelValueGrid("Description", DialogHelper.CreateDialogValue(description, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
     var versionGrid = DialogHelper.CreateLabelValueGrid("Version", DialogHelper.CreateDialogValue(version));
 
+    var llmCredit = "Developed with help from Anthropic Claude, Google Gemini, and Z.ai GLM";
+    var creditsGrid = DialogHelper.CreateLabelValueGrid("Credit", DialogHelper.CreateDialogValue(llmCredit, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
+
     var contentPanel = DialogHelper.CreateDialogPanel([
       productGrid,
       descriptionGrid,
       versionGrid,
+      creditsGrid,
     ]);
 
     var contentDialog = DialogHelper.CreateStandardDialog(window.Content.XamlRoot, "About", contentPanel, closeButtonText: "Close");

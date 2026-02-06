@@ -74,3 +74,11 @@ For detailed instructions on all features and keyboard shortcuts, see the **[Use
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
+
+## Acknowledgments
+This project was developed with help from multiple Large Language Models:
+- **Anthropic Claude**: Architecture, code generation, and documentation.
+- **Google Gemini**: Refactoring, test optimization, and troubleshooting.
+- **Z.ai GLM**: Feature implementation and specialized code assistance.
+
+WinEnvEdit was heavily inspired by the original **Rapid Environment Editor**.
