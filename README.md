@@ -1,6 +1,7 @@
 # WinEnvEdit
 
-A modern Windows 11 environment variable editor built with WinUI 3 and .NET 10. Designed for safety, performance, and a native Windows experience.
+A modern Windows 11 environment variable editor built with WinUI 3 and .NET 10.
+Distributed via [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget) for easy installation and updates.
 
 ![WinEnvEdit](src/WinEnvEdit/Assets/StoreLogo.png)
 
@@ -49,6 +50,59 @@ dotnet build src/WinEnvEdit/WinEnvEdit.csproj -p:Platform=x64
 # Run the application
 ./bin/x64/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
 ```
+
+## Building & Releasing
+
+### Version Management
+
+**Single Source of Truth**: The `VERSION` file contains the version number (currently `1.0.0.0`).
+
+**To update version**:
+1. Edit `VERSION` file
+2. Commit changes
+3. Push to `main`
+4. GitHub Actions will automatically:
+   - Build and create releases using this version
+   - Update winget manifest automatically
+
+### GitHub Actions CI/CD
+
+**Workflow**: `.github/workflows/pipeline.yml`
+
+**Automated Process**:
+- Triggers on any push to `main` or versioned tag
+- Reads `VERSION` file to get version number
+- Builds x64 + ARM64 MSI installers
+- Creates GitHub Release with both MSIs on version tag
+- Updates winget manifest `src/WinEnvEdit.yaml` with new version
+
+### Creating a Release
+
+The release process is fully automated:
+1. Update the version number in the **`VERSION`** file
+2. Commit and push the change to the `main` branch
+3. GitHub Actions will automatically:
+   - Detect the version change
+   - Build x64 and ARM64 MSI installers
+   - Create a new Git Tag (e.g., `v1.0.1`)
+   - Create a GitHub Release with the MSIs attached
+   - Update the WinGet manifest and commit it back to the repo
+
+### Winget Distribution
+
+**Installation**:
+```bash
+winget install WinEnvEdit
+```
+
+**Updates**:
+```bash
+winget upgrade WinEnvEdit
+```
+
+Winget scans GitHub releases for updates - no app code needed.
+
+### Installation via winget
 
 ## Development
 

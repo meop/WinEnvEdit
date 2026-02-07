@@ -1,0 +1,27 @@
+PackageIdentifier: WinEnvEdit
+PackageVersion: ${{ github.ref_name }}
+Publisher: meop
+PackageName: WinEnvEdit
+License: MIT
+ShortDescription: Modern Windows Environment Editor
+Description: A modern Windows 11+ environment variable editor built with WinUI 3 and .NET 10.
+Moniker: wineditedit
+Tags:
+  - utility
+  - environment
+  - windows
+  - winui
+  - opensource
+Homepage: https://github.com/meop/WinEnvEdit
+LicenseUrl: https://github.com/meop/WinEnvEdit/blob/main/LICENSE.txt
+ManifestType: msi
+InstallerType: msi
+Dependencies:
+  PackageDependencies:
+    - PackageIdentifier: Microsoft.DotNet.DesktopRuntime.10
+    - PackageIdentifier: Microsoft.WindowsAppRuntime.1.6
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/meop/WinEnvEdit/releases/download/v1.0.0.0/WinEnvEdit-x64.msi
+  - Architecture: arm64
+    InstallerUrl: https://github.com/meop/WinEnvEdit/releases/download/v1.0.0.0/WinEnvEdit-ARM64.msi

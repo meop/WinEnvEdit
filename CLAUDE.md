@@ -103,35 +103,81 @@ Ensure you have:
 
 ```
 src/
-├── Scripts/                        # Utility scripts
-│   ├── Format.ps1                  # Format C# and XAML code
-│   ├── Icon.ps1                    # Generate app icons from source PNG
-│   ├── Settings.XamlStyler          # XAML formatter configuration
+├── Directory.Build.props              # Central version management
+├── WinEnvEdit.wxs                     # WiX MSI installer source
+├── WinEnvEdit.yaml                    # WinGet package manifest
+├── Scripts/                           # Utility scripts
+│   ├── Format.ps1                     # Format C# and XAML code
+│   ├── Icons.ps1                      # Generate app icons from source PNG
+│   ├── Settings.XamlStyler            # XAML formatter configuration
 │   └── Settings.XamlStyler.Fixes.ps1  # Fix XAML line endings
-├── WinEnvEdit/                      # Main application project
-│   ├── Assets/                     # App icons and images
-│   ├── Models/                      # Data models (EnvironmentVariable, etc.)
-│   ├── ViewModels/                  # ViewModels with [ObservableProperty]
-│   ├── Views/                       # XAML resources and templates
-│   ├── Services/                    # Business logic (EnvironmentService, etc.)
-│   ├── Validation/                  # Input validation (VariableValidator)
-│   ├── Converters/                  # XAML value converters
-│   ├── Resources/                   # ResourceDictionaries (VariableTemplates.xaml)
-│   ├── App.xaml(.cs)                # Application entry point
-│   ├── MainWindow.xaml(.cs)         # Main UI window
-│   └── WinEnvEdit.csproj            # Main project file
+├── WinEnvEdit/                        # Main application project
+│   ├── Assets/                        # App icons and images
+│   ├── Models/                        # Data models (EnvironmentVariable, etc.)
+│   ├── ViewModels/                    # ViewModels with [ObservableProperty]
+│   ├── Views/                         # XAML resources and templates
+│   ├── Services/                      # Business logic (EnvironmentService, etc.)
+│   ├── Validation/                    # Input validation (VariableValidator)
+│   ├── Converters/                    # XAML value converters
+│   ├── Resources/                     # ResourceDictionaries (VariableTemplates.xaml)
+│   ├── App.xaml(.cs)                  # Application entry point
+│   ├── MainWindow.xaml(.cs)           # Main UI window
+│   └── WinEnvEdit.csproj              # Main project file
 │
-└── WinEnvEdit.Tests/                # Unit test project
-    ├── Services/                    # Tests for business logic
-    ├── ViewModels/                  # Tests for UI state management
-    ├── Validation/                  # Tests for input validation
-    ├── Converters/                  # Tests for value converters
-    ├── Helpers/                     # Test utilities (builders, mocks)
-    ├── AssemblyInfo.cs              # Test assembly configuration
-    └── WinEnvEdit.Tests.csproj      # Test project file
+└── WinEnvEdit.Tests/                  # Unit test project
+    ├── Services/                      # Tests for business logic
+    ├── ViewModels/                    # Tests for UI state management
+    ├── Validation/                    # Tests for input validation
+    ├── Converters/                    # Tests for value converters
+    ├── Helpers/                       # Test utilities (builders, mocks)
+    ├── AssemblyInfo.cs                # Test assembly configuration
+    └── WinEnvEdit.Tests.csproj        # Test project file
 ```
 
 The test project (`WinEnvEdit.Tests`) mirrors the structure of the main project for easy navigation.
+
+---
+
+## Building & Releasing
+
+### GitHub Actions CI/CD
+
+The project uses GitHub Actions for automated building and releasing:
+
+**Workflow**: `.github/workflows/pipeline.yml`
+
+**Triggers**:
+- Push to `main` branch (builds x64 + ARM64 MSIs)
+- Creating release tag like `v1.0.0.0` (builds + creates GitHub Release)
+
+**Artifacts**:
+- `WinEnvEdit-x64.msi` - x64 MSI installer
+- `WinEnvEdit-ARM64.msi` - ARM64 MSI installer
+
+### Creating a Release
+
+The release process is fully automated via GitHub Actions:
+
+1. Update the version number in the **`VERSION`** file at the root.
+2. Commit and push the change to the `main` branch.
+3. The **Build and Release** workflow will:
+   - Verify that the version has **increased semantically**.
+   - Run the **Format**, **Build**, and **Unit Test** suite (tests must pass to proceed).
+   - Build both **x64** and **ARM64** MSI installers.
+   - Create a **Git Tag** (e.g., `v1.0.1`) automatically.
+   - Create a **GitHub Release** with the MSIs attached.
+   - Synchronize the version in **`Package.appxmanifest`** and the WinGet manifest.
+   - Commit the manifest updates back to the repository.
+
+### Winget Distribution
+
+Winget manifest: `src/Manifests/WinEnvEdit.yaml`
+
+**Installation**: `winget install WinEnvEdit` or `winget upgrade WinEnvEdit`
+
+**Updates**: Winget automatically scans GitHub releases for updates - no app code needed
+
+**Note**: The app is distributed as an unsigned MSI. Users can install without warnings. Winget manifest is submitted to `microsoft/winget-pkgs` repository for inclusion.
 
 ---
 
@@ -287,15 +333,15 @@ using WinEnvEdit.ViewModels;
 
 ### Naming Conventions
 
-| Type            | Convention          | Example                      |
-| --------------- | ------------------ | ---------------------------- |
-| Private fields  | camelCase (no prefix) | `fieldName`                  |
-| Properties      | PascalCase          | `WindowSize`                 |
-| Methods         | PascalCase          | `GetPath()`, `SaveChanges()` |
-| Async methods   | PascalCase (no suffix)| `LoadData()`                 |
-| Interfaces      | `I` prefix          | `IEnvironmentService`        |
-| Local variables | camelCase           | `isDirty`, `itemCount`       |
-| Classes/Types   | PascalCase           | `EnvironmentVariable`        |
+| Type            | Convention             | Example                      |
+| --------------- | ---------------------- | ---------------------------- |
+| Private fields  | camelCase (no prefix)  | `fieldName`                  |
+| Properties      | PascalCase             | `WindowSize`                 |
+| Methods         | PascalCase             | `GetPath()`, `SaveChanges()` |
+| Async methods   | PascalCase (no suffix) | `LoadData()`                 |
+| Interfaces      | `I` prefix             | `IEnvironmentService`        |
+| Local variables | camelCase              | `isDirty`, `itemCount`       |
+| Classes/Types   | PascalCase             | `EnvironmentVariable`        |
 
 ---
 
@@ -308,7 +354,7 @@ using WinEnvEdit.ViewModels;
 To regenerate app icons from a source PNG:
 
 ```bash
-./src/Scripts/Icon.ps1 -SourcePath ~/path/to/source.png
+./src/Scripts/Icons.ps1 -SourcePath ~/path/to/source.png
 ```
 
 This generates all required icon sizes (square, wide, splash, store, lock screen) from a single source image.
@@ -394,11 +440,11 @@ This generates all required icon sizes (square, wide, splash, store, lock screen
 - **Purpose**: Fast development builds
 
 #### Release Configuration
-- **Self-contained**: Yes (bundles .NET runtime)
-- **Trimming**: Disabled (WinUI 3 assemblies aren't trim-safe)
+- **Self-contained**: No (relies on shared .NET and Windows App SDK runtimes)
+- **Trimming**: Disabled
 - **AOT**: Disabled
 - **Warnings as Errors**: Enabled
-- **Purpose**: Distribution-ready builds
+- **Purpose**: Efficient distribution via MSI/WinGet
 
 #### Common Settings
 - **Nullable Reference Types**: Enabled

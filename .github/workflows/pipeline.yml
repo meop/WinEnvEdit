@@ -1,0 +1,179 @@
+name: Continuous Integration & Deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - '*.csproj'
+      - '*.sln'
+      - 'VERSION'
+
+permissions:
+  contents: write
+
+jobs:
+  check-version:
+    name: Check for Version Change
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check.outputs.changed }}
+      new_version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if VERSION changed and increased
+        id: check
+        shell: bash
+        run: |
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          # Try to get previous version from git, default to 0.0.0 if not found
+          PREV_VERSION=$(git show HEAD^:VERSION 2>/dev/null | tr -d '[:space:]' || echo "0.0.0")
+          
+          if [ -z "$PREV_VERSION" ]; then PREV_VERSION="0.0.0"; fi
+          
+          echo "Current version: $VERSION"
+          echo "Previous version: $PREV_VERSION"
+          
+          if [ "$VERSION" != "$PREV_VERSION" ]; then
+            # Semantic version comparison
+            # Returns true if VERSION > PREV_VERSION
+            if [ "$(printf '%s\n%s' "$PREV_VERSION" "$VERSION" | sort -V | head -n1)" == "$VERSION" ] && [ "$VERSION" != "$PREV_VERSION" ]; then
+              echo "Error: Version decreased or is invalid"
+              exit 1
+            fi
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+  test:
+    name: Format, Build and Test
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Format Check
+        run: ./src/Scripts/Format.ps1
+
+      - name: Build Solution
+        run: dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=x64
+
+      - name: Run Unit Tests
+        run: dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug -p:Platform=x64 --no-build
+
+  build:
+    name: Build MSI Installers
+    needs: [check-version, test]
+    if: needs.check-version.outputs.version_changed == 'true'
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        platform: [x64, ARM64]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build
+        run: |
+          $version = "${{ needs.check-version.outputs.new_version }}"
+          echo "Building version $version"
+          # Framework-dependent build (much smaller, relies on system runtimes)
+          dotnet publish src/WinEnvEdit/WinEnvEdit.csproj -c Release -p:Platform=${{ matrix.platform }} --self-contained false -p:PublishSingleFile=false -p:PublishReadyToRun=false
+
+      - name: Build MSI
+        run: |
+          $version = "${{ needs.check-version.outputs.new_version }}"
+          # Ensure MSI gets 4 digits even if VERSION has 3
+          $msiVersion = if ($version.Split('.').Count -eq 3) { "$version.0" } else { $version }
+          $platform = "${{ matrix.platform }}"
+          $sourceDir = "src/WinEnvEdit/bin/$platform/Release/net10.0-windows10.0.26100.0/win-$platform/publish"
+          $programFilesId = if ($platform -eq "x64") { "ProgramFiles64Folder" } else { "ProgramFilesFolder" }
+          
+          # Use WiX Toolset
+          heat dir $sourceDir -cg HarvestedComponents -dr INSTALLFOLDER -sreg -srd -var var.SourceDir -o src/HarvestedFiles.wxs
+          candle -dVersion=$msiVersion -dPlatform=$platform -dSourceDir=$sourceDir -dProgramFilesId=$programFilesId -arch $platform -o src/ src/WinEnvEdit.wxs src/HarvestedFiles.wxs
+          light -ext WixUIExtension -o src/WinEnvEdit/bin/WinEnvEdit-$platform.msi src/WinEnvEdit.wixobj src/HarvestedFiles.wixobj
+
+      - name: Upload MSI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: WinEnvEdit-${{ matrix.platform }}-MSI
+          path: src/WinEnvEdit/bin/WinEnvEdit-${{ matrix.platform }}.msi
+          retention-days: 90
+
+  release:
+    name: Create Tag and Release
+    needs: [check-version, build]
+    runs-on: ubuntu-latest
+    if: needs.check-version.outputs.version_changed == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: WinEnvEdit-x64-MSI
+          path: ./
+
+      - name: Download artifacts (ARM64)
+        uses: actions/download-artifact@v4
+        with:
+          name: WinEnvEdit-ARM64-MSI
+          path: ./
+
+      - name: Update Manifests
+        run: |
+          VERSION_NUM="${{ needs.check-version.outputs.new_version }}"
+          # Ensure 4 digits for Windows manifests if only 3 are in VERSION
+          if [[ $VERSION_NUM =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            WIN_VERSION="${VERSION_NUM}.0"
+          else
+            WIN_VERSION="$VERSION_NUM"
+          fi
+          
+          # Update WinGet YAML
+          sed -i "s/PackageVersion: .*/PackageVersion: $VERSION_NUM/" src/WinEnvEdit.yaml
+          sed -i "s/download\/v[0-9.]*\/WinEnvEdit/download\/v$VERSION_NUM\/WinEnvEdit/g" src/WinEnvEdit.yaml
+          
+          # Update Package.appxmanifest (XML)
+          sed -i "s/Version=\"[0-9.]*\"/Version=\"$WIN_VERSION\"/" src/WinEnvEdit/Package.appxmanifest
+          
+          # Update App.manifest (XML)
+          sed -i "s/version=\"[0-9.]*\"/version=\"$WIN_VERSION\"/" src/WinEnvEdit/App.manifest
+          
+      - name: Commit manifest updates
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/WinEnvEdit.yaml src/WinEnvEdit/Package.appxmanifest src/WinEnvEdit/App.manifest
+          git commit -m "Sync manifests to v${{ needs.check-version.outputs.new_version }}" || echo "No changes to commit"
+          git push origin main
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.check-version.outputs.new_version }}
+          files: ./WinEnvEdit-*.msi
+          generate_release_notes: true
+          draft: false
+          prerelease: false
