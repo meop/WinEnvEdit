@@ -28,7 +28,7 @@ Guidelines for AI agents working with this repository.
 
 ### When to Create Commits
 
-Only create commits when the user explicitly asks. Never commit automatically after making changes.
+**NEVER** create commits automatically after making changes. You MUST only create commits when the user explicitly asks (e.g., "Commit the change"). This is a hard rule.
 
 ### Commit Message Guidelines
 

@@ -14,10 +14,14 @@ $BaseDir = Join-Path $ScriptDir ".."
 
 Push-Location $BaseDir
 
+Write-Host "Restoring tools and dependencies..." -ForegroundColor Cyan
+dotnet tool restore
+dotnet restore WinEnvEdit.slnx
+
 Write-Host "Formatting code..." -ForegroundColor Cyan
 
 Write-Host "Running dotnet format..." -ForegroundColor Yellow
-dotnet format --no-restore
+dotnet format WinEnvEdit.slnx
 if ($LASTEXITCODE -ne 0) {
   Write-Host "dotnet format failed" -ForegroundColor Red
   Pop-Location

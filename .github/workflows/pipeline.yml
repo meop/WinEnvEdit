@@ -45,10 +45,10 @@ jobs:
               echo "Error: Version decreased or is invalid"
               exit 1
             fi
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           else
-            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
   test:
@@ -63,11 +63,11 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Format Check
+      - name: Run Format and Restore
         run: ./src/Scripts/Format.ps1
 
       - name: Build Solution
-        run: dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=x64
+        run: dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=x64 --no-restore
 
       - name: Run Unit Tests
         run: dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug -p:Platform=x64 --no-build
@@ -153,7 +153,8 @@ jobs:
           
           # Update WinGet YAML
           sed -i "s/PackageVersion: .*/PackageVersion: $VERSION_NUM/" src/WinEnvEdit.yaml
-          sed -i "s/download\/v[0-9.]*\/WinEnvEdit/download\/v$VERSION_NUM\/WinEnvEdit/g" src/WinEnvEdit.yaml
+          # Update all download URLs (covers both x64 and ARM64)
+          sed -i "s|releases/download/v[0-9.]*/WinEnvEdit|releases/download/v$VERSION_NUM/WinEnvEdit|g" src/WinEnvEdit.yaml
           
           # Update Package.appxmanifest (XML)
           sed -i "s/Version=\"[0-9.]*\"/Version=\"$WIN_VERSION\"/" src/WinEnvEdit/Package.appxmanifest

@@ -52,6 +52,15 @@ bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 5.  **Initialization**: Simple types inline; complex types (`ObservableCollection`) in constructors (see [PATTERNS.md](PATTERNS.md)).
 6.  **Formatting**: 2-space indentation, LF line endings, `./src/Scripts/Format.ps1`.
 7.  **Tests**: Tests are part of every change. No skipped tests (`Assert.Inconclusive`).
+8.  **Visual Studio Independence**: The project MUST be fully functional without Visual Studio. All critical tasks (format, build, test, release) MUST be possible via CLI. Visual Studio is only for debugging.
+
+**Git Safety Rules (CRITICAL)**:
+- **NO AUTOMATIC COMMITS**: Never run `git commit` unless explicitly told to by the user (e.g., "Commit the change"). This is the absolute priority.
+- Read-only git commands (`status`, `diff`, `log`, `fetch`) are encouraged.
+- **Never** run destructive or state-changing commands without explicit user request:
+  - No `git push`, `git reset`, `git checkout -- <file>`, `git clean`, `git stash drop`.
+  - No `git rebase` or `git merge` on shared branches.
+  - See [AGENTS.md](AGENTS.md) for full git safety rules.
 
 ---
 
