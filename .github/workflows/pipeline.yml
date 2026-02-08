@@ -88,8 +88,8 @@ jobs:
         run: dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=x64
 
       - name: Run Unit Tests
-        run: dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug -p:Platform=x64 --blame-hang --blame-hang-timeout 1m
-        timeout-minutes: 10
+        run: dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug -p:Platform=x64 --no-build --logger "console;verbosity=normal"
+        timeout-minutes: 2
 
   build:
     name: Build MSI Installers
