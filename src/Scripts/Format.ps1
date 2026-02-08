@@ -14,9 +14,8 @@ $BaseDir = Join-Path $ScriptDir ".."
 
 Push-Location $BaseDir
 
-Write-Host "Restoring tools and dependencies..." -ForegroundColor Cyan
+Write-Host "Restoring tools..." -ForegroundColor Cyan
 dotnet tool restore
-dotnet restore WinEnvEdit.slnx
 
 Write-Host "Formatting code..." -ForegroundColor Cyan
 

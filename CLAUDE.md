@@ -10,16 +10,16 @@ Guidance for Claude Code when working with this repository.
 
 **Standard Workflow** (Claude detects host platform and targets it):
 ```bash
-# Format code first
+# Format the code
 ./src/Scripts/Format.ps1
 
-# Build solution (main + test projects)
+# Build the solution
 dotnet build -c Debug -p:Platform=<Platform>
 
-# Run unit tests
+# Run the unit tests
 dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -p:Platform=<Platform> --no-build
 
-# Run application
+# Run the application
 bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
 ```
 

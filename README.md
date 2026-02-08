@@ -44,6 +44,9 @@ Several frameworks were considered to achieve the best balance of performance an
 To build and run the application from the command line:
 
 ```bash
+# Format the code
+./src/Scripts/Format.ps1
+
 # Build the solution
 dotnet build src/WinEnvEdit/WinEnvEdit.csproj -p:Platform=x64
 
@@ -112,7 +115,7 @@ Detailed development guidelines, including standard workflows and MVVM/XAML best
 Stability is verified by a suite of over 160 unit tests.
 
 ```bash
-# Run all unit tests
+# Run the unit tests
 dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -p:Platform=x64
 ```
 

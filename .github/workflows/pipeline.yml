@@ -2,7 +2,12 @@ name: Continuous Integration & Deployment
 
 on:
   push:
-    branches: [main]
+    paths:
+      - 'src/**'
+      - '*.csproj'
+      - '*.sln'
+      - 'VERSION'
+  pull_request:
     paths:
       - 'src/**'
       - '*.csproj'
@@ -16,6 +21,7 @@ jobs:
   check-version:
     name: Check for Version Change
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     outputs:
       version_changed: ${{ steps.check.outputs.changed }}
       new_version: ${{ steps.check.outputs.version }}
@@ -32,12 +38,12 @@ jobs:
           VERSION=$(cat VERSION | tr -d '[:space:]')
           # Try to get previous version from git, default to 0.0.0 if not found
           PREV_VERSION=$(git show HEAD^:VERSION 2>/dev/null | tr -d '[:space:]' || echo "0.0.0")
-          
+
           if [ -z "$PREV_VERSION" ]; then PREV_VERSION="0.0.0"; fi
-          
+
           echo "Current version: $VERSION"
           echo "Previous version: $PREV_VERSION"
-          
+
           if [ "$VERSION" != "$PREV_VERSION" ]; then
             # Semantic version comparison
             # Returns true if VERSION > PREV_VERSION
@@ -63,14 +69,27 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Run Format and Restore
+      - name: Diagnose Environment
+        run: |
+          Write-Host "=== PowerShell ==="
+          Write-Host "Version: $($PSVersionTable.PSVersion)"
+          Write-Host "OS: $($PSVersionTable.OS)"
+          Write-Host ""
+          Write-Host "=== .NET Info ==="
+          dotnet --info
+          Write-Host ""
+          Write-Host "=== CPU Count ==="
+          $env:NUMBER_OF_PROCESSORS
+
+      - name: Run Format
         run: ./src/Scripts/Format.ps1
 
       - name: Build Solution
-        run: dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=x64 --no-restore
+        run: dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=x64
 
       - name: Run Unit Tests
-        run: dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug -p:Platform=x64 --no-build
+        run: dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug -p:Platform=x64 --blame-hang --blame-hang-timeout 1m
+        timeout-minutes: 10
 
   build:
     name: Build MSI Installers
@@ -106,7 +125,7 @@ jobs:
           $platform = "${{ matrix.platform }}"
           $sourceDir = "src/WinEnvEdit/bin/$platform/Release/net10.0-windows10.0.26100.0/win-$platform/publish"
           $programFilesId = if ($platform -eq "x64") { "ProgramFiles64Folder" } else { "ProgramFilesFolder" }
-          
+
           # Use WiX Toolset
           heat dir $sourceDir -cg HarvestedComponents -dr INSTALLFOLDER -sreg -srd -var var.SourceDir -o src/HarvestedFiles.wxs
           candle -dVersion=$msiVersion -dPlatform=$platform -dSourceDir=$sourceDir -dProgramFilesId=$programFilesId -arch $platform -o src/ src/WinEnvEdit.wxs src/HarvestedFiles.wxs
@@ -150,18 +169,18 @@ jobs:
           else
             WIN_VERSION="$VERSION_NUM"
           fi
-          
+
           # Update WinGet YAML
           sed -i "s/PackageVersion: .*/PackageVersion: $VERSION_NUM/" src/WinEnvEdit.yaml
           # Update all download URLs (covers both x64 and ARM64)
           sed -i "s|releases/download/v[0-9.]*/WinEnvEdit|releases/download/v$VERSION_NUM/WinEnvEdit|g" src/WinEnvEdit.yaml
-          
+
           # Update Package.appxmanifest (XML)
           sed -i "s/Version=\"[0-9.]*\"/Version=\"$WIN_VERSION\"/" src/WinEnvEdit/Package.appxmanifest
-          
+
           # Update App.manifest (XML)
           sed -i "s/version=\"[0-9.]*\"/version=\"$WIN_VERSION\"/" src/WinEnvEdit/App.manifest
-          
+
       - name: Commit manifest updates
         run: |
           git config --global user.name "github-actions[bot]"
