@@ -26,7 +26,7 @@ public class MainWindowViewModelTests {
     undoRedoService = new UndoRedoService();
 
     // Create ViewModel without window (null parameter)
-    viewModel = new MainWindowViewModel(environmentService, null!, fileService, stateService, undoRedoService);
+    viewModel = new MainWindowViewModel(environmentService, null!, fileService, stateService, undoRedoService, MockFactory.CreateClipboardService().Object, MockFactory.CreateDialogService().Object);
   }
 
   #region State Management Tests
@@ -304,7 +304,7 @@ public class MainWindowViewModelTests {
     environmentService.AddVolatileVariable(volatileVar);
 
     // Create a fresh ViewModel to load the volatile variable
-    viewModel = new MainWindowViewModel(environmentService, null!, fileService, stateService, undoRedoService);
+    viewModel = new MainWindowViewModel(environmentService, null!, fileService, stateService, undoRedoService, MockFactory.CreateClipboardService().Object, MockFactory.CreateDialogService().Object);
     var volatileCountBefore = viewModel.UserVariables.Variables.Count(v => v.Model.IsVolatile);
     volatileCountBefore.Should().BeGreaterThan(0, "should have volatile variables before import");
 
@@ -387,4 +387,10 @@ internal class MockFileService : IFileService {
 
   public Task ExportToFile(string filePath, IEnumerable<EnvironmentVariable> variables) =>
     Task.CompletedTask;
+
+  public Task ExportToStream(Stream stream, IEnumerable<EnvironmentVariable> variables) =>
+    Task.CompletedTask;
+
+  public Task<IEnumerable<EnvironmentVariable>> ImportFromStream(Stream stream) =>
+    Task.FromResult(ImportData);
 }

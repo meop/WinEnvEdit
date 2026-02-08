@@ -2,6 +2,8 @@ using FluentAssertions;
 
 using Microsoft.Win32;
 
+using Moq;
+
 using WinEnvEdit.Tests.Helpers;
 using WinEnvEdit.ViewModels;
 
@@ -30,7 +32,7 @@ public class VariableViewModelTests {
       .Build();
 
     // Act
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Assert
     viewModel.Name.Should().Be("TEST_VAR");
@@ -48,7 +50,7 @@ public class VariableViewModelTests {
       .Build();
 
     // Act
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Assert
     viewModel.IsLocked.Should().BeTrue();
@@ -62,7 +64,7 @@ public class VariableViewModelTests {
       .Build();
 
     // Act
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Assert
     viewModel.IsPathList.Should().BeTrue();
@@ -78,7 +80,7 @@ public class VariableViewModelTests {
       .Build();
 
     // Act
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Assert
     viewModel.IsPathList.Should().BeTrue();
@@ -92,7 +94,7 @@ public class VariableViewModelTests {
   public void Name_SetToValidValue_UpdatesModel() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     viewModel.Name = "NEW_NAME";
@@ -106,7 +108,7 @@ public class VariableViewModelTests {
   public void Name_SetToInvalidValue_UpdatesModelWithInvalidValue() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     viewModel.Name = "INVALID=NAME";
@@ -119,7 +121,7 @@ public class VariableViewModelTests {
   public void Name_ChangeTriggersCallback_WhenProvided() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, () => changeCallbackCallCount++);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, () => changeCallbackCallCount++);
     changeCallbackCallCount = 0;
 
     // Act
@@ -137,7 +139,7 @@ public class VariableViewModelTests {
   public void Data_SetToValidValue_UpdatesModelAndClearsError() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     viewModel.Data = "new_data";
@@ -152,7 +154,7 @@ public class VariableViewModelTests {
   public void Data_SetToInvalidValue_SetsError() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     viewModel.Data = "invalid\0data";
@@ -165,7 +167,7 @@ public class VariableViewModelTests {
   public void Data_ChangeTriggersCallback_WhenProvided() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, () => changeCallbackCallCount++);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, () => changeCallbackCallCount++);
     changeCallbackCallCount = 0;
 
     // Act
@@ -183,7 +185,7 @@ public class VariableViewModelTests {
   public void HasDataError_WhenDataValid_ReturnsFalse() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     viewModel.Data = "valid data";
@@ -196,7 +198,7 @@ public class VariableViewModelTests {
   public void HasDataError_WhenDataInvalid_ReturnsTrue() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     viewModel.Data = "invalid\0data";
@@ -213,7 +215,7 @@ public class VariableViewModelTests {
   public void ExpandTooltip_WhenExpanded_ReturnsCollapse() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
     viewModel.IsExpanded = true;
 
     // Act
@@ -227,7 +229,7 @@ public class VariableViewModelTests {
   public void ExpandTooltip_WhenNotExpanded_ReturnsExpand() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
     viewModel.IsExpanded = false;
 
     // Act
@@ -251,7 +253,7 @@ public class VariableViewModelTests {
       .Build();
 
     // Act
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Assert
     viewModel.PathItems.Count.Should().Be(3);
@@ -269,7 +271,7 @@ public class VariableViewModelTests {
       .Build();
 
     // Act
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Assert
     viewModel.PathItems.Count.Should().Be(0);
@@ -284,7 +286,7 @@ public class VariableViewModelTests {
       .Build();
 
     // Act
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Assert
     viewModel.PathItems.Count.Should().Be(0);
@@ -296,7 +298,7 @@ public class VariableViewModelTests {
     var model = EnvironmentVariableBuilder.Default()
       .AsPathVariable()
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     viewModel.SyncDataFromPaths();
@@ -317,7 +319,7 @@ public class VariableViewModelTests {
     var model = EnvironmentVariableBuilder.Default()
       .AsPathVariable()
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
     var initialData = viewModel.Data;
 
     // Act
@@ -334,7 +336,7 @@ public class VariableViewModelTests {
     var model = EnvironmentVariableBuilder.Default()
       .AsPathVariable()
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     var itemToRemove = viewModel.PathItems.First();
@@ -350,7 +352,7 @@ public class VariableViewModelTests {
     var model = EnvironmentVariableBuilder.Default()
       .AsPathVariable()
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
     var firstItem = viewModel.PathItems.First();
     var lastItem = viewModel.PathItems.Last();
 
@@ -373,7 +375,7 @@ public class VariableViewModelTests {
       .AsPathVariable()
       .WithData("X:\\NonExistent\\Path")
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     var hasInvalid = viewModel.HasInvalidPath;
@@ -390,7 +392,7 @@ public class VariableViewModelTests {
       .WithData("aa;X:\\fake")
       .WithType(RegistryValueKind.ExpandString)
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act & Assert
     viewModel.HasInvalidPath.Should().BeTrue("second entry looks like a filesystem path and doesn't exist");
@@ -404,7 +406,7 @@ public class VariableViewModelTests {
       .WithData("aa;bb")
       .WithType(RegistryValueKind.ExpandString)
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act & Assert
     viewModel.HasInvalidPath.Should().BeFalse("no entries look like filesystem paths");
@@ -420,7 +422,7 @@ public class VariableViewModelTests {
       .Build();
 
     // Act
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Assert
     viewModel.HasInvalidPath.Should().BeFalse("value doesn't look like a filesystem path");
@@ -441,7 +443,7 @@ public class VariableViewModelTests {
       .Build();
 
     // Act
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Assert
     viewModel.DataPathExists.Should().BeTrue();
@@ -458,7 +460,7 @@ public class VariableViewModelTests {
       .Build();
 
     // Act
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Assert
     viewModel.DataPathExists.Should().BeFalse();
@@ -474,7 +476,7 @@ public class VariableViewModelTests {
       .WithData(systemRoot)
       .WithType(RegistryValueKind.String)
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
     viewModel.DataPathExists.Should().BeTrue();
 
     // Act
@@ -495,7 +497,7 @@ public class VariableViewModelTests {
       .Build();
 
     // Act
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Assert
     viewModel.DataPathExists.Should().BeTrue("environment variable should be expanded and path checked");
@@ -509,7 +511,7 @@ public class VariableViewModelTests {
   public void ToggleExpandCommand_TogglesIsExpanded() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
     var initialState = viewModel.IsExpanded;
 
     // Act
@@ -529,7 +531,7 @@ public class VariableViewModelTests {
     var model = EnvironmentVariableBuilder.Default()
       .AsPathVariable()
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
     var initialCount = viewModel.PathItems.Count;
 
     // Act
@@ -550,7 +552,7 @@ public class VariableViewModelTests {
     var model = EnvironmentVariableBuilder.Default()
       .AsPathVariable()
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
     var itemToRemove = viewModel.PathItems.First();
     var initialCount = viewModel.PathItems.Count;
 
@@ -571,7 +573,7 @@ public class VariableViewModelTests {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
     Action<VariableViewModel> deleteCallback = v => deletedVariable = v;
-    var viewModel = new VariableViewModel(model, deleteCallback, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, deleteCallback, null);
 
     // Act
     viewModel.RemoveCommand.Execute(null);
@@ -584,7 +586,7 @@ public class VariableViewModelTests {
   public void RemoveCommand_CallsChangeCallback() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, () => changeCallbackCallCount++);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, () => changeCallbackCallCount++);
     changeCallbackCallCount = 0;
 
     // Act
@@ -604,7 +606,7 @@ public class VariableViewModelTests {
     var model = EnvironmentVariableBuilder.Default()
       .WithType(RegistryValueKind.String)
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     viewModel.ToggleTypeCommand.Execute(null);
@@ -619,7 +621,7 @@ public class VariableViewModelTests {
     var model = EnvironmentVariableBuilder.Default()
       .WithType(RegistryValueKind.ExpandString)
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     viewModel.ToggleTypeCommand.Execute(null);
@@ -634,7 +636,7 @@ public class VariableViewModelTests {
     var model = EnvironmentVariableBuilder.Default()
       .WithType(RegistryValueKind.String)
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
     viewModel.IsPathList.Should().BeFalse();
 
     // Act
@@ -651,7 +653,7 @@ public class VariableViewModelTests {
       .WithData("some;data")
       .WithType(RegistryValueKind.ExpandString)
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
     viewModel.IsPathList.Should().BeTrue();
 
     // Act
@@ -669,7 +671,7 @@ public class VariableViewModelTests {
       .WithIsVolatile(true)
       .WithType(RegistryValueKind.String)
       .Build();
-    var viewModel = new VariableViewModel(model, null, null);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     viewModel.ToggleTypeCommand.Execute(null);
@@ -682,7 +684,7 @@ public class VariableViewModelTests {
   public void ToggleTypeCommand_CallsChangeCallback() {
     // Arrange
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, () => changeCallbackCallCount++);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, () => changeCallbackCallCount++);
     changeCallbackCallCount = 0;
 
     // Act
@@ -697,7 +699,7 @@ public class VariableViewModelTests {
     // Arrange
     var refreshCalled = false;
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, null, _ => refreshCalled = true);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null, _ => refreshCalled = true);
 
     // Act
     viewModel.ToggleTypeCommand.Execute(null);
@@ -711,13 +713,65 @@ public class VariableViewModelTests {
     // Arrange
     VariableViewModel? callbackVariable = null;
     var model = EnvironmentVariableBuilder.Default().Build();
-    var viewModel = new VariableViewModel(model, null, null, v => callbackVariable = v);
+    var viewModel = new VariableViewModel(model, Helpers.MockFactory.CreateClipboardService().Object, null, null, v => callbackVariable = v);
 
     // Act
     viewModel.ToggleTypeCommand.Execute(null);
 
     // Assert
     callbackVariable.Should().Be(viewModel);
+  }
+
+  #endregion
+
+  #region CopyData Tests
+
+  [TestMethod]
+  public void CopyDataCommand_CopiesNameEqualsValue() {
+    // Arrange
+    var model = EnvironmentVariableBuilder.Default().WithName("TEST_VAR").WithData("test_value").Build();
+    var clipboardService = Helpers.MockFactory.CreateClipboardService();
+    var viewModel = new VariableViewModel(model, clipboardService.Object, null, null);
+
+    // Act
+    viewModel.CopyDataCommand.Execute(null);
+
+    // Assert
+    clipboardService.Verify(c => c.SetText("TEST_VAR=test_value"), Times.Once);
+  }
+
+  #endregion
+
+  #region PasteData Tests
+
+  [TestMethod]
+  public async Task PasteDataCommand_WithTrailingWhitespace_TrimsValue() {
+    // Arrange
+    var model = EnvironmentVariableBuilder.Default().WithName("TEST").WithData("old").Build();
+    var clipboardService = Helpers.MockFactory.CreateClipboardService();
+    clipboardService.Setup(s => s.GetText()).ReturnsAsync("TEST=new_value  \n\n");
+    var viewModel = new VariableViewModel(model, clipboardService.Object, null, null);
+
+    // Act
+    await viewModel.PasteDataCommand.ExecuteAsync(null);
+
+    // Assert
+    viewModel.Data.Should().Be("new_value", "trailing whitespace should be trimmed");
+  }
+
+  [TestMethod]
+  public async Task PasteDataCommand_WithoutSeparator_TrimsEntireText() {
+    // Arrange
+    var model = EnvironmentVariableBuilder.Default().WithName("TEST").WithData("old").Build();
+    var clipboardService = Helpers.MockFactory.CreateClipboardService();
+    clipboardService.Setup(s => s.GetText()).ReturnsAsync("  new_value  \n");
+    var viewModel = new VariableViewModel(model, clipboardService.Object, null, null);
+
+    // Act
+    await viewModel.PasteDataCommand.ExecuteAsync(null);
+
+    // Assert
+    viewModel.Data.Should().Be("new_value", "entire text should be trimmed");
   }
 
   #endregion

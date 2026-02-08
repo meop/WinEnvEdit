@@ -24,6 +24,8 @@ namespace WinEnvEdit.ViewModels;
 public partial class VariableScopeViewModel : ObservableObject {
   private const int DialogLabelWidth = 80;
   private readonly IEnvironmentService environmentService;
+  private readonly IClipboardService clipboardService;
+  private readonly IDialogService dialogService;
   private readonly MainWindowViewModel? parentViewModel;
 
   [ObservableProperty]
@@ -41,9 +43,11 @@ public partial class VariableScopeViewModel : ObservableObject {
   [ObservableProperty]
   public partial string SearchText { get; set; } = string.Empty;
 
-  public VariableScopeViewModel(VariableScope scope, IEnvironmentService environmentService, MainWindowViewModel? parentViewModel = null) {
+  public VariableScopeViewModel(VariableScope scope, IEnvironmentService environmentService, IClipboardService clipboardService, IDialogService dialogService, MainWindowViewModel? parentViewModel = null) {
     Scope = scope;
     this.environmentService = environmentService;
+    this.clipboardService = clipboardService;
+    this.dialogService = dialogService;
     this.parentViewModel = parentViewModel;
     Variables = [];
     FilteredVariables = [];
@@ -111,7 +115,7 @@ public partial class VariableScopeViewModel : ObservableObject {
       var targetVar = targetList[i];
       if (i < FilteredVariables.Count) {
         if (FilteredVariables[i] == targetVar) {
-          // Already at the right position.
+          // Already at the right position. 
           // If this is the specific variable that changed, force a Replace notification to refresh template.
           if (targetVar == changedVariable) {
             FilteredVariables[i] = targetVar;
@@ -176,7 +180,7 @@ public partial class VariableScopeViewModel : ObservableObject {
     Variables.Clear();
 
     foreach (var envVar in newVars) {
-      var viewModel = new VariableViewModel(envVar, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
+      var viewModel = new VariableViewModel(envVar, clipboardService, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
 
       // Restore expand/collapse state if it existed before
       if (viewModel.IsPathList && expandedStateMap.TryGetValue(envVar.Name, out var wasExpanded)) {
@@ -284,7 +288,7 @@ public partial class VariableScopeViewModel : ObservableObject {
       IsRemoved = false,
     };
 
-    var newViewModel = new VariableViewModel(variable, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
+    var newViewModel = new VariableViewModel(variable, clipboardService, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
 
     // Find sorted insertion position
     var insertIndex = 0;
@@ -464,24 +468,18 @@ public partial class VariableScopeViewModel : ObservableObject {
   private void CopyAll() {
     var lines = FilteredVariables.Where(v => !v.Model.IsVolatile).Select(v => $"{v.Name}={v.Data}");
     var text = string.Join(Environment.NewLine, lines);
-    var dataPackage = new DataPackage();
-    dataPackage.SetText(text);
-    Clipboard.SetContent(dataPackage);
+    clipboardService.SetText(text);
   }
 
   [RelayCommand]
   private async Task PasteAll() {
-    var clipboardContent = Clipboard.GetContent();
-    if (!clipboardContent.Contains(StandardDataFormats.Text)) {
-      return;
-    }
-
-    var text = await clipboardContent.GetTextAsync();
+    var text = await clipboardService.GetText();
     if (string.IsNullOrWhiteSpace(text)) {
       return;
     }
 
-    var pastedValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    text = text.Trim();
+
     foreach (var line in text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)) {
       var equalsIndex = line.IndexOf('=');
       if (equalsIndex <= 0) {
@@ -492,17 +490,8 @@ public partial class VariableScopeViewModel : ObservableObject {
       var value = line.Substring(equalsIndex + 1).Trim();
 
       if (!string.IsNullOrEmpty(name)) {
-        pastedValues[name] = value;
-      }
-    }
-
-    foreach (var variable in FilteredVariables) {
-      if (variable.Model.IsVolatile) {
-        continue;
-      }
-
-      if (pastedValues.TryGetValue(variable.Name, out var value)) {
-        variable.Data = value;
+        // AddVariable handles existing (active or deleted) and new variables
+        AddVariable(name, value, RegistryValueKind.String);
       }
     }
   }

@@ -14,11 +14,13 @@ using Windows.ApplicationModel.DataTransfer;
 
 using WinEnvEdit.Extensions;
 using WinEnvEdit.Models;
+using WinEnvEdit.Services;
 using WinEnvEdit.Validation;
 
 namespace WinEnvEdit.ViewModels;
 
 public partial class VariableViewModel : ObservableObject {
+  private readonly IClipboardService clipboardService;
   private readonly Action<VariableViewModel>? deleteCallback;
   private readonly Action? changeCallback;
   private readonly Action<VariableViewModel>? refreshCallback;
@@ -79,8 +81,9 @@ public partial class VariableViewModel : ObservableObject {
 
   public EnvironmentVariable Model { get; init; }
 
-  public VariableViewModel(EnvironmentVariable model, Action<VariableViewModel>? deleteCallback = null, Action? changeCallback = null, Action<VariableViewModel>? refreshCallback = null) {
+  public VariableViewModel(EnvironmentVariable model, IClipboardService clipboardService, Action<VariableViewModel>? deleteCallback = null, Action? changeCallback = null, Action<VariableViewModel>? refreshCallback = null) {
     Model = model;
+    this.clipboardService = clipboardService;
     this.deleteCallback = deleteCallback;
     this.changeCallback = changeCallback;
     this.refreshCallback = refreshCallback;
@@ -208,22 +211,25 @@ public partial class VariableViewModel : ObservableObject {
   }
 
   [RelayCommand]
-  private async Task PasteData() {
-    var dataPackageView = Clipboard.GetContent();
-    if (!dataPackageView.Contains(StandardDataFormats.Text)) {
-      return;
-    }
+  private void CopyData() {
+    var text = $"{Name}={Data}";
+    clipboardService.SetText(text);
+  }
 
-    var clipboardText = await dataPackageView.GetTextAsync();
+  [RelayCommand]
+  private async Task PasteData() {
+    var clipboardText = await clipboardService.GetText();
     if (string.IsNullOrWhiteSpace(clipboardText)) {
       return;
     }
+
+    clipboardText = clipboardText.Trim();
 
     // Parse "name=value" format
     var separatorIndex = clipboardText.IndexOf('=');
     if (separatorIndex > 0) {
       // Found "name=value" format - extract value part
-      var value = clipboardText[(separatorIndex + 1)..];
+      var value = clipboardText[(separatorIndex + 1)..].Trim();
       Data = value;
     }
     else {

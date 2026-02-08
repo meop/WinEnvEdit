@@ -18,7 +18,7 @@ public class PathItemViewModelTests {
       .WithData("C:\\Windows;C:\\Program Files")
       .WithType(RegistryValueKind.ExpandString)
       .Build();
-    parentViewModel = new VariableViewModel(model, null, null);
+    parentViewModel = new VariableViewModel(model, MockFactory.CreateClipboardService().Object, null, null);
   }
 
   #region Constructor Tests
@@ -165,7 +165,7 @@ public class PathItemViewModelTests {
       .WithName("TEST")
       .WithData("value")
       .Build();
-    var parent = new VariableViewModel(model, null, null);
+    var parent = new VariableViewModel(model, MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     var pathItem = new PathItemViewModel("C:\\Windows", parent);
@@ -182,7 +182,7 @@ public class PathItemViewModelTests {
       .WithData("value")
       .WithIsVolatile(true)
       .Build();
-    var parent = new VariableViewModel(model, null, null);
+    var parent = new VariableViewModel(model, MockFactory.CreateClipboardService().Object, null, null);
 
     // Act
     var pathItem = new PathItemViewModel("C:\\Windows", parent);

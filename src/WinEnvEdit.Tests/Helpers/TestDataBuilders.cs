@@ -87,4 +87,12 @@ public static class MockFactory {
     mock.Setup(s => s.IsDirty(It.IsAny<IEnumerable<EnvironmentVariable>>())).Returns(false);
     return mock;
   }
+
+  public static Mock<IClipboardService> CreateClipboardService() => new Mock<IClipboardService>();
+
+  public static Mock<IDialogService> CreateDialogService() {
+    var mock = new Mock<IDialogService>();
+    mock.Setup(s => s.ShowConfirmation(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+    return mock;
+  }
 }

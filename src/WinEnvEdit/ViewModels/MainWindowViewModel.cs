@@ -10,14 +10,10 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
-using Windows.Storage.Pickers;
-
 using WinEnvEdit.Extensions;
 using WinEnvEdit.Helpers;
 using WinEnvEdit.Models;
 using WinEnvEdit.Services;
-
-using WinRT.Interop;
 
 namespace WinEnvEdit.ViewModels;
 
@@ -27,6 +23,8 @@ public partial class MainWindowViewModel : ObservableObject {
   private readonly IFileService fileService;
   private readonly IStateSnapshotService stateService;
   private readonly IUndoRedoService undoRedoService;
+  private readonly IClipboardService clipboardService;
+  private readonly IDialogService dialogService;
   // Prevents UpdatePendingChangesState from pushing intermediate states to undo stack during restore.
   private bool isRestoringState = false;
 
@@ -82,18 +80,20 @@ public partial class MainWindowViewModel : ObservableObject {
   [NotifyCanExecuteChangedFor(nameof(RedoCommand))]
   public partial bool CanRedoState { get; set; } = false;
 
-  public MainWindowViewModel() : this(new EnvironmentService(), null!, new FileService(), new StateSnapshotService(), new UndoRedoService()) {
+  public MainWindowViewModel() : this(new EnvironmentService(), null!, new FileService(), new StateSnapshotService(), new UndoRedoService(), new ClipboardService(), new DialogService(null!)) {
   }
 
-  public MainWindowViewModel(IEnvironmentService environmentService, Window window, IFileService fileService, IStateSnapshotService stateService, IUndoRedoService undoRedoService) {
+  public MainWindowViewModel(IEnvironmentService environmentService, Window window, IFileService fileService, IStateSnapshotService stateService, IUndoRedoService undoRedoService, IClipboardService clipboardService, IDialogService dialogService) {
     this.environmentService = environmentService;
     this.window = window;
     this.fileService = fileService;
     this.stateService = stateService;
     this.undoRedoService = undoRedoService;
+    this.clipboardService = clipboardService;
+    this.dialogService = dialogService;
 
-    SystemVariables = new VariableScopeViewModel(VariableScope.System, environmentService, this);
-    UserVariables = new VariableScopeViewModel(VariableScope.User, environmentService, this);
+    SystemVariables = new VariableScopeViewModel(VariableScope.System, environmentService, clipboardService, dialogService, this);
+    UserVariables = new VariableScopeViewModel(VariableScope.User, environmentService, clipboardService, dialogService, this);
 
     // Load initial data
     LoadVariables();
@@ -116,25 +116,6 @@ public partial class MainWindowViewModel : ObservableObject {
 
   private IEnumerable<EnvironmentVariable> AllVariables() =>
     SystemVariables.GetAllVariables().Concat(UserVariables.GetAllVariables());
-
-  private async Task<bool> ShowConfirmationDialog(string title, string message, string primaryButtonText = "Okay") {
-    if (window.Content.XamlRoot == null) {
-      return false;
-    }
-
-    var messageText = new TextBlock {
-      Text = message,
-      TextWrapping = TextWrapping.Wrap,
-      VerticalAlignment = VerticalAlignment.Top,
-      HorizontalAlignment = HorizontalAlignment.Left,
-      TextAlignment = TextAlignment.Left,
-    };
-
-    var contentPanel = DialogHelper.CreateDialogPanel([messageText]);
-    var dialog = DialogHelper.CreateStandardDialog(window.Content.XamlRoot, title, contentPanel, primaryButtonText, "Cancel");
-    var result = await dialog.ShowAsync();
-    return result == ContentDialogResult.Primary;
-  }
 
   private void LoadVariables() {
     // LoadFromRegistry now uses incremental updates - only changes what's different
@@ -168,23 +149,17 @@ public partial class MainWindowViewModel : ObservableObject {
   [RelayCommand]
   private async Task Import() {
     if (HasPendingChanges) {
-      if (!await ShowConfirmationDialog("Import", "This will discard all unsaved changes")) {
+      if (!await dialogService.ShowConfirmation("Import", "This will discard all unsaved changes")) {
         return;
       }
     }
 
-    var hwnd = WindowNative.GetWindowHandle(window);
-    var openPicker = new FileOpenPicker();
-    InitializeWithWindow.Initialize(openPicker, hwnd);
-    openPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-    openPicker.FileTypeFilter.Add(FileService.FileExtension);
-
-    var file = await openPicker.PickSingleFileAsync();
-    if (file == null) {
+    var filePath = await dialogService.PickOpenFile(FileService.FileExtension);
+    if (filePath == null) {
       return;
     }
 
-    var importedVars = (await fileService.ImportFromFile(file.Path)).ToList();
+    var importedVars = (await fileService.ImportFromFile(filePath)).ToList();
 
     // Preserve existing volatile variables (they're not in the file)
     var systemVolatile = SystemVariables.Variables
@@ -219,26 +194,19 @@ public partial class MainWindowViewModel : ObservableObject {
 
   [RelayCommand]
   private async Task Export() {
-    var hwnd = WindowNative.GetWindowHandle(window);
-    var savePicker = new FileSavePicker();
-    InitializeWithWindow.Initialize(savePicker, hwnd);
-    savePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-    savePicker.FileTypeChoices.Add(FileService.FileDescription, [FileService.FileExtension]);
-    savePicker.SuggestedFileName = FileService.SuggestedFileName;
-
-    var file = await savePicker.PickSaveFileAsync();
-    if (file == null) {
+    var filePath = await dialogService.PickSaveFile(FileService.FileDescription, FileService.FileExtension, FileService.SuggestedFileName);
+    if (filePath == null) {
       return;
     }
 
     var allVars = AllVariables().Where(v => !v.IsRemoved && !v.IsVolatile);
-    await fileService.ExportToFile(file.Path, allVars);
+    await fileService.ExportToFile(filePath, allVars);
   }
 
   [RelayCommand]
   private async Task Refresh() {
     if (HasPendingChanges) {
-      if (!await ShowConfirmationDialog("Refresh", "This will discard all unsaved changes")) {
+      if (!await dialogService.ShowConfirmation("Refresh", "This will discard all unsaved changes")) {
         return;
       }
     }
@@ -257,7 +225,7 @@ public partial class MainWindowViewModel : ObservableObject {
         ? "System"
         : "User";
 
-    if (!await ShowConfirmationDialog("Save", $"This will persist all {scope} changes to the Windows Registry")) {
+    if (!await dialogService.ShowConfirmation("Save", $"This will persist all {scope} changes to the Windows Registry")) {
       return;
     }
 
@@ -274,23 +242,7 @@ public partial class MainWindowViewModel : ObservableObject {
       HasPendingChanges = false;
     }
     catch (Exception ex) {
-      if (window.Content.XamlRoot == null) {
-        return;
-      }
-
-      var contentPanel = DialogHelper.CreateDialogPanel([
-        new TextBlock {
-          Style = Application.Current.Resources["DialogErrorHeaderStyle"] as Style,
-          Text = "An error occurred while saving environment variables:",
-        },
-        new TextBox {
-          Style = Application.Current.Resources["DialogErrorDetailStyle"] as Style,
-          Text = ex.Message,
-        },
-      ]);
-
-      var dialog = DialogHelper.CreateStandardDialog(window.Content.XamlRoot, "Save Error", contentPanel, closeButtonText: "Close");
-      await dialog.ShowAsync();
+      await dialogService.ShowError("Save Error", "An error occurred while saving environment variables:", ex.Message);
     }
   }
 
@@ -392,14 +344,10 @@ public partial class MainWindowViewModel : ObservableObject {
     var descriptionGrid = DialogHelper.CreateLabelValueGrid("Description", DialogHelper.CreateDialogValue(description, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
     var versionGrid = DialogHelper.CreateLabelValueGrid("Version", DialogHelper.CreateDialogValue(version));
 
-    var llmCredit = "Developed with help from Anthropic Claude, Google Gemini, and Z.ai GLM";
-    var creditsGrid = DialogHelper.CreateLabelValueGrid("Credit", DialogHelper.CreateDialogValue(llmCredit, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
-
     var contentPanel = DialogHelper.CreateDialogPanel([
       productGrid,
       descriptionGrid,
       versionGrid,
-      creditsGrid,
     ]);
 
     var contentDialog = DialogHelper.CreateStandardDialog(window.Content.XamlRoot, "About", contentPanel, closeButtonText: "Close");

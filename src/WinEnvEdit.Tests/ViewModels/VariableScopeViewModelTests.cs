@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
 using FluentAssertions;
 
 using Microsoft.Win32;
@@ -22,7 +27,7 @@ public class VariableScopeViewModelTests {
     envServiceMock = Helpers.MockFactory.CreateEnvironmentService();
     changeCallbackCallCount = 0;
     Action changeCallback = () => changeCallbackCallCount++;
-    viewModel = new VariableScopeViewModel(VariableScope.User, envServiceMock.Object, null);
+    viewModel = new VariableScopeViewModel(VariableScope.User, envServiceMock.Object, Helpers.MockFactory.CreateClipboardService().Object, Helpers.MockFactory.CreateDialogService().Object, null);
   }
 
   #region Constructor Tests
@@ -98,7 +103,7 @@ public class VariableScopeViewModelTests {
     // Arrange
     viewModel.Variables.Add(new VariableViewModel(
       EnvironmentVariableBuilder.Default().WithName("OLD_VAR").Build(),
-      null, null));
+      Helpers.MockFactory.CreateClipboardService().Object, null, null));
     envServiceMock.Setup(s => s.GetVariables()).Returns([]);
 
     // Act
@@ -746,15 +751,95 @@ public class VariableScopeViewModelTests {
     envServiceMock.Setup(s => s.GetVariables()).Returns(testVars);
     viewModel.LoadFromRegistry();
 
-    // Act - Note: This test may not work in headless environment
-    try {
-      viewModel.CopyAllCommand.Execute(null);
-    }
-    catch {
-      // Clipboard operations may fail in test environment
-    }
+    var clipboardMock = new Mock<IClipboardService>();
+    var scopeViewModel = new VariableScopeViewModel(VariableScope.User, envServiceMock.Object, clipboardMock.Object, Helpers.MockFactory.CreateDialogService().Object, null);
+    scopeViewModel.LoadFromRegistry();
 
-    // Assert - If no exception, operation completed
+    // Act
+    scopeViewModel.CopyAllCommand.Execute(null);
+
+    // Assert
+    clipboardMock.Verify(c => c.SetText(It.Is<string>(s => s.Contains("VAR1=value1") && s.Contains("VAR2=value2"))), Times.Once);
+  }
+
+  #endregion
+
+  #region PasteAll Tests
+
+  [TestMethod]
+  public async Task PasteAllCommand_UpdatesAllVariables_NotJustFiltered() {
+    // Arrange - Create variables and apply search filter
+    var testVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default().WithName("MATCH_VAR").WithData("old1").Build(),
+      EnvironmentVariableBuilder.Default().WithName("OTHER_VAR").WithData("old2").Build(),
+    };
+    envServiceMock.Setup(s => s.GetVariables()).Returns(testVars);
+    viewModel.LoadFromRegistry();
+
+    // Apply search filter to hide "OTHER_VAR"
+    viewModel.SearchText = "MATCH";
+    viewModel.FilteredVariables.Should().HaveCount(1, "search filter should hide OTHER_VAR");
+
+    // Mock clipboard with data for both variables
+    var clipboardText = "MATCH_VAR=new1\r\nOTHER_VAR=new2";
+    var clipboardMock = new Mock<IClipboardService>();
+    clipboardMock.Setup(c => c.GetText()).ReturnsAsync(clipboardText);
+
+    var scopeViewModel = new VariableScopeViewModel(VariableScope.User, envServiceMock.Object, clipboardMock.Object, Helpers.MockFactory.CreateDialogService().Object, null);
+    scopeViewModel.LoadFromRegistry();
+    scopeViewModel.SearchText = "MATCH";
+
+    // Act
+    await scopeViewModel.PasteAllCommand.ExecuteAsync(null);
+
+    // Assert - Both variables should be updated, even though OTHER_VAR is filtered out
+    scopeViewModel.Variables.First(v => v.Name == "MATCH_VAR").Data.Should().Be("new1");
+    scopeViewModel.Variables.First(v => v.Name == "OTHER_VAR").Data.Should().Be("new2", "paste should update all variables, not just filtered ones");
+  }
+
+  [TestMethod]
+  public async Task PasteAllCommand_SkipsVolatileVariables() {
+    // Arrange
+    var testVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default().WithName("NORMAL").WithData("old_value").Build(),
+      EnvironmentVariableBuilder.Default().WithName("VOLATILE").WithData("volatile_value").WithIsVolatile(true).Build(),
+    };
+    envServiceMock.Setup(s => s.GetVariables()).Returns(testVars);
+    viewModel.LoadFromRegistry();
+
+    // Mock clipboard with data for both variables
+    var clipboardText = "NORMAL=new_value\r\nVOLATILE=should_not_update";
+    var clipboardMock = new Mock<IClipboardService>();
+    clipboardMock.Setup(c => c.GetText()).ReturnsAsync(clipboardText);
+
+    var scopeViewModel = new VariableScopeViewModel(VariableScope.User, envServiceMock.Object, clipboardMock.Object, Helpers.MockFactory.CreateDialogService().Object, null);
+    scopeViewModel.LoadFromRegistry();
+
+    // Act
+    await scopeViewModel.PasteAllCommand.ExecuteAsync(null);
+
+    // Assert
+    scopeViewModel.Variables.First(v => v.Name == "NORMAL").Data.Should().Be("new_value");
+    scopeViewModel.Variables.First(v => v.Name == "VOLATILE").Data.Should().Be("volatile_value", "volatile variables should not be updated");
+  }
+
+  [TestMethod]
+  public async Task PasteAllCommand_WithTrailingWhitespace_TrimsValues() {
+    // Arrange
+    var testVars = new List<EnvironmentVariable> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("old1").Build(),
+    };
+    envServiceMock.Setup(s => s.GetVariables()).Returns(testVars);
+    var clipboardService = Helpers.MockFactory.CreateClipboardService();
+    clipboardService.Setup(s => s.GetText()).ReturnsAsync("  VAR1=new1  \n\n  ");
+    viewModel = new VariableScopeViewModel(VariableScope.User, envServiceMock.Object, clipboardService.Object, Helpers.MockFactory.CreateDialogService().Object, null);
+    viewModel.LoadFromRegistry();
+
+    // Act
+    await viewModel.PasteAllCommand.ExecuteAsync(null);
+
+    // Assert
+    viewModel.Variables.First(v => v.Name == "VAR1").Data.Should().Be("new1", "trailing whitespace should be trimmed");
   }
 
   #endregion

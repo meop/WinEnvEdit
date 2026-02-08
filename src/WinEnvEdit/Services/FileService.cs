@@ -31,6 +31,11 @@ public class FileService : IFileService {
   }
 
   public async Task ExportToFile(string filePath, IEnumerable<EnvironmentVariable> variables) {
+    using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true);
+    await ExportToStream(stream, variables);
+  }
+
+  public async Task ExportToStream(Stream stream, IEnumerable<EnvironmentVariable> variables) {
     var model = variables
       .Where(v => !v.IsRemoved && !v.IsVolatile)
       .GroupBy(v => v.Scope.ToString())
@@ -47,7 +52,10 @@ public class FileService : IFileService {
     var formattedContent = FormatTomlOutput(tomlContent);
 
     // Write with LF line endings and UTF-8 encoding (no BOM)
-    await File.WriteAllTextAsync(filePath, formattedContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+    var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+    var bytes = encoding.GetBytes(formattedContent);
+    await stream.WriteAsync(bytes);
+    await stream.FlushAsync();
   }
 
   internal static string FormatTomlOutput(string content) {
@@ -72,7 +80,13 @@ public class FileService : IFileService {
   }
 
   public async Task<IEnumerable<EnvironmentVariable>> ImportFromFile(string filePath) {
-    var content = await File.ReadAllTextAsync(filePath);
+    using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
+    return await ImportFromStream(stream);
+  }
+
+  public async Task<IEnumerable<EnvironmentVariable>> ImportFromStream(Stream stream) {
+    using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 4096, leaveOpen: true);
+    var content = await reader.ReadToEndAsync();
     var model = Toml.ToModel(content);
     var result = new List<EnvironmentVariable>();
     var sections = new[] { ("System", VariableScope.System), ("User", VariableScope.User) };
