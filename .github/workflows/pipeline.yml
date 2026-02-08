@@ -2,17 +2,11 @@ name: Continuous Integration & Deployment
 
 on:
   push:
-    paths:
-      - 'src/**'
-      - '*.csproj'
-      - '*.sln'
-      - 'VERSION'
+    branches:
+      - '**'  # Run on all branches
   pull_request:
-    paths:
-      - 'src/**'
-      - '*.csproj'
-      - '*.sln'
-      - 'VERSION'
+    branches:
+      - '**'  # Run on all PRs
 
 permissions:
   contents: write
