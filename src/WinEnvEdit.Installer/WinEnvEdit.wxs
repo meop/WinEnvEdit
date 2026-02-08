@@ -1,0 +1,50 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Id="WinEnvEdit.Package"
+           Name="WinEnvEdit"
+           Version="$(var.Version)"
+           Manufacturer="meop"
+           InstallerVersion="500">
+
+    <SummaryInformation Description="Modern Windows Environment Editor" />
+
+    <MajorUpgrade Schedule="afterInstallInitialize" DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="Main" Title="WinEnvEdit" Level="1">
+      <ComponentGroupRef Id="AppComponents" />
+    </Feature>
+
+    <Icon Id="AppIcon" SourceFile="$(var.SourceDir)\Assets\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
+    <ui:WixUI Id="WixUI_Minimal" />
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="WinEnvEdit" />
+    </StandardDirectory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="AppComponents" Directory="INSTALLFOLDER">
+      <Files Include="$(var.SourceDir)\**" />
+
+      <Component Id="AppShortcut" Guid="*">
+        <Shortcut Id="StartMenuShortcut"
+                  Directory="ProgramMenuFolder"
+                  Name="WinEnvEdit"
+                  Target="[INSTALLFOLDER]WinEnvEdit.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon"
+                  Advertise="no" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\meop\WinEnvEdit"
+                       Name="installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

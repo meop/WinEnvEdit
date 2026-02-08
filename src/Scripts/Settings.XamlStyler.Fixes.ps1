@@ -1,5 +1,20 @@
+#!/usr/bin/env pwsh
+
+<#
+.SYNOPSIS
+  Fixes XAML line endings after XamlStyler formatting.
+
+.DESCRIPTION
+  XamlStyler sometimes introduces CRLF line endings or inconsistent formatting.
+  This script ensures all XAML files use LF line endings and UTF-8 with BOM.
+
+.PARAMETER Directory
+  The directory to search for XAML files.
+#>
+
 param(
-  [string]$Directory = "."
+  [Parameter(Mandatory = $true)]
+  [string]$Directory
 )
 
 $utf8Bom = New-Object System.Text.UTF8Encoding($true)

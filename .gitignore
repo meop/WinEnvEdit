@@ -1,6 +1,2 @@
-# Top-level ignores only
-# For Visual Studio / .NET ignores, see src/.gitignore
-
 # Claude Code temporary files and settings
-tmpclaude-*
 .claude/

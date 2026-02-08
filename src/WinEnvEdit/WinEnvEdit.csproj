@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <ApplicationManifest>App.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <ApplicationManifest>App.manifest</ApplicationManifest>
     <AssemblyName>WinEnvEdit</AssemblyName>
     <Description>Modern Windows Environment Editor</Description>
     <EnableMsixTooling>false</EnableMsixTooling>
@@ -11,13 +11,16 @@
     <OutputType>WinExe</OutputType>
     <Platforms>ARM64;x64</Platforms>
     <PublishAot>false</PublishAot>
+    <PublishReadyToRun>false</PublishReadyToRun>
     <PublishTrimmed>false</PublishTrimmed>
     <RuntimeIdentifiers>win-arm64;win-x64</RuntimeIdentifiers>
+    <SelfContained>false</SelfContained>
     <SupportedOSPlatformVersion>10.0.22000.0</SupportedOSPlatformVersion>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <UseWinUI>true</UseWinUI>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <WindowsPackageType>None</WindowsPackageType>
     <WinUISDKReferences>false</WinUISDKReferences>
   </PropertyGroup>
@@ -27,18 +30,6 @@
       <_Parameter1>WinEnvEdit.Tests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
-
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <PublishReadyToRun>false</PublishReadyToRun>
-    <SelfContained>false</SelfContained>
-    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <PublishReadyToRun>true</PublishReadyToRun>
-    <SelfContained>true</SelfContained>
-    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-  </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\..\LICENSE.txt">
@@ -62,5 +53,4 @@
   <ItemGroup>
     <ProjectReference Include="..\WinEnvEdit.Core\WinEnvEdit.Core.csproj" />
   </ItemGroup>
-
 </Project>

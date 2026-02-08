@@ -8,18 +8,21 @@ Guidance for Claude Code when working with this repository.
 
 ## Quick Reference
 
+**Note**: `<Platform>` is auto-detected via `powershell -c 'Write-Output $Env:PROCESSOR_ARCHITECTURE'`
+(single quotes required — Git Bash swallows `$Env:` if double-quoted). Maps `AMD64` → `x64`, `ARM64` → `ARM64`.
+
 **Standard Workflow** (Claude detects host platform and targets it):
 ```bash
-# Format code first
+# Format the code
 ./src/Scripts/Format.ps1
 
-# Build solution (main + test projects)
+# Build the solution
 dotnet build -c Debug -p:Platform=<Platform>
 
-# Run unit tests
+# Run the unit tests
 dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -p:Platform=<Platform> --no-build
 
-# Run application
+# Run the application
 bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
 ```
 
@@ -32,18 +35,6 @@ dotnet build -c Release -p:Platform=<Platform>
 bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 ```
 
-**Release Build**:
-```bash
-# Build Release (self-contained, bundles .NET runtime)
-dotnet build -c Release -p:Platform=<Platform>
-
-# Run Release directly
-bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
-```
-
-**Note**: `<Platform>` is auto-detected via `powershell -c 'Write-Output $Env:PROCESSOR_ARCHITECTURE'`
-(single quotes required — Git Bash swallows `$Env:` if double-quoted). Maps `AMD64` → `x64`, `ARM64` → `ARM64`.
-
 **Key Rules (In Priority Order)**:
 1.  **Var Usage (Primary)**: Always use `var` for local variables. This takes precedence over modern syntax if they conflict (e.g., prefer `var x = new List<T>();` over `List<T> x = [];`).
 2.  **Naming Conventions**: No underscores for private fields (`camelCase`). No `Async` suffix for asynchronous methods.
@@ -51,16 +42,12 @@ bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 4.  **Modern C# Expressions**: Use `=>` for simple members, collection expressions `[]` when target type is known (but see Var priority), and target-typed `new()`.
 5.  **Initialization**: Simple types inline; complex types (`ObservableCollection`) in constructors (see [PATTERNS.md](PATTERNS.md)).
 6.  **Formatting**: 2-space indentation, LF line endings, `./src/Scripts/Format.ps1`.
-<<<<<<< HEAD
-7.  **Tests**: Tests are part of every change. No skipped tests (`Assert.Inconclusive`).
-=======
 7.  **Tests**: Tests are part of every change. No skipped tests (`Assert.Inconclusive`). All tests in `WinEnvEdit.Tests` MUST be pure unit tests.
     - No hitting the Windows Registry or OS APIs directly.
     - No real File System access (use mocks or memory streams).
     - No dependencies on machine-specific state or environment variables.
     - Every test must be deterministic and portable.
-    - **Internal Scope for Testing**: Use the `internal` access modifier for complex internal logic (like sorting or formatting) to enable pure unit testing. The `WinEnvEdit` project is configured with `InternalsVisibleTo` for `WinEnvEdit.Tests`.
->>>>>>> 34123ae (Enforce pure unit tests and implement 'Internal for Testing' pattern)
+    - **Internal Scope for Testing**: Use the `internal` access modifier for complex internal logic (like sorting or formatting) to enable pure unit testing. The `WinEnvEdit.Core` and `WinEnvEdit` projects are configured with `InternalsVisibleTo` for `WinEnvEdit.Tests`.
 8.  **Visual Studio Independence**: The project MUST be fully functional without Visual Studio. All critical tasks (format, build, test, release) MUST be possible via CLI. Visual Studio is only for debugging.
 
 **Git Safety Rules (CRITICAL)**:
@@ -99,8 +86,8 @@ WinEnvEdit is a Windows 11+ environment variable editor built with WinUI 3 and .
 - Contains application code: Models, ViewModels, Services, UI
 
 **Test Project** (`WinEnvEdit.Tests`):
-- Unit test suite with 47+ tests
-- Uses MSTest framework with FluentAssertions
+- Unit test suite with 224 tests
+- Uses xUnit framework with FluentAssertions
 - Mirrors main project structure for easy navigation
 
 **Project Requirements**:
@@ -108,7 +95,7 @@ WinEnvEdit is a Windows 11+ environment variable editor built with WinUI 3 and .
 - **Target Framework**: .NET 10
 - **UI Framework**: WinUI 3 (Windows App SDK 1.8)
 - **Deployment**: Unpackaged (runs as .exe directly, no MSIX required)
-- **Testing**: Integrated MSTest with optional coverage analysis
+- **Testing**: Integrated xUnit with optional coverage analysis
 
 ### Environment Setup
 
@@ -116,6 +103,7 @@ Ensure you have:
 - **Windows 11 or later** installed
 - **.NET 10 SDK** - verify with `dotnet --version`
 - **Visual Studio Code** or **Visual Studio 2022** (optional, but recommended for XAML editing)
+
 
 ### Project Structure
 
@@ -147,7 +135,7 @@ src/
     ├── ViewModels/                    # Tests for UI state management
     ├── Validation/                    # Tests for input validation
     ├── Converters/                    # Tests for value converters
-    ├── Helpers/                       # Test utilities (builders, mocks)
+    ├── Helpers/                       # Test utilities (builders)
     ├── AssemblyInfo.cs                # Test assembly configuration
     └── WinEnvEdit.Tests.csproj        # Test project file
 ```
@@ -274,7 +262,7 @@ bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 
 When using Visual Studio, the solution contains two projects:
 1. **WinEnvEdit** - Main application project (WinExe)
-2. **WinEnvEdit.Tests** - Unit test project (WinExe, for MSTest AppContainer infrastructure)
+2. **WinEnvEdit.Tests** - Unit test project (WinExe, for xUnit test infrastructure)
 
 **Workflow**:
 1. Select the **"WinEnvEdit (Unpackaged)"** launch profile to run the main app
@@ -869,7 +857,7 @@ Tests/
 ├── ViewModels/         # UI state management tests
 ├── Validation/         # Input validation tests
 ├── Converters/         # Value converter tests
-└── Helpers/            # Test utilities (TestDataBuilders, MockFactory)
+└── Helpers/            # Test utilities (TestDataBuilders)
 ```
 
 ### Test Patterns
@@ -879,12 +867,12 @@ Tests/
 
 **Structure**: Arrange-Act-Assert (AAA)
 - Use `EnvironmentVariableBuilder` for test data
-- Use `MockFactory` for service mocks
+- Use Core library interfaces directly (no mocks needed)
 - Use FluentAssertions for readable assertions
 
 **Example**:
 ```csharp
-[TestMethod]
+[Fact]
 public void IsDirty_VariableRemoved_ReturnsTrue() {
   // Arrange
   var variable = EnvironmentVariableBuilder.Default()
@@ -911,10 +899,11 @@ public void IsDirty_VariableRemoved_ReturnsTrue() {
 ### Adding New Tests
 
 1. Create test class in corresponding folder (e.g., `Services/NewServiceTests.cs`)
-2. Use `[TestClass]` attribute
-3. Follow naming conventions
-4. Use TestDataBuilders for setup
-5. Run `dotnet test` to verify
+2. Use `[Fact]` attribute for test methods
+3. Follow naming conventions: `{MethodName}_{Scenario}_{ExpectedResult}`
+4. Use constructors for test initialization (not Setup methods)
+5. Use TestDataBuilders for setup
+6. Run `dotnet test` to verify
 
 ---
 

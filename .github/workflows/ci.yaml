@@ -1,0 +1,143 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - '**' # Run on all branches
+  pull_request:
+    branches:
+      - '**' # Run on all PRs
+
+permissions:
+  contents: write
+
+jobs:
+  version-check:
+    name: Detect Version Change
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check.outputs.changed }}
+      new_version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if version tag exists
+        id: check
+        shell: bash
+        run: |
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          echo "Target version: $VERSION"
+
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists. Skipping release steps."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag v$VERSION does not exist. Triggering release pipeline."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+  validate:
+    name: Validate Code
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Format and Check
+        shell: pwsh
+        run: |
+          ./src/Scripts/Format.ps1
+          $status = git status --porcelain
+          if ($status) {
+            Write-Error "Code formatting discrepancies found. Please run ./src/Scripts/Format.ps1 locally and commit."
+            Write-Host $status
+            exit 1
+          }
+
+      - name: Build and Test
+        run: dotnet test src/WinEnvEdit.slnx -c Debug -p:Platform=x64 --verbosity normal
+
+  package:
+    name: Package MSI
+    needs: [version-check, validate]
+    if: github.ref == 'refs/heads/main' && needs.version-check.outputs.version_changed == 'true'
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        platform: [arm64, x64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build MSI Installer
+        shell: pwsh
+        run: ./src/Scripts/Package.ps1 -Platform ${{ matrix.platform }}
+
+      - name: Upload MSI Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WinEnvEdit-${{ matrix.platform }}-MSI
+          path: src/WinEnvEdit.Installer/bin/${{ matrix.platform }}/Release/WinEnvEdit-*.msi
+
+  release:
+    name: Create GitHub Release
+    needs: [version-check, package]
+    if: github.ref == 'refs/heads/main' && needs.version-check.outputs.version_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download MSI Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Update Repository Manifests
+        run: |
+          VERSION_NUM="${{ needs.version-check.outputs.new_version }}"
+          WIN_VERSION=$([[ $VERSION_NUM =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && echo "${VERSION_NUM}.0" || echo "$WIN_VERSION")
+
+          # Sync WinGet manifest
+          sed -i "s/PackageVersion: .*/PackageVersion: $VERSION_NUM/" src/WinEnvEdit.yaml
+          sed -i "s|releases/download/v[0-9.]*/WinEnvEdit|releases/download/v$VERSION_NUM/WinEnvEdit|g" src/WinEnvEdit.yaml
+
+          # Sync Appx and Assembly manifests (Specific regex)
+          sed -i "s/\(<Identity[^>]*Version=\"\)[0-9.]*\"/\1$WIN_VERSION\"/" src/WinEnvEdit/Package.appxmanifest
+          sed -i "s/\(<assemblyIdentity[^>]*version=\"\)[0-9.]*\"/\1$WIN_VERSION\"/" src/WinEnvEdit/App.manifest
+
+          # Ensure final newline in all synchronized files
+          for f in src/WinEnvEdit.yaml src/WinEnvEdit/Package.appxmanifest src/WinEnvEdit/App.manifest; do
+            sed -i '$a\' "$f"
+          done
+
+      - name: Commit Manifest Sync
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/WinEnvEdit.yaml src/WinEnvEdit/Package.appxmanifest src/WinEnvEdit/App.manifest
+          git commit -m "chore: bump manifests to v${{ needs.version-check.outputs.new_version }}" || echo "No changes to commit"
+          git push origin main
+
+      - name: Create Tag and Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version-check.outputs.new_version }}
+          files: ./artifacts/**/*.msi
+          generate_release_notes: true
+          draft: false
+          prerelease: false

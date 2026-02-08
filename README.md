@@ -43,12 +43,17 @@ Several frameworks were considered to achieve the best balance of performance an
 ### Build & Run
 To build and run the application from the command line:
 
+**Note**: `<Platform>` is auto-detected via `powershell -c 'Write-Output $Env:PROCESSOR_ARCHITECTURE'` (maps `AMD64` → `x64`, `ARM64` → `ARM64`).
+
 ```bash
+# Format the code
+./src/Scripts/Format.ps1
+
 # Build the solution
-dotnet build src/WinEnvEdit/WinEnvEdit.csproj -p:Platform=x64
+dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=<Platform>
 
 # Run the application
-./bin/x64/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
+bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
 ```
 
 ## Building & Releasing
@@ -102,8 +107,6 @@ winget upgrade WinEnvEdit
 
 Winget scans GitHub releases for updates - no app code needed.
 
-### Installation via winget
-
 ## Development
 
 Detailed development guidelines, including standard workflows and MVVM/XAML best practices, are maintained in **[CLAUDE.md](CLAUDE.md)**.
@@ -112,8 +115,8 @@ Detailed development guidelines, including standard workflows and MVVM/XAML best
 Stability is verified by a suite of over 160 unit tests.
 
 ```bash
-# Run all unit tests
-dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -p:Platform=x64
+# Run the unit tests
+dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -p:Platform=<Platform> --no-build
 ```
 
 ### Implementation Patterns

@@ -7,13 +7,13 @@ root = true
 [*]
 charset = utf-8
 end_of_line = lf
+indent_size = 2
+indent_style = space
 insert_final_newline = true
 trim_trailing_whitespace = true
 
 # Code files
 [*.{cs,csx,xaml}]
-indent_size = 2
-indent_style = space
 tab_width = 2
 
 # C# files
@@ -120,6 +120,7 @@ csharp_new_line_before_open_brace = none
 csharp_new_line_before_else = true
 csharp_new_line_before_catch = true
 csharp_new_line_before_finally = true
+csharp_new_line_before_open_brace = none
 csharp_new_line_before_members_in_object_initializers = true
 csharp_new_line_before_members_in_anonymous_types = true
 csharp_new_line_between_query_expression_clauses = true
@@ -146,8 +147,8 @@ csharp_space_between_method_call_empty_parameter_list_parentheses = false
 csharp_preserve_single_line_statements = false
 csharp_preserve_single_line_blocks = true
 
-# XAML files
-[*.xaml]
+# PowerShell files
+[*.{ps1,psm1}]
 indent_size = 2
 
 # XML project files
