@@ -7,7 +7,6 @@
     <Platforms>ARM64;x64</Platforms>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
-    <NoWarn>xUnit1051</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

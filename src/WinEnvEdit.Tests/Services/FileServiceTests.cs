@@ -47,7 +47,7 @@ public class FileServiceTests {
     // Assert
     stream.Position = 0;
     using var reader = new StreamReader(stream, Encoding.UTF8);
-    var content = await reader.ReadToEndAsync();
+    var content = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
 
     content.Should().Contain("[User]");
     content.Should().Contain("[[User]]");
@@ -82,7 +82,7 @@ public class FileServiceTests {
     // Assert
     stream.Position = 0;
     using var reader = new StreamReader(stream, Encoding.UTF8);
-    var content = await reader.ReadToEndAsync();
+    var content = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
 
     content.Should().Contain("ACTIVE_VAR");
     content.Should().NotContain("REMOVED_VAR");
@@ -110,7 +110,7 @@ public class FileServiceTests {
     // Assert
     stream.Position = 0;
     using var reader = new StreamReader(stream, Encoding.UTF8);
-    var content = await reader.ReadToEndAsync();
+    var content = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
 
     content.Should().Contain("NORMAL_VAR");
     content.Should().NotContain("VOLATILE_VAR");
@@ -137,7 +137,7 @@ public class FileServiceTests {
     // Assert
     stream.Position = 0;
     using var reader = new StreamReader(stream, Encoding.UTF8);
-    var content = await reader.ReadToEndAsync();
+    var content = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
     var lines = content.Split('\n');
 
     // Verify empty lines exist before array table definitions (except first)
@@ -166,7 +166,7 @@ public class FileServiceTests {
     // Assert
     stream.Position = 0;
     using var reader = new StreamReader(stream, Encoding.UTF8);
-    var content = await reader.ReadToEndAsync();
+    var content = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
     content.Should().Contain("MULTI_VAR");
     content.Should().Contain("type = \"MultiString\"");
   }
@@ -189,7 +189,7 @@ public class FileServiceTests {
     // Assert
     stream.Position = 0;
     using var reader = new StreamReader(stream, Encoding.UTF8);
-    var content = await reader.ReadToEndAsync();
+    var content = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
     content.Should().Contain("DWORD_VAR");
     content.Should().Contain("type = \"DWord\"");
   }
@@ -208,7 +208,7 @@ public class FileServiceTests {
     // Assert
     stream.Position = 0;
     using var reader = new StreamReader(stream, Encoding.UTF8);
-    var content = await reader.ReadToEndAsync();
+    var content = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
     content.Should().EndWith("\n");
   }
 
