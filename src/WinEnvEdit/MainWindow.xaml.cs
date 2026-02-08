@@ -11,7 +11,8 @@ using Microsoft.UI.Xaml.Media;
 
 using Windows.ApplicationModel.DataTransfer;
 
-using WinEnvEdit.Helpers;
+using WinEnvEdit.Core.Constants;
+using WinEnvEdit.Core.Services;
 using WinEnvEdit.Services;
 using WinEnvEdit.ViewModels;
 
@@ -30,7 +31,9 @@ public sealed partial class MainWindow : Window {
     var fileService = new FileService();
     var stateSnapshotService = new StateSnapshotService();
     var undoRedoService = new UndoRedoService();
-    ViewModel = new MainWindowViewModel(environmentService, this, fileService, stateSnapshotService, undoRedoService);
+    var clipboardService = new ClipboardService();
+    var dialogService = new DialogService(this);
+    ViewModel = new MainWindowViewModel(environmentService, this, fileService, stateSnapshotService, undoRedoService, clipboardService, dialogService);
     InitializeComponent();
 
     // Set minimum window size at Win32 level to prevent flickering

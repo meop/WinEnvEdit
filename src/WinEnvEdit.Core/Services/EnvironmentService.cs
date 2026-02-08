@@ -10,9 +10,10 @@ using System.Threading.Tasks;
 
 using Microsoft.Win32;
 
-using WinEnvEdit.Models;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Types;
 
-namespace WinEnvEdit.Services;
+namespace WinEnvEdit.Core.Services;
 
 /// <summary>
 /// Service for reading and writing Windows environment variables from/ to registry.
@@ -21,24 +22,24 @@ public partial class EnvironmentService : IEnvironmentService {
   private const string UserEnvironmentKey = @"Environment";
   private const string SystemEnvironmentKey = @"SYSTEM\CurrentControlSet\Control\Session Manager\Environment";
 
-  public List<EnvironmentVariable> GetVariables() {
+  public List<EnvironmentVariableModel> GetVariables() {
     var userVars = GetVariablesFromRegistry(RegistryHive.CurrentUser, UserEnvironmentKey, VariableScope.User);
     var systemVars = GetVariablesFromRegistry(RegistryHive.LocalMachine, SystemEnvironmentKey, VariableScope.System);
     var volatileUserVars = GetVolatileUserVariables();
     var volatileSystemVars = GetVolatileSystemVariables();
 
-    var persistent = new List<EnvironmentVariable>();
+    var persistent = new List<EnvironmentVariableModel>();
     persistent.AddRange(userVars);
     persistent.AddRange(systemVars);
 
-    var volatileVars = new List<EnvironmentVariable>();
+    var volatileVars = new List<EnvironmentVariableModel>();
     volatileVars.AddRange(volatileUserVars);
     volatileVars.AddRange(volatileSystemVars);
 
     return GetAndSortVariables(persistent, volatileVars);
   }
 
-  public async Task SaveVariables(IEnumerable<EnvironmentVariable> variables) {
+  public async Task SaveVariables(IEnumerable<EnvironmentVariableModel> variables) {
     var varsList = variables.ToList();
 
     if (varsList.Count == 0) {
@@ -97,7 +98,7 @@ public partial class EnvironmentService : IEnvironmentService {
     await Task.Run(NotifySystemOfChanges);
   }
 
-  private static void AddVariableToScript(List<string> scriptLines, string registryPath, EnvironmentVariable variable) {
+  private static void AddVariableToScript(List<string> scriptLines, string registryPath, EnvironmentVariableModel variable) {
     var value = variable.Data?.Replace("'", "''") ?? string.Empty;
 
     if (variable.IsRemoved) {
@@ -185,8 +186,8 @@ public partial class EnvironmentService : IEnvironmentService {
     }
   }
 
-  private static List<EnvironmentVariable> GetVariablesFromRegistry(RegistryHive hive, string keyPath, VariableScope scope) {
-    var variables = new List<EnvironmentVariable>();
+  private static List<EnvironmentVariableModel> GetVariablesFromRegistry(RegistryHive hive, string keyPath, VariableScope scope) {
+    var variables = new List<EnvironmentVariableModel>();
 
     using var baseKey = RegistryKey.OpenBaseKey(hive, RegistryView.Default);
     using var envKey = baseKey.OpenSubKey(keyPath, writable: false);
@@ -204,8 +205,8 @@ public partial class EnvironmentService : IEnvironmentService {
     return variables;
   }
 
-  private static List<EnvironmentVariable> GetVolatileUserVariables() {
-    var variables = new List<EnvironmentVariable>();
+  private static List<EnvironmentVariableModel> GetVolatileUserVariables() {
+    var variables = new List<EnvironmentVariableModel>();
 
     try {
       var currentUserSid = WindowsIdentity.GetCurrent()?.User?.Value;
@@ -232,8 +233,8 @@ public partial class EnvironmentService : IEnvironmentService {
     return variables;
   }
 
-  private static List<EnvironmentVariable> GetVolatileSystemVariables() {
-    var variables = new List<EnvironmentVariable>();
+  private static List<EnvironmentVariableModel> GetVolatileSystemVariables() {
+    var variables = new List<EnvironmentVariableModel>();
 
     try {
       var userRegistryVars = GetVariablesFromRegistry(RegistryHive.CurrentUser, UserEnvironmentKey, VariableScope.User);
@@ -265,14 +266,14 @@ public partial class EnvironmentService : IEnvironmentService {
     return variables;
   }
 
-  internal static List<EnvironmentVariable> GetAndSortVariables(IEnumerable<EnvironmentVariable> persistentVars, IEnumerable<EnvironmentVariable> volatileVars) {
-    var variables = new List<EnvironmentVariable>();
+  internal static List<EnvironmentVariableModel> GetAndSortVariables(IEnumerable<EnvironmentVariableModel> persistentVars, IEnumerable<EnvironmentVariableModel> volatileVars) {
+    var variables = new List<EnvironmentVariableModel>();
     variables.AddRange(persistentVars);
     variables.AddRange(volatileVars);
     return [.. variables.OrderBy(v => v.Name)];
   }
 
-  internal static EnvironmentVariable CreateEnvironmentVariable(string name, string data, VariableScope scope, RegistryValueKind type, bool isVolatile) =>
+  internal static EnvironmentVariableModel CreateEnvironmentVariable(string name, string data, VariableScope scope, RegistryValueKind type, bool isVolatile) =>
     new() {
       Name = name,
       Data = data,

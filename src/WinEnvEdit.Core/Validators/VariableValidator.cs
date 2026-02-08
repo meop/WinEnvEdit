@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace WinEnvEdit.Validation;
+namespace WinEnvEdit.Core.Validators;
 
 public static class VariableValidator {
   private const int MaxNameLength = 255;

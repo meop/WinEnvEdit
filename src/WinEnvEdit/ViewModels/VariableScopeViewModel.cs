@@ -12,19 +12,18 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 
-using Windows.ApplicationModel.DataTransfer;
-
+using WinEnvEdit.Core.Helpers;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Services;
+using WinEnvEdit.Core.Types;
+using WinEnvEdit.Core.Validators;
 using WinEnvEdit.Helpers;
-using WinEnvEdit.Models;
 using WinEnvEdit.Services;
-using WinEnvEdit.Validation;
 
 namespace WinEnvEdit.ViewModels;
 
-public partial class VariableScopeViewModel : ObservableObject {
+public partial class VariableScopeViewModel(IEnvironmentService environmentService, IClipboardService clipboardService, MainWindowViewModel? parentViewModel = null) : ObservableObject {
   private const int DialogLabelWidth = 80;
-  private readonly IEnvironmentService environmentService;
-  private readonly MainWindowViewModel? parentViewModel;
 
   [ObservableProperty]
   public partial VariableScope Scope { get; set; }
@@ -41,10 +40,9 @@ public partial class VariableScopeViewModel : ObservableObject {
   [ObservableProperty]
   public partial string SearchText { get; set; } = string.Empty;
 
-  public VariableScopeViewModel(VariableScope scope, IEnvironmentService environmentService, MainWindowViewModel? parentViewModel = null) {
+  public VariableScopeViewModel(VariableScope scope, IEnvironmentService environmentService, IClipboardService clipboardService, MainWindowViewModel? parentViewModel = null)
+      : this(environmentService, clipboardService, parentViewModel) {
     Scope = scope;
-    this.environmentService = environmentService;
-    this.parentViewModel = parentViewModel;
     Variables = [];
     FilteredVariables = [];
   }
@@ -111,7 +109,7 @@ public partial class VariableScopeViewModel : ObservableObject {
       var targetVar = targetList[i];
       if (i < FilteredVariables.Count) {
         if (FilteredVariables[i] == targetVar) {
-          // Already at the right position.
+          // Already at the right position. 
           // If this is the specific variable that changed, force a Replace notification to refresh template.
           if (targetVar == changedVariable) {
             FilteredVariables[i] = targetVar;
@@ -154,11 +152,11 @@ public partial class VariableScopeViewModel : ObservableObject {
   }
 
   /// <summary>
-  /// Restores Variables collection from a list of EnvironmentVariable models.
+  /// Restores Variables collection from a list of EnvironmentVariableModel models.
   /// Uses O(N) reconciliation to minimize UI updates (only adds/removes/updates what changed).
   /// Used by Refresh, Import, Undo, and Redo to avoid scrollbar bounce.
   /// </summary>
-  public void RestoreFromVariables(List<EnvironmentVariable> newVars) {
+  public void RestoreFromVariables(List<EnvironmentVariableModel> newVars) {
     // Fast path: if nothing changed, skip update entirely to avoid scroll bounce
     if (!HasVariablesChanged(newVars)) {
       return;
@@ -176,7 +174,7 @@ public partial class VariableScopeViewModel : ObservableObject {
     Variables.Clear();
 
     foreach (var envVar in newVars) {
-      var viewModel = new VariableViewModel(envVar, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
+      var viewModel = new VariableViewModel(envVar, clipboardService, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
 
       // Restore expand/collapse state if it existed before
       if (viewModel.IsPathList && expandedStateMap.TryGetValue(envVar.Name, out var wasExpanded)) {
@@ -194,7 +192,7 @@ public partial class VariableScopeViewModel : ObservableObject {
   /// Returns true if any changes detected (add, remove, or modification).
   /// Supports both sorted (Refresh) and unsorted (Import/Undo/Redo) inputs.
   /// </summary>
-  private bool HasVariablesChanged(List<EnvironmentVariable> newVars) {
+  private bool HasVariablesChanged(List<EnvironmentVariableModel> newVars) {
     // Quick count check
     if (Variables.Count != newVars.Count) {
       return true;
@@ -275,7 +273,7 @@ public partial class VariableScopeViewModel : ObservableObject {
     }
 
     // Create new variable
-    var variable = new EnvironmentVariable {
+    var variable = new EnvironmentVariableModel {
       Name = name,
       Data = value,
       Scope = Scope,
@@ -284,7 +282,7 @@ public partial class VariableScopeViewModel : ObservableObject {
       IsRemoved = false,
     };
 
-    var newViewModel = new VariableViewModel(variable, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
+    var newViewModel = new VariableViewModel(variable, clipboardService, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
 
     // Find sorted insertion position
     var insertIndex = 0;
@@ -331,7 +329,7 @@ public partial class VariableScopeViewModel : ObservableObject {
   /// <summary>
   /// Gets all variable models for this scope.
   /// </summary>
-  public IEnumerable<EnvironmentVariable> GetAllVariables() => Variables.Select(v => v.Model);
+  public IEnumerable<EnvironmentVariableModel> GetAllVariables() => Variables.Select(v => v.Model);
 
   /// <summary>
   /// Removes variables marked as removed and clears IsAdded flags after a successful save.
@@ -464,46 +462,20 @@ public partial class VariableScopeViewModel : ObservableObject {
   private void CopyAll() {
     var lines = FilteredVariables.Where(v => !v.Model.IsVolatile).Select(v => $"{v.Name}={v.Data}");
     var text = string.Join(Environment.NewLine, lines);
-    var dataPackage = new DataPackage();
-    dataPackage.SetText(text);
-    Clipboard.SetContent(dataPackage);
+    clipboardService.SetText(text);
   }
 
   [RelayCommand]
   private async Task PasteAll() {
-    var clipboardContent = Clipboard.GetContent();
-    if (!clipboardContent.Contains(StandardDataFormats.Text)) {
-      return;
-    }
-
-    var text = await clipboardContent.GetTextAsync();
+    var text = await clipboardService.GetText();
     if (string.IsNullOrWhiteSpace(text)) {
       return;
     }
 
-    var pastedValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    foreach (var line in text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)) {
-      var equalsIndex = line.IndexOf('=');
-      if (equalsIndex <= 0) {
-        continue;
-      }
-
-      var name = line.Substring(0, equalsIndex).Trim();
-      var value = line.Substring(equalsIndex + 1).Trim();
-
-      if (!string.IsNullOrEmpty(name)) {
-        pastedValues[name] = value;
-      }
-    }
-
-    foreach (var variable in FilteredVariables) {
-      if (variable.Model.IsVolatile) {
-        continue;
-      }
-
-      if (pastedValues.TryGetValue(variable.Name, out var value)) {
-        variable.Data = value;
-      }
+    var parsed = ClipboardFormatHelper.ParseMultiLine(text);
+    foreach (var (name, value) in parsed) {
+      // AddVariable handles existing (active or deleted) and new variables
+      AddVariable(name, value, RegistryValueKind.String);
     }
   }
 }

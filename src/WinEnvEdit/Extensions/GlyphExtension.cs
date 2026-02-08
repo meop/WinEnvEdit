@@ -2,6 +2,8 @@ using System.Reflection;
 
 using Microsoft.UI.Xaml.Markup;
 
+using WinEnvEdit.Core.Constants;
+
 namespace WinEnvEdit.Extensions;
 
 [MarkupExtensionReturnType(ReturnType = typeof(string))]

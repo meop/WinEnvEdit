@@ -11,9 +11,10 @@ using Microsoft.Win32;
 
 using Tomlyn;
 
-using WinEnvEdit.Models;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Types;
 
-namespace WinEnvEdit.Services;
+namespace WinEnvEdit.Core.Services;
 
 public class FileService : IFileService {
   private static readonly string fileExtension = ".toml";
@@ -30,7 +31,12 @@ public class FileService : IFileService {
     return $"{product}{fileExtension}";
   }
 
-  public async Task ExportToFile(string filePath, IEnumerable<EnvironmentVariable> variables) {
+  public async Task ExportToFile(string filePath, IEnumerable<EnvironmentVariableModel> variables) {
+    using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true);
+    await ExportToStream(stream, variables);
+  }
+
+  public async Task ExportToStream(Stream stream, IEnumerable<EnvironmentVariableModel> variables) {
     var model = variables
       .Where(v => !v.IsRemoved && !v.IsVolatile)
       .GroupBy(v => v.Scope.ToString())
@@ -47,7 +53,10 @@ public class FileService : IFileService {
     var formattedContent = FormatTomlOutput(tomlContent);
 
     // Write with LF line endings and UTF-8 encoding (no BOM)
-    await File.WriteAllTextAsync(filePath, formattedContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+    var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+    var bytes = encoding.GetBytes(formattedContent);
+    await stream.WriteAsync(bytes);
+    await stream.FlushAsync();
   }
 
   internal static string FormatTomlOutput(string content) {
@@ -71,10 +80,16 @@ public class FileService : IFileService {
     return string.Join("\n", result).TrimEnd() + "\n";
   }
 
-  public async Task<IEnumerable<EnvironmentVariable>> ImportFromFile(string filePath) {
-    var content = await File.ReadAllTextAsync(filePath);
+  public async Task<IEnumerable<EnvironmentVariableModel>> ImportFromFile(string filePath) {
+    using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
+    return await ImportFromStream(stream);
+  }
+
+  public async Task<IEnumerable<EnvironmentVariableModel>> ImportFromStream(Stream stream) {
+    using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 4096, leaveOpen: true);
+    var content = await reader.ReadToEndAsync();
     var model = Toml.ToModel(content);
-    var result = new List<EnvironmentVariable>();
+    var result = new List<EnvironmentVariableModel>();
     var sections = new[] { ("System", VariableScope.System), ("User", VariableScope.User) };
 
     foreach (var (sectionName, scope) in sections) {
@@ -89,7 +104,7 @@ public class FileService : IFileService {
             }
 
             if (!string.IsNullOrEmpty(name)) {
-              result.Add(new EnvironmentVariable {
+              result.Add(new EnvironmentVariableModel {
                 Name = name,
                 Data = data,
                 Type = type,
