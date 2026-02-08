@@ -50,7 +50,7 @@ If in doubt, present options and let the user decide.
 
 1. Make code changes
 2. Run `./src/Scripts/Format.ps1`
-3. Build and test if required
+3. Build and test if required. **Ensure all tests are pure unit tests**. Mock all OS-level dependencies (Registry, File System, Process).
 4. Stop - DO NOT create git commits automatically
 
 ## Key Takeaway

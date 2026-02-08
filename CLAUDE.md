@@ -51,7 +51,16 @@ bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 4.  **Modern C# Expressions**: Use `=>` for simple members, collection expressions `[]` when target type is known (but see Var priority), and target-typed `new()`.
 5.  **Initialization**: Simple types inline; complex types (`ObservableCollection`) in constructors (see [PATTERNS.md](PATTERNS.md)).
 6.  **Formatting**: 2-space indentation, LF line endings, `./src/Scripts/Format.ps1`.
+<<<<<<< HEAD
 7.  **Tests**: Tests are part of every change. No skipped tests (`Assert.Inconclusive`).
+=======
+7.  **Tests**: Tests are part of every change. No skipped tests (`Assert.Inconclusive`). All tests in `WinEnvEdit.Tests` MUST be pure unit tests.
+    - No hitting the Windows Registry or OS APIs directly.
+    - No real File System access (use mocks or memory streams).
+    - No dependencies on machine-specific state or environment variables.
+    - Every test must be deterministic and portable.
+    - **Internal Scope for Testing**: Use the `internal` access modifier for complex internal logic (like sorting or formatting) to enable pure unit testing. The `WinEnvEdit` project is configured with `InternalsVisibleTo` for `WinEnvEdit.Tests`.
+>>>>>>> 34123ae (Enforce pure unit tests and implement 'Internal for Testing' pattern)
 8.  **Visual Studio Independence**: The project MUST be fully functional without Visual Studio. All critical tasks (format, build, test, release) MUST be possible via CLI. Visual Studio is only for debugging.
 
 **Git Safety Rules (CRITICAL)**:

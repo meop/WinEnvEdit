@@ -268,4 +268,44 @@ public class UndoRedoServiceTests {
     restoredVar.IsAdded.Should().BeTrue();
     restoredVar.IsRemoved.Should().BeFalse();
   }
+
+  #region Internal Helper Tests
+
+  [TestMethod]
+  public void DeepCopy_CreatesIndependentInstances() {
+    // Arrange
+    var original = new List<EnvironmentVariable> {
+      new() { Name = "VAR", Data = "val" }
+    };
+
+    // Act
+    var copy = UndoRedoService.DeepCopy(original);
+
+    // Assert
+    copy.Should().NotBeSameAs(original);
+    copy[0].Should().NotBeSameAs(original[0]);
+    copy[0].Name.Should().Be(original[0].Name);
+  }
+
+  [TestMethod]
+  public void VariablesMatch_IdentifiesMatchingVariables() {
+    // Arrange
+    var v1 = new EnvironmentVariable { Name = "A", Data = "B", Scope = VariableScope.User };
+    var v2 = new EnvironmentVariable { Name = "A", Data = "B", Scope = VariableScope.User };
+
+    // Act & Assert
+    UndoRedoService.VariablesMatch(v1, v2).Should().BeTrue();
+  }
+
+  [TestMethod]
+  public void StatesAreEqual_IdentifiesMatchingStates() {
+    // Arrange
+    var s1 = new List<EnvironmentVariable> { new() { Name = "A", Data = "1" } };
+    var s2 = new List<EnvironmentVariable> { new() { Name = "A", Data = "1" } };
+
+    // Act & Assert
+    UndoRedoService.StatesAreEqual(s1, s2).Should().BeTrue();
+  }
+
+  #endregion
 }

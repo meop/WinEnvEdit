@@ -96,7 +96,7 @@ public class UndoRedoService : IUndoRedoService {
     currentState.Clear();
   }
 
-  private static bool StatesAreEqual(List<EnvironmentVariable> a, List<EnvironmentVariable> b) {
+  internal static bool StatesAreEqual(List<EnvironmentVariable> a, List<EnvironmentVariable> b) {
     if (a.Count != b.Count) {
       return false;
     }
@@ -113,7 +113,7 @@ public class UndoRedoService : IUndoRedoService {
     return true;
   }
 
-  private static bool VariablesMatch(EnvironmentVariable a, EnvironmentVariable b) =>
+  internal static bool VariablesMatch(EnvironmentVariable a, EnvironmentVariable b) =>
     a.Scope == b.Scope &&
     string.Equals(a.Name, b.Name, StringComparison.OrdinalIgnoreCase) &&
     string.Equals(a.Data, b.Data, StringComparison.Ordinal) &&
@@ -125,7 +125,7 @@ public class UndoRedoService : IUndoRedoService {
   /// <summary>
   /// Creates a deep copy of the environment variables collection.
   /// </summary>
-  private static List<EnvironmentVariable> DeepCopy(IEnumerable<EnvironmentVariable> variables) {
+  internal static List<EnvironmentVariable> DeepCopy(IEnumerable<EnvironmentVariable> variables) {
     return variables.Select(v => new EnvironmentVariable {
       Name = v.Name,
       Data = v.Data,

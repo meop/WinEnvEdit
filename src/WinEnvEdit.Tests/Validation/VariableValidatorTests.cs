@@ -124,6 +124,17 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().BeEmpty();
   }
 
+  [TestMethod]
+  public void ValidateNameAllErrors_ReturnsMultipleErrors() {
+    // Act
+    var errors = VariableValidator.ValidateNameAllErrors("INVALID=NAME WITH SPACE;");
+
+    // Assert
+    errors.Should().Contain("cannot contain '=' characters");
+    errors.Should().Contain("cannot contain spaces");
+    errors.Should().Contain("cannot contain ';' characters");
+  }
+
   #endregion
 
   #region ValidateData Tests
@@ -172,6 +183,19 @@ public class VariableValidatorTests {
     // Assert
     result.IsValid.Should().BeTrue();
     result.ErrorMessage.Should().BeEmpty();
+  }
+
+  [TestMethod]
+  public void ValidateDataAllErrors_ReturnsMultipleErrors() {
+    // Arrange
+    var longValueWithNull = new string('A', 32768) + "\0";
+
+    // Act
+    var errors = VariableValidator.ValidateDataAllErrors(longValueWithNull);
+
+    // Assert
+    errors.Should().Contain("cannot exceed 32767 characters");
+    errors.Should().Contain("cannot contain null characters");
   }
 
   #endregion

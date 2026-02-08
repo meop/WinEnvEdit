@@ -2,6 +2,7 @@ using FluentAssertions;
 
 using Microsoft.Win32;
 
+using WinEnvEdit.Models;
 using WinEnvEdit.Services;
 using WinEnvEdit.Tests.Helpers;
 
@@ -315,6 +316,40 @@ public class StateSnapshotServiceTests {
 
     // Assert
     changed.Should().BeEmpty("no variables changed");
+  }
+
+  #endregion
+
+  #region Internal Logic Tests
+
+  [TestMethod]
+  public void HasChanged_DetectsNameChange() {
+    // Arrange
+    var variable = new EnvironmentVariable { Name = "NEW", Data = "VAL", Type = RegistryValueKind.String };
+    var snapshot = new StateSnapshotService.EnvVarSnapshot("OLD", "VAL", RegistryValueKind.String, VariableScope.User);
+
+    // Act & Assert
+    StateSnapshotService.HasChanged(variable, snapshot).Should().BeTrue();
+  }
+
+  [TestMethod]
+  public void HasChanged_DetectsDataChange() {
+    // Arrange
+    var variable = new EnvironmentVariable { Name = "VAR", Data = "NEW", Type = RegistryValueKind.String };
+    var snapshot = new StateSnapshotService.EnvVarSnapshot("VAR", "OLD", RegistryValueKind.String, VariableScope.User);
+
+    // Act & Assert
+    StateSnapshotService.HasChanged(variable, snapshot).Should().BeTrue();
+  }
+
+  [TestMethod]
+  public void HasChanged_DetectsTypeChange() {
+    // Arrange
+    var variable = new EnvironmentVariable { Name = "VAR", Data = "VAL", Type = RegistryValueKind.ExpandString };
+    var snapshot = new StateSnapshotService.EnvVarSnapshot("VAR", "VAL", RegistryValueKind.String, VariableScope.User);
+
+    // Act & Assert
+    StateSnapshotService.HasChanged(variable, snapshot).Should().BeTrue();
   }
 
   #endregion

@@ -50,7 +50,7 @@ public class FileService : IFileService {
     await File.WriteAllTextAsync(filePath, formattedContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
   }
 
-  private static string FormatTomlOutput(string content) {
+  internal static string FormatTomlOutput(string content) {
     // Normalize line endings to LF first (handle CRLF from Toml library)
     var normalized = content.Replace("\r\n", "\n").Replace("\r", "\n");
     var lines = normalized.Split('\n', StringSplitOptions.None);

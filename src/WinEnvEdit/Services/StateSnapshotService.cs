@@ -12,8 +12,8 @@ namespace WinEnvEdit.Services;
 /// Tracks dirty state by comparing current variables against a captured snapshot.
 /// </summary>
 public class StateSnapshotService : IStateSnapshotService {
-  private readonly record struct EnvVarSnapshot(string Name, string Data, RegistryValueKind Type, VariableScope Scope);
-  private readonly record struct SnapshotKey(VariableScope Scope, string Name);
+  internal readonly record struct EnvVarSnapshot(string Name, string Data, RegistryValueKind Type, VariableScope Scope);
+  internal readonly record struct SnapshotKey(VariableScope Scope, string Name);
 
   private Dictionary<SnapshotKey, EnvVarSnapshot> snapshot = [];
 
@@ -91,7 +91,7 @@ public class StateSnapshotService : IStateSnapshotService {
     return changed;
   }
 
-  private static bool HasChanged(EnvironmentVariable variable, EnvVarSnapshot snapshot) =>
+  internal static bool HasChanged(EnvironmentVariable variable, EnvVarSnapshot snapshot) =>
     !string.Equals(variable.Name, snapshot.Name, StringComparison.Ordinal) ||
     !string.Equals(variable.Data, snapshot.Data, StringComparison.Ordinal) ||
     variable.Type != snapshot.Type;

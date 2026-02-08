@@ -420,6 +420,45 @@ type = ""String""
 
   #endregion
 
+  #region FormatTomlOutput Tests
+
+  [TestMethod]
+  public void FormatTomlOutput_AddsEmptyLinesBeforeArrayTables() {
+    // Arrange
+    var input = "[[System]]\nname = \"v1\"\n[[System]]\nname = \"v2\"";
+
+    // Act
+    var result = FileService.FormatTomlOutput(input);
+
+    // Assert
+    result.Should().Contain("\n\n[[System]]");
+    result.Should().EndWith("\n");
+  }
+
+  [TestMethod]
+  public void FormatTomlOutput_HandlesEmptyString() {
+    // Act
+    var result = FileService.FormatTomlOutput(string.Empty);
+
+    // Assert
+    result.Should().Be("\n");
+  }
+
+  [TestMethod]
+  public void FormatTomlOutput_NormalizesMixedLineEndings() {
+    // Arrange
+    var input = "[[User]]\r\nname = \"v1\"\r[[User]]\nname = \"v2\"";
+
+    // Act
+    var result = FileService.FormatTomlOutput(input);
+
+    // Assert
+    result.Should().NotContain("\r");
+    result.Should().Contain("\n\n[[User]]");
+  }
+
+  #endregion
+
   #region Static Properties Tests
 
   [TestMethod]

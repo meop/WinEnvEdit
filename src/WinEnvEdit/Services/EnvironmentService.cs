@@ -265,14 +265,14 @@ public partial class EnvironmentService : IEnvironmentService {
     return variables;
   }
 
-  private static List<EnvironmentVariable> GetAndSortVariables(IEnumerable<EnvironmentVariable> persistentVars, IEnumerable<EnvironmentVariable> volatileVars) {
+  internal static List<EnvironmentVariable> GetAndSortVariables(IEnumerable<EnvironmentVariable> persistentVars, IEnumerable<EnvironmentVariable> volatileVars) {
     var variables = new List<EnvironmentVariable>();
     variables.AddRange(persistentVars);
     variables.AddRange(volatileVars);
     return [.. variables.OrderBy(v => v.Name)];
   }
 
-  private static EnvironmentVariable CreateEnvironmentVariable(string name, string data, VariableScope scope, RegistryValueKind type, bool isVolatile) =>
+  internal static EnvironmentVariable CreateEnvironmentVariable(string name, string data, VariableScope scope, RegistryValueKind type, bool isVolatile) =>
     new() {
       Name = name,
       Data = data,
