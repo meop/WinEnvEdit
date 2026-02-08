@@ -2,24 +2,26 @@ using FluentAssertions;
 
 using Microsoft.Win32;
 
-using WinEnvEdit.Models;
-using WinEnvEdit.Services;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Services;
+using WinEnvEdit.Core.Types;
 using WinEnvEdit.Tests.Helpers;
+
+using Xunit;
 
 namespace WinEnvEdit.Tests.Services;
 
-[TestClass]
 public class StateSnapshotServiceTests {
-  private StateSnapshotService service = null!;
+  private StateSnapshotService service;
 
-  [TestInitialize]
-  public void Setup() {
+
+  public StateSnapshotServiceTests() {
     service = new StateSnapshotService();
   }
 
   #region CaptureSnapshot Tests
 
-  [TestMethod]
+  [Fact]
   public void CaptureSnapshot_WithVariables_StoresSnapshot() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -34,7 +36,7 @@ public class StateSnapshotServiceTests {
     service.IsDirty(new[] { variable }).Should().BeFalse();
   }
 
-  [TestMethod]
+  [Fact]
   public void CaptureSnapshot_ExcludesRemovedVariables() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -52,7 +54,7 @@ public class StateSnapshotServiceTests {
     service.IsDirty(new[] { variable }).Should().BeTrue("variable wasn't in snapshot and is now added");
   }
 
-  [TestMethod]
+  [Fact]
   public void CaptureSnapshot_ExcludesVolatileVariables() {
     // Arrange
     var persistentVar = EnvironmentVariableBuilder.Default()
@@ -77,7 +79,7 @@ public class StateSnapshotServiceTests {
 
   #region IsDirty Tests
 
-  [TestMethod]
+  [Fact]
   public void IsDirty_VariableRemoved_ReturnsTrue() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -94,7 +96,7 @@ public class StateSnapshotServiceTests {
     result.Should().BeTrue("removed variable exists in snapshot");
   }
 
-  [TestMethod]
+  [Fact]
   public void IsDirty_VariableAdded_ReturnsTrue() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -109,7 +111,7 @@ public class StateSnapshotServiceTests {
     result.Should().BeTrue("variable is marked as added");
   }
 
-  [TestMethod]
+  [Fact]
   public void IsDirty_DataChanged_ReturnsTrue() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -128,7 +130,7 @@ public class StateSnapshotServiceTests {
   }
 
 
-  [TestMethod]
+  [Fact]
   public void IsDirty_TypeChanged_ReturnsTrue() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -146,7 +148,7 @@ public class StateSnapshotServiceTests {
     result.Should().BeTrue("type changed from String to ExpandString");
   }
 
-  [TestMethod]
+  [Fact]
   public void IsDirty_NoChanges_ReturnsFalse() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -163,7 +165,7 @@ public class StateSnapshotServiceTests {
     result.Should().BeFalse("nothing changed");
   }
 
-  [TestMethod]
+  [Fact]
   public void IsDirty_EmptySnapshot_EmptyCurrent_ReturnsFalse() {
     // Arrange
     service.CaptureSnapshot([]);
@@ -175,7 +177,7 @@ public class StateSnapshotServiceTests {
     result.Should().BeFalse("both snapshot and current are empty");
   }
 
-  [TestMethod]
+  [Fact]
   public void IsDirty_CaseInsensitiveLookup_FindsVariable() {
     // Arrange - capture with lowercase name
     var variable = EnvironmentVariableBuilder.Default()
@@ -192,7 +194,7 @@ public class StateSnapshotServiceTests {
     result.Should().BeTrue("name case changed from 'test' to 'TEST'");
   }
 
-  [TestMethod]
+  [Fact]
   public void IsDirty_VolatileVariableAdded_ReturnsFalse() {
     // Arrange
     service.CaptureSnapshot([]);
@@ -214,7 +216,7 @@ public class StateSnapshotServiceTests {
 
   #region GetChangedVariables Tests
 
-  [TestMethod]
+  [Fact]
   public void GetChangedVariables_RemovedVariable_InSnapshot_Included() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -233,7 +235,7 @@ public class StateSnapshotServiceTests {
     changed[0].IsRemoved.Should().BeTrue();
   }
 
-  [TestMethod]
+  [Fact]
   public void GetChangedVariables_RemovedVariable_NotInSnapshot_Excluded() {
     // Arrange - capture snapshot without the variable
     service.CaptureSnapshot([]);
@@ -250,7 +252,7 @@ public class StateSnapshotServiceTests {
     changed.Should().BeEmpty("variable wasn't in original snapshot");
   }
 
-  [TestMethod]
+  [Fact]
   public void GetChangedVariables_AddedVariable_Included() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -266,7 +268,7 @@ public class StateSnapshotServiceTests {
     changed[0].IsAdded.Should().BeTrue();
   }
 
-  [TestMethod]
+  [Fact]
   public void GetChangedVariables_ModifiedVariable_Included() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -285,7 +287,7 @@ public class StateSnapshotServiceTests {
     changed[0].Data.Should().Be("modified");
   }
 
-  [TestMethod]
+  [Fact]
   public void GetChangedVariables_VolatileVariable_Excluded() {
     // Arrange
     service.CaptureSnapshot([]);
@@ -303,7 +305,7 @@ public class StateSnapshotServiceTests {
     changed.Should().BeEmpty("volatile vars are excluded from changed variables");
   }
 
-  [TestMethod]
+  [Fact]
   public void GetChangedVariables_NoChanges_ReturnsEmpty() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -322,30 +324,30 @@ public class StateSnapshotServiceTests {
 
   #region Internal Logic Tests
 
-  [TestMethod]
+  [Fact]
   public void HasChanged_DetectsNameChange() {
     // Arrange
-    var variable = new EnvironmentVariable { Name = "NEW", Data = "VAL", Type = RegistryValueKind.String };
+    var variable = new EnvironmentVariableModel { Name = "NEW", Data = "VAL", Type = RegistryValueKind.String };
     var snapshot = new StateSnapshotService.EnvVarSnapshot("OLD", "VAL", RegistryValueKind.String, VariableScope.User);
 
     // Act & Assert
     StateSnapshotService.HasChanged(variable, snapshot).Should().BeTrue();
   }
 
-  [TestMethod]
+  [Fact]
   public void HasChanged_DetectsDataChange() {
     // Arrange
-    var variable = new EnvironmentVariable { Name = "VAR", Data = "NEW", Type = RegistryValueKind.String };
+    var variable = new EnvironmentVariableModel { Name = "VAR", Data = "NEW", Type = RegistryValueKind.String };
     var snapshot = new StateSnapshotService.EnvVarSnapshot("VAR", "OLD", RegistryValueKind.String, VariableScope.User);
 
     // Act & Assert
     StateSnapshotService.HasChanged(variable, snapshot).Should().BeTrue();
   }
 
-  [TestMethod]
+  [Fact]
   public void HasChanged_DetectsTypeChange() {
     // Arrange
-    var variable = new EnvironmentVariable { Name = "VAR", Data = "VAL", Type = RegistryValueKind.ExpandString };
+    var variable = new EnvironmentVariableModel { Name = "VAR", Data = "VAL", Type = RegistryValueKind.ExpandString };
     var snapshot = new StateSnapshotService.EnvVarSnapshot("VAR", "VAL", RegistryValueKind.String, VariableScope.User);
 
     // Act & Assert

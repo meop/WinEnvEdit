@@ -2,17 +2,19 @@ using FluentAssertions;
 
 using Microsoft.Win32;
 
-using WinEnvEdit.Models;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Types;
 using WinEnvEdit.Tests.Helpers;
+
+using Xunit;
 
 namespace WinEnvEdit.Tests.Models;
 
-[TestClass]
 public class EnvironmentVariableTests {
-  [TestMethod]
+  [Fact]
   public void Properties_CanBeSet() {
     // Arrange & Act
-    var variable = new EnvironmentVariable {
+    var variable = new EnvironmentVariableModel {
       Name = "TEST_VAR",
       Data = "test_value",
       Type = RegistryValueKind.String,
@@ -26,7 +28,7 @@ public class EnvironmentVariableTests {
     variable.IsRemoved.Should().BeTrue();
   }
 
-  [TestMethod]
+  [Fact]
   public void IsRemoved_InitializesFalse() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -38,7 +40,7 @@ public class EnvironmentVariableTests {
     variable.IsRemoved.Should().BeFalse();
   }
 
-  [TestMethod]
+  [Fact]
   public void IsVolatile_WhenSet_ReturnsSetValue() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -51,7 +53,7 @@ public class EnvironmentVariableTests {
     variable.IsVolatile.Should().BeTrue();
   }
 
-  [TestMethod]
+  [Fact]
   public void IsAdded_InitializesFalse() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -63,10 +65,10 @@ public class EnvironmentVariableTests {
     variable.IsAdded.Should().BeFalse();
   }
 
-  [TestMethod]
+  [Fact]
   public void Type_DefaultsToString() {
     // Arrange
-    var variable = new EnvironmentVariable {
+    var variable = new EnvironmentVariableModel {
       Name = "TEST",
       Data = "value",
     };
@@ -75,7 +77,7 @@ public class EnvironmentVariableTests {
     variable.Type.Should().Be(RegistryValueKind.String);
   }
 
-  [TestMethod]
+  [Fact]
   public void Scope_CanBeUserOrSystem() {
     // Arrange
     var userVar = EnvironmentVariableBuilder.Default()
@@ -96,9 +98,8 @@ public class EnvironmentVariableTests {
   }
 }
 
-[TestClass]
 public class VariableScopeTests {
-  [TestMethod]
+  [Fact]
   public void VariableScope_UserAndSystemAreDifferent() {
     // Assert
     VariableScope.User.Should().NotBe(VariableScope.System);

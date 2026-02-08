@@ -1,13 +1,11 @@
 using Microsoft.Win32;
 
-using Moq;
-
-using WinEnvEdit.Models;
-using WinEnvEdit.Services;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Types;
 
 namespace WinEnvEdit.Tests.Helpers;
 
-/// <summary>Builder for EnvironmentVariable test instances.</summary>
+/// <summary>Builder for EnvironmentVariableModel test instances.</summary>
 public class EnvironmentVariableBuilder {
   private string name = "TEST_VAR";
   private string data = "test_value";
@@ -54,14 +52,7 @@ public class EnvironmentVariableBuilder {
     return this;
   }
 
-  public EnvironmentVariableBuilder AsPathVariable() {
-    name = "PATH";
-    data = "C:\\Windows\\System32;C:\\Windows";
-    type = RegistryValueKind.ExpandString;
-    return this;
-  }
-
-  public EnvironmentVariable Build() => new() {
+  public EnvironmentVariableModel Build() => new() {
     Name = name,
     Data = data,
     Scope = scope,
@@ -70,21 +61,4 @@ public class EnvironmentVariableBuilder {
     IsAdded = isAdded,
     IsRemoved = isRemoved,
   };
-}
-
-/// <summary>Mock factories for service interfaces.</summary>
-public static class MockFactory {
-  public static Mock<IEnvironmentService> CreateEnvironmentService() {
-    var mock = new Mock<IEnvironmentService>();
-    mock.Setup(s => s.GetVariables()).Returns(new List<EnvironmentVariable>());
-    return mock;
-  }
-
-  public static Mock<IFileService> CreateFileService() => new Mock<IFileService>();
-
-  public static Mock<IStateSnapshotService> CreateStateSnapshotService() {
-    var mock = new Mock<IStateSnapshotService>();
-    mock.Setup(s => s.IsDirty(It.IsAny<IEnumerable<EnvironmentVariable>>())).Returns(false);
-    return mock;
-  }
 }

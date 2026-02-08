@@ -2,23 +2,25 @@ using FluentAssertions;
 
 using Microsoft.Win32;
 
-using WinEnvEdit.Models;
-using WinEnvEdit.Services;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Services;
+using WinEnvEdit.Core.Types;
+
+using Xunit;
 
 namespace WinEnvEdit.Tests.Services;
 
-[TestClass]
 public class EnvironmentServiceTests {
   #region GetAndSortVariables Tests
 
-  [TestMethod]
+  [Fact]
   public void GetAndSortVariables_CombinesAndSortsCorrectly() {
     // Arrange
-    var persistent = new List<EnvironmentVariable> {
+    var persistent = new List<EnvironmentVariableModel> {
       new() { Name = "Z_VAR", Data = "z", Scope = VariableScope.System },
       new() { Name = "A_VAR", Data = "a", Scope = VariableScope.User }
     };
-    var volatileVars = new List<EnvironmentVariable> {
+    var volatileVars = new List<EnvironmentVariableModel> {
       new() { Name = "M_VAR", Data = "m", Scope = VariableScope.User, IsVolatile = true }
     };
 
@@ -36,7 +38,7 @@ public class EnvironmentServiceTests {
 
   #region CreateEnvironmentVariable Tests
 
-  [TestMethod]
+  [Fact]
   public void CreateEnvironmentVariable_SetsInitialStateCorrectly() {
     // Act
     var variable = EnvironmentService.CreateEnvironmentVariable("NAME", "DATA", VariableScope.User, RegistryValueKind.String, isVolatile: true);

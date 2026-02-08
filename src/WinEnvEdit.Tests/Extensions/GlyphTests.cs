@@ -1,12 +1,13 @@
 using FluentAssertions;
 
-using WinEnvEdit.Extensions;
+using WinEnvEdit.Core.Constants;
+
+using Xunit;
 
 namespace WinEnvEdit.Tests.Extensions;
 
-[TestClass]
 public class GlyphTests {
-  [TestMethod]
+  [Fact]
   public void Glyph_ConstantsAreDefined() {
     // Assert - Verify that key glyph constants exist and are non-empty
     Glyph.Refresh.Should().NotBeNullOrEmpty();
@@ -23,7 +24,7 @@ public class GlyphTests {
     Glyph.Export.Should().NotBeNullOrEmpty();
   }
 
-  [TestMethod]
+  [Fact]
   public void Glyph_Constants_AreNotEqual() {
     // Assert - Different glyphs should have different values
     Glyph.ChevronDown.Should().NotBe(Glyph.ChevronUp);
