@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using Microsoft.UI.Xaml;
@@ -13,12 +12,7 @@ using WinRT.Interop;
 
 namespace WinEnvEdit.Services;
 
-public class DialogService : IDialogService {
-  private readonly Window window;
-
-  public DialogService(Window window) {
-    this.window = window;
-  }
+public class DialogService(Window window) : IDialogService {
 
   public async Task<bool> ShowConfirmation(string title, string message, string primaryButtonText = "Okay") {
     if (window?.Content?.XamlRoot == null) {

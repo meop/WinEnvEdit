@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml;
 
 using Windows.Graphics;
 
-using WinEnvEdit.Helpers;
+using WinEnvEdit.Core.Constants;
 
 using WinRT.Interop;
 

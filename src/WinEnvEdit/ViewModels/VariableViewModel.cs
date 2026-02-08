@@ -10,12 +10,11 @@ using CommunityToolkit.Mvvm.Input;
 
 using Microsoft.Win32;
 
-using Windows.ApplicationModel.DataTransfer;
-
-using WinEnvEdit.Extensions;
-using WinEnvEdit.Models;
+using WinEnvEdit.Core.Constants;
+using WinEnvEdit.Core.Helpers;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Validators;
 using WinEnvEdit.Services;
-using WinEnvEdit.Validation;
 
 namespace WinEnvEdit.ViewModels;
 
@@ -62,15 +61,9 @@ public partial class VariableViewModel : ObservableObject {
   [NotifyPropertyChangedFor(nameof(HasInvalidPath))]
   public partial bool DataPathExists { get; set; } = true;
 
-  public bool HasInvalidPath {
-    get {
-      if (IsPathList) {
-        return PathItems.Any(p => !p.Exists);
-      }
-      // For non-path-list variables, check if the entire Data is a valid path
-      return !DataPathExists;
-    }
-  }
+  public bool HasInvalidPath => IsPathList
+    ? PathItems.Any(p => !p.Exists)
+    : !DataPathExists;
 
   /// <summary>
   /// Updates DataPathExists based on current Data value. Called when Data changes for non-path-list variables.
@@ -79,9 +72,9 @@ public partial class VariableViewModel : ObservableObject {
   public void UpdateDataPathExists() =>
     DataPathExists = !VariableValidator.LooksLikePath(Data) || VariableValidator.IsValidPath(Data);
 
-  public EnvironmentVariable Model { get; init; }
+  public EnvironmentVariableModel Model { get; init; }
 
-  public VariableViewModel(EnvironmentVariable model, IClipboardService clipboardService, Action<VariableViewModel>? deleteCallback = null, Action? changeCallback = null, Action<VariableViewModel>? refreshCallback = null) {
+  public VariableViewModel(EnvironmentVariableModel model, IClipboardService clipboardService, Action<VariableViewModel>? deleteCallback = null, Action? changeCallback = null, Action<VariableViewModel>? refreshCallback = null) {
     Model = model;
     this.clipboardService = clipboardService;
     this.deleteCallback = deleteCallback;
@@ -223,19 +216,8 @@ public partial class VariableViewModel : ObservableObject {
       return;
     }
 
-    clipboardText = clipboardText.Trim();
-
-    // Parse "name=value" format
-    var separatorIndex = clipboardText.IndexOf('=');
-    if (separatorIndex > 0) {
-      // Found "name=value" format - extract value part
-      var value = clipboardText[(separatorIndex + 1)..].Trim();
-      Data = value;
-    }
-    else {
-      // No separator found - paste entire text as value
-      Data = clipboardText;
-    }
+    var (_, value) = ClipboardFormatHelper.ParseSingleLine(clipboardText);
+    Data = value;
   }
 
   private void ParsePathsFromData() {
@@ -246,9 +228,9 @@ public partial class VariableViewModel : ObservableObject {
         return;
       }
 
-      var paths = Data.Split(';', StringSplitOptions.RemoveEmptyEntries);
+      var paths = PathListHelper.SplitPathList(Data);
       foreach (var path in paths) {
-        PathItems.Add(new PathItemViewModel(path.Trim(), this));
+        PathItems.Add(new PathItemViewModel(path, this));
       }
 
       UpdateAllPathExists();
@@ -261,7 +243,7 @@ public partial class VariableViewModel : ObservableObject {
   public void SyncDataFromPaths() {
     isSyncingFromPaths = true;
     try {
-      Data = string.Join(";", PathItems.Select(p => p.PathValue));
+      Data = PathListHelper.JoinPathList(PathItems.Select(p => p.PathValue));
       Model.Data = Data;
     }
     finally {
@@ -278,9 +260,7 @@ public partial class VariableViewModel : ObservableObject {
       return;
     }
 
-    var newPaths = string.IsNullOrWhiteSpace(Data)
-      ? []
-      : Data.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+    var newPaths = PathListHelper.SplitPathList(Data);
 
     // Update existing items or add/remove as needed
     for (var i = 0; i < newPaths.Count; i++) {

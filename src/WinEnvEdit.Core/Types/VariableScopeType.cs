@@ -1,4 +1,4 @@
-namespace WinEnvEdit.Models;
+namespace WinEnvEdit.Core.Types;
 
 public enum VariableScope {
   System,

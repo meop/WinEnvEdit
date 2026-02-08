@@ -2,7 +2,7 @@ using System;
 
 using Microsoft.UI.Xaml.Data;
 
-using WinEnvEdit.Extensions;
+using WinEnvEdit.Core.Constants;
 
 namespace WinEnvEdit.Converters;
 

@@ -1,4 +1,4 @@
-name: Continuous Integration & Deployment
+name: CI/CD Pipeline
 
 on:
   push:
@@ -52,8 +52,11 @@ jobs:
           fi
 
   test:
-    name: Format, Build and Test
+    name: Build and Test
     runs-on: windows-latest
+    strategy:
+      matrix:
+        platform: [x64, ARM64]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,27 +66,14 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Diagnose Environment
-        run: |
-          Write-Host "=== PowerShell ==="
-          Write-Host "Version: $($PSVersionTable.PSVersion)"
-          Write-Host "OS: $($PSVersionTable.OS)"
-          Write-Host ""
-          Write-Host "=== .NET Info ==="
-          dotnet --info
-          Write-Host ""
-          Write-Host "=== CPU Count ==="
-          $env:NUMBER_OF_PROCESSORS
-
       - name: Run Format
         run: ./src/Scripts/Format.ps1
 
       - name: Build Solution
-        run: dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=x64
+        run: dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=${{ matrix.platform }}
 
       - name: Run Unit Tests
-        run: dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug -p:Platform=x64 --no-build --logger "console;verbosity=normal"
-        timeout-minutes: 2
+        run: dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -p:Platform=${{ matrix.platform }} --no-build --verbosity normal
 
   build:
     name: Build MSI Installers

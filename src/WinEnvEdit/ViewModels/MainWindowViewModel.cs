@@ -10,9 +10,11 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
-using WinEnvEdit.Extensions;
+using WinEnvEdit.Core.Constants;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Services;
+using WinEnvEdit.Core.Types;
 using WinEnvEdit.Helpers;
-using WinEnvEdit.Models;
 using WinEnvEdit.Services;
 
 namespace WinEnvEdit.ViewModels;
@@ -92,8 +94,8 @@ public partial class MainWindowViewModel : ObservableObject {
     this.clipboardService = clipboardService;
     this.dialogService = dialogService;
 
-    SystemVariables = new VariableScopeViewModel(VariableScope.System, environmentService, clipboardService, dialogService, this);
-    UserVariables = new VariableScopeViewModel(VariableScope.User, environmentService, clipboardService, dialogService, this);
+    SystemVariables = new VariableScopeViewModel(VariableScope.System, environmentService, clipboardService, this);
+    UserVariables = new VariableScopeViewModel(VariableScope.User, environmentService, clipboardService, this);
 
     // Load initial data
     LoadVariables();
@@ -114,7 +116,7 @@ public partial class MainWindowViewModel : ObservableObject {
     }
   }
 
-  private IEnumerable<EnvironmentVariable> AllVariables() =>
+  private IEnumerable<EnvironmentVariableModel> AllVariables() =>
     SystemVariables.GetAllVariables().Concat(UserVariables.GetAllVariables());
 
   private void LoadVariables() {
@@ -132,12 +134,13 @@ public partial class MainWindowViewModel : ObservableObject {
   }
 
   public void UpdatePendingChangesState() {
-    var allVariables = AllVariables();
+    var allVariables = AllVariables().ToList();
     var isDirty = stateService.IsDirty(allVariables);
     HasPendingChanges = isDirty;
 
-    // Push state to undo history if dirty and not restoring
-    if (isDirty && !isRestoringState) {
+    // Push state to undo history if not restoring
+    // PushState handles checking for actual deltas internally
+    if (!isRestoringState) {
       undoRedoService.PushState(allVariables);
     }
 
@@ -149,7 +152,7 @@ public partial class MainWindowViewModel : ObservableObject {
   [RelayCommand]
   private async Task Import() {
     if (HasPendingChanges) {
-      if (!await dialogService.ShowConfirmation("Import", "This will discard all unsaved changes")) {
+      if (!await dialogService.ShowConfirmation("Import", "This will overwrite any unsaved changes")) {
         return;
       }
     }
@@ -170,26 +173,29 @@ public partial class MainWindowViewModel : ObservableObject {
       .Select(v => v.Model);
 
     // Combine imported vars with volatile vars, then sort by name
-    var systemImported = new List<EnvironmentVariable>();
+    var systemImported = new List<EnvironmentVariableModel>();
     systemImported.AddRange(importedVars.Where(v => v.Scope == VariableScope.System));
     systemImported.AddRange(systemVolatile);
     systemImported = [.. systemImported.OrderBy(v => v.Name)];
 
-    var userImported = new List<EnvironmentVariable>();
+    var userImported = new List<EnvironmentVariableModel>();
     userImported.AddRange(importedVars.Where(v => v.Scope == VariableScope.User));
     userImported.AddRange(userVolatile);
     userImported = [.. userImported.OrderBy(v => v.Name)];
 
-    // Use unified restoration for minimal UI updates
-    SystemVariables.RestoreFromVariables(systemImported);
-    UserVariables.RestoreFromVariables(userImported);
+    isRestoringState = true;
+    try {
+      // Use unified restoration for minimal UI updates
+      SystemVariables.RestoreFromVariables(systemImported);
+      UserVariables.RestoreFromVariables(userImported);
+    }
+    finally {
+      isRestoringState = false;
+    }
 
-    // Update state after import
-    stateService.CaptureSnapshot(AllVariables());
-    undoRedoService.Reset(AllVariables());
-    CanUndoState = false;
-    CanRedoState = false;
-    HasPendingChanges = false;
+    // Update state after import - do NOT capture snapshot as these are pending changes
+    // This pushes the state to the undo stack and updates HasPendingChanges
+    UpdatePendingChangesState();
   }
 
   [RelayCommand]
@@ -206,7 +212,7 @@ public partial class MainWindowViewModel : ObservableObject {
   [RelayCommand]
   private async Task Refresh() {
     if (HasPendingChanges) {
-      if (!await dialogService.ShowConfirmation("Refresh", "This will discard all unsaved changes")) {
+      if (!await dialogService.ShowConfirmation("Refresh", "This will overwrite any unsaved changes")) {
         return;
       }
     }
@@ -254,53 +260,53 @@ public partial class MainWindowViewModel : ObservableObject {
 
   [RelayCommand(CanExecute = nameof(CanUndoState))]
   private void Undo() {
-    // Perform undo
-    var restoredState = undoRedoService.Undo();
-    if (restoredState != null) {
-      // Restore the previous state
-      RestoreState(restoredState);
+    isRestoringState = true;
+    try {
+      var restoredState = undoRedoService.Undo();
+      if (restoredState != null) {
+        RestoreState(restoredState);
+      }
+    }
+    finally {
+      isRestoringState = false;
+      UpdatePendingChangesState();
     }
   }
 
   [RelayCommand(CanExecute = nameof(CanRedoState))]
   private void Redo() {
-    // Perform redo
-    var restoredState = undoRedoService.Redo();
-    if (restoredState != null) {
-      // Restore the next state
-      RestoreState(restoredState);
-    }
-  }
-
-  private void RestoreState(IEnumerable<EnvironmentVariable> restoredVariables) {
     isRestoringState = true;
-
     try {
-      var restoredList = restoredVariables.ToList();
-      var systemRestoredVars = restoredList.Where(v => v.Scope == VariableScope.System).ToList();
-      var userRestoredVars = restoredList.Where(v => v.Scope == VariableScope.User).ToList();
-
-      // Check if each pane has changes and only update those that do
-      var systemChanged = HasScopeChanged(SystemVariables, systemRestoredVars);
-      var userChanged = HasScopeChanged(UserVariables, userRestoredVars);
-
-      if (systemChanged) {
-        RestoreScopeVariables(SystemVariables, systemRestoredVars);
+      var restoredState = undoRedoService.Redo();
+      if (restoredState != null) {
+        RestoreState(restoredState);
       }
-
-      if (userChanged) {
-        RestoreScopeVariables(UserVariables, userRestoredVars);
-      }
-
-      // Update pending changes state
-      UpdatePendingChangesState();
     }
     finally {
       isRestoringState = false;
+      UpdatePendingChangesState();
     }
   }
 
-  private bool HasScopeChanged(VariableScopeViewModel scopeViewModel, List<EnvironmentVariable> restoredVariables) {
+  private void RestoreState(IEnumerable<EnvironmentVariableModel> restoredVariables) {
+    var restoredList = restoredVariables.ToList();
+    var systemRestoredVars = restoredList.Where(v => v.Scope == VariableScope.System).ToList();
+    var userRestoredVars = restoredList.Where(v => v.Scope == VariableScope.User).ToList();
+
+    // Check if each pane has changes and only update those that do
+    var systemChanged = HasScopeChanged(SystemVariables, systemRestoredVars);
+    var userChanged = HasScopeChanged(UserVariables, userRestoredVars);
+
+    if (systemChanged) {
+      RestoreScopeVariables(SystemVariables, systemRestoredVars);
+    }
+
+    if (userChanged) {
+      RestoreScopeVariables(UserVariables, userRestoredVars);
+    }
+  }
+
+  private bool HasScopeChanged(VariableScopeViewModel scopeViewModel, List<EnvironmentVariableModel> restoredVariables) {
     var currentVariables = scopeViewModel.Variables.Select(v => v.Model).ToList();
 
     if (currentVariables.Count != restoredVariables.Count) {
@@ -317,7 +323,7 @@ public partial class MainWindowViewModel : ObservableObject {
     return false;
   }
 
-  private static bool AreVariablesEqual(EnvironmentVariable a, EnvironmentVariable b) =>
+  private static bool AreVariablesEqual(EnvironmentVariableModel a, EnvironmentVariableModel b) =>
     string.Equals(a.Name, b.Name, StringComparison.OrdinalIgnoreCase) &&
     a.Data == b.Data &&
     a.Type == b.Type &&
@@ -325,7 +331,7 @@ public partial class MainWindowViewModel : ObservableObject {
     a.IsRemoved == b.IsRemoved &&
     a.IsVolatile == b.IsVolatile;
 
-  private void RestoreScopeVariables(VariableScopeViewModel scopeViewModel, List<EnvironmentVariable> restoredVariables) {
+  private void RestoreScopeVariables(VariableScopeViewModel scopeViewModel, List<EnvironmentVariableModel> restoredVariables) {
     // Use unified restoration for minimal UI updates
     scopeViewModel.RestoreFromVariables(restoredVariables);
   }
@@ -344,10 +350,14 @@ public partial class MainWindowViewModel : ObservableObject {
     var descriptionGrid = DialogHelper.CreateLabelValueGrid("Description", DialogHelper.CreateDialogValue(description, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
     var versionGrid = DialogHelper.CreateLabelValueGrid("Version", DialogHelper.CreateDialogValue(version));
 
+    var llmCredit = "Developed with help from Anthropic Claude, Google Gemini, and Z.ai GLM";
+    var creditsGrid = DialogHelper.CreateLabelValueGrid("Credit", DialogHelper.CreateDialogValue(llmCredit, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
+
     var contentPanel = DialogHelper.CreateDialogPanel([
       productGrid,
       descriptionGrid,
       versionGrid,
+      creditsGrid,
     ]);
 
     var contentDialog = DialogHelper.CreateStandardDialog(window.Content.XamlRoot, "About", contentPanel, closeButtonText: "Close");

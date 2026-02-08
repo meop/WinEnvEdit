@@ -11,7 +11,8 @@ using Microsoft.UI.Xaml.Media;
 
 using Windows.ApplicationModel.DataTransfer;
 
-using WinEnvEdit.Helpers;
+using WinEnvEdit.Core.Constants;
+using WinEnvEdit.Core.Services;
 using WinEnvEdit.Services;
 using WinEnvEdit.ViewModels;
 

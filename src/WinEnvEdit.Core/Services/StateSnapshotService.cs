@@ -4,9 +4,10 @@ using System.Linq;
 
 using Microsoft.Win32;
 
-using WinEnvEdit.Models;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Types;
 
-namespace WinEnvEdit.Services;
+namespace WinEnvEdit.Core.Services;
 
 /// <summary>
 /// Tracks dirty state by comparing current variables against a captured snapshot.
@@ -17,7 +18,7 @@ public class StateSnapshotService : IStateSnapshotService {
 
   private Dictionary<SnapshotKey, EnvVarSnapshot> snapshot = [];
 
-  public void CaptureSnapshot(IEnumerable<EnvironmentVariable> variables) {
+  public void CaptureSnapshot(IEnumerable<EnvironmentVariableModel> variables) {
     snapshot = variables
       .Where(v => !v.IsRemoved && !v.IsVolatile)
       .ToDictionary(
@@ -27,7 +28,7 @@ public class StateSnapshotService : IStateSnapshotService {
       );
   }
 
-  public bool IsDirty(IEnumerable<EnvironmentVariable> currentVariables) {
+  public bool IsDirty(IEnumerable<EnvironmentVariableModel> currentVariables) {
     var current = currentVariables.Where(v => !v.IsVolatile).ToList();
 
     // Check for removed variables (in snapshot but marked removed or not in current)
@@ -59,8 +60,8 @@ public class StateSnapshotService : IStateSnapshotService {
     return false;
   }
 
-  public IEnumerable<EnvironmentVariable> GetChangedVariables(IEnumerable<EnvironmentVariable> currentVariables) {
-    var changed = new List<EnvironmentVariable>();
+  public IEnumerable<EnvironmentVariableModel> GetChangedVariables(IEnumerable<EnvironmentVariableModel> currentVariables) {
+    var changed = new List<EnvironmentVariableModel>();
     var current = currentVariables.Where(v => !v.IsVolatile).ToList();
 
     foreach (var variable in current) {
@@ -91,7 +92,7 @@ public class StateSnapshotService : IStateSnapshotService {
     return changed;
   }
 
-  internal static bool HasChanged(EnvironmentVariable variable, EnvVarSnapshot snapshot) =>
+  internal static bool HasChanged(EnvironmentVariableModel variable, EnvVarSnapshot snapshot) =>
     !string.Equals(variable.Name, snapshot.Name, StringComparison.Ordinal) ||
     !string.Equals(variable.Data, snapshot.Data, StringComparison.Ordinal) ||
     variable.Type != snapshot.Type;

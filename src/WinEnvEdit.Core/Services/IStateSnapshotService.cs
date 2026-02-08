@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 
-using WinEnvEdit.Models;
+using WinEnvEdit.Core.Models;
 
-namespace WinEnvEdit.Services;
+namespace WinEnvEdit.Core.Services;
 
 /// <summary>
 /// Service for tracking dirty state via snapshots of environment variables.
@@ -12,16 +12,16 @@ public interface IStateSnapshotService {
   /// Captures a snapshot of the current state of variables.
   /// Call after loading from registry or saving changes.
   /// </summary>
-  public void CaptureSnapshot(IEnumerable<EnvironmentVariable> variables);
+  public void CaptureSnapshot(IEnumerable<EnvironmentVariableModel> variables);
 
   /// <summary>
   /// Checks if the current variables differ from the snapshot.
   /// </summary>
-  public bool IsDirty(IEnumerable<EnvironmentVariable> currentVariables);
+  public bool IsDirty(IEnumerable<EnvironmentVariableModel> currentVariables);
 
   /// <summary>
   /// Gets the variables that have changed from the snapshot.
   /// Includes added, removed, and modified variables.
   /// </summary>
-  public IEnumerable<EnvironmentVariable> GetChangedVariables(IEnumerable<EnvironmentVariable> currentVariables);
+  public IEnumerable<EnvironmentVariableModel> GetChangedVariables(IEnumerable<EnvironmentVariableModel> currentVariables);
 }

@@ -4,13 +4,15 @@ using FluentAssertions;
 
 using Microsoft.Win32;
 
-using WinEnvEdit.Models;
-using WinEnvEdit.Services;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Services;
+using WinEnvEdit.Core.Types;
 using WinEnvEdit.Tests.Helpers;
+
+using Xunit;
 
 namespace WinEnvEdit.Tests.Services;
 
-[TestClass]
 public class FileServiceTests {
   private readonly FileService fileService;
 
@@ -20,10 +22,10 @@ public class FileServiceTests {
 
   #region ExportToStream Tests
 
-  [TestMethod]
+  [Fact]
   public async Task ExportToStream_ExportsVariablesCorrectly() {
     // Arrange
-    var variables = new List<EnvironmentVariable> {
+    var variables = new List<EnvironmentVariableModel> {
       EnvironmentVariableBuilder.Default()
         .WithName("USER_VAR1")
         .WithData("user_value1")
@@ -58,10 +60,10 @@ public class FileServiceTests {
     content.Should().Contain("type = \"ExpandString\"");
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ExportToStream_ExcludesRemovedVariables() {
     // Arrange
-    var variables = new List<EnvironmentVariable> {
+    var variables = new List<EnvironmentVariableModel> {
       EnvironmentVariableBuilder.Default()
         .WithName("ACTIVE_VAR")
         .WithData("active_value")
@@ -86,10 +88,10 @@ public class FileServiceTests {
     content.Should().NotContain("REMOVED_VAR");
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ExportToStream_ExcludesVolatileVariables() {
     // Arrange
-    var variables = new List<EnvironmentVariable> {
+    var variables = new List<EnvironmentVariableModel> {
       EnvironmentVariableBuilder.Default()
         .WithName("NORMAL_VAR")
         .WithData("normal_value")
@@ -114,10 +116,10 @@ public class FileServiceTests {
     content.Should().NotContain("VOLATILE_VAR");
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ExportToStream_FormatsWithEmptyLinesBetweenArrays() {
     // Arrange
-    var variables = new List<EnvironmentVariable> {
+    var variables = new List<EnvironmentVariableModel> {
       EnvironmentVariableBuilder.Default()
         .WithName("VAR1")
         .WithData("value1")
@@ -146,10 +148,10 @@ public class FileServiceTests {
     }
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ExportToStream_WithMultiStringType_ExportsCorrectly() {
     // Arrange
-    var variables = new List<EnvironmentVariable> {
+    var variables = new List<EnvironmentVariableModel> {
       EnvironmentVariableBuilder.Default()
         .WithName("MULTI_VAR")
         .WithData("value1;value2;value3")
@@ -169,10 +171,10 @@ public class FileServiceTests {
     content.Should().Contain("type = \"MultiString\"");
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ExportToStream_WithDWordType_ExportsCorrectly() {
     // Arrange
-    var variables = new List<EnvironmentVariable> {
+    var variables = new List<EnvironmentVariableModel> {
       EnvironmentVariableBuilder.Default()
         .WithName("DWORD_VAR")
         .WithData("12345")
@@ -192,10 +194,10 @@ public class FileServiceTests {
     content.Should().Contain("type = \"DWord\"");
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ExportToStream_EndsWithNewline() {
     // Arrange
-    var variables = new List<EnvironmentVariable> {
+    var variables = new List<EnvironmentVariableModel> {
       EnvironmentVariableBuilder.Default().WithName("VAR").WithData("VAL").Build(),
     };
     using var stream = new MemoryStream();
@@ -214,7 +216,7 @@ public class FileServiceTests {
 
   #region ImportFromStream Tests
 
-  [TestMethod]
+  [Fact]
   public async Task ImportFromStream_ImportsVariablesCorrectly() {
     // Arrange
     var content = @"[[User]]
@@ -253,7 +255,7 @@ type = ""DWord""
     systemVar1.Type.Should().Be(RegistryValueKind.DWord);
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ImportFromStream_WithMultiStringType_ImportsCorrectly() {
     // Arrange
     var content = @"[[User]]
@@ -272,7 +274,7 @@ type = ""MultiString""
     variables[0].Type.Should().Be(RegistryValueKind.MultiString);
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ImportFromStream_WithDefaultStringType_ImportsCorrectly() {
     // Arrange
     var content = @"[[User]]
@@ -291,7 +293,7 @@ type = ""String""
     variables[0].Type.Should().Be(RegistryValueKind.String);
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ImportFromStream_SkipsEmptyNames() {
     // Arrange
     var content = @"[[User]]
@@ -314,7 +316,7 @@ type = ""String""
     variables[0].Name.Should().Be("VALID_VAR");
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ImportFromStream_HandlesMissingType() {
     // Arrange
     var content = @"[[User]]
@@ -331,7 +333,7 @@ data = ""value""
     variables[0].Type.Should().Be(RegistryValueKind.String, "default type should be String");
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ImportFromStream_WithEmptyFile_ReturnsEmptyList() {
     // Arrange
     using var stream = new MemoryStream(Encoding.UTF8.GetBytes(""));
@@ -343,7 +345,7 @@ data = ""value""
     variables.Should().BeEmpty();
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ImportFromStream_WithInvalidSection_IgnoresInvalidSection() {
     // Arrange
     var content = @"[[InvalidSection]]
@@ -364,10 +366,10 @@ data = ""valid_value""
     variables[0].Name.Should().Be("VALID_VAR");
   }
 
-  [TestMethod]
+  [Fact]
   public async Task ImportFromStream_RoundTripMaintainsData() {
     // Arrange
-    var originalVariables = new List<EnvironmentVariable> {
+    var originalVariables = new List<EnvironmentVariableModel> {
       EnvironmentVariableBuilder.Default()
         .WithName("USER_VAR")
         .WithData("user_value")
@@ -404,7 +406,7 @@ data = ""valid_value""
 
   #region FormatTomlOutput Tests
 
-  [TestMethod]
+  [Fact]
   public void FormatTomlOutput_AddsEmptyLinesBeforeArrayTables() {
     // Arrange
     var input = "[[System]]\nname = \"v1\"\n[[System]]\nname = \"v2\"";
@@ -417,7 +419,7 @@ data = ""valid_value""
     result.Should().EndWith("\n");
   }
 
-  [TestMethod]
+  [Fact]
   public void FormatTomlOutput_HandlesEmptyString() {
     // Act
     var result = FileService.FormatTomlOutput(string.Empty);
@@ -426,7 +428,7 @@ data = ""valid_value""
     result.Should().Be("\n");
   }
 
-  [TestMethod]
+  [Fact]
   public void FormatTomlOutput_NormalizesMixedLineEndings() {
     // Arrange
     var input = "[[User]]\r\nname = \"v1\"\r[[User]]\nname = \"v2\"";
@@ -443,7 +445,7 @@ data = ""valid_value""
 
   #region Static Properties Tests
 
-  [TestMethod]
+  [Fact]
   public void FileExtension_ReturnsTomlExtension() {
     // Act
     var extension = FileService.FileExtension;
@@ -452,7 +454,7 @@ data = ""valid_value""
     extension.Should().Be(".toml");
   }
 
-  [TestMethod]
+  [Fact]
   public void FileDescription_ReturnsCorrectDescription() {
     // Act
     var description = FileService.FileDescription;
@@ -461,7 +463,7 @@ data = ""valid_value""
     description.Should().Be("TOML Files");
   }
 
-  [TestMethod]
+  [Fact]
   public void SuggestedFileName_ReturnsFileNameBasedOnAssembly() {
     // Act
     var fileName = FileService.SuggestedFileName;

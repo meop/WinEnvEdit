@@ -1,4 +1,4 @@
-namespace WinEnvEdit.Extensions;
+namespace WinEnvEdit.Core.Constants;
 
 /// <summary>
 /// Segoe Fluent Icons glyphs used throughout the application.

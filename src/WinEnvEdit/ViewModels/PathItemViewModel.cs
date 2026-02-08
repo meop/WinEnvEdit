@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-using WinEnvEdit.Validation;
+using WinEnvEdit.Core.Validators;
 
 namespace WinEnvEdit.ViewModels;
 

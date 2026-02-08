@@ -2,37 +2,39 @@ using FluentAssertions;
 
 using Microsoft.Win32;
 
-using WinEnvEdit.Models;
-using WinEnvEdit.Services;
+using WinEnvEdit.Core.Models;
+using WinEnvEdit.Core.Services;
+using WinEnvEdit.Core.Types;
 using WinEnvEdit.Tests.Helpers;
+
+using Xunit;
 
 namespace WinEnvEdit.Tests.Services;
 
-[TestClass]
 public class UndoRedoServiceTests {
-  private UndoRedoService service = null!;
+  private UndoRedoService service;
 
-  [TestInitialize]
-  public void Setup() {
+
+  public UndoRedoServiceTests() {
     service = new UndoRedoService();
   }
 
-  [TestMethod]
+  [Fact]
   public void CanUndo_InitiallyEmpty_ReturnsFalse() {
     // Act & Assert
     service.CanUndo.Should().BeFalse("undo stack is initially empty");
   }
 
-  [TestMethod]
+  [Fact]
   public void CanRedo_InitiallyEmpty_ReturnsFalse() {
     // Act & Assert
     service.CanRedo.Should().BeFalse("redo stack is initially empty");
   }
 
-  [TestMethod]
+  [Fact]
   public void PushState_AddsToUndoStack() {
     // Arrange
-    var initial = new List<EnvironmentVariable>();
+    var initial = new List<EnvironmentVariableModel>();
     var variables = new[] {
       EnvironmentVariableBuilder.Default().WithName("TEST").Build(),
     };
@@ -47,10 +49,10 @@ public class UndoRedoServiceTests {
     service.CanRedo.Should().BeFalse("redo stack should be cleared");
   }
 
-  [TestMethod]
+  [Fact]
   public void PushState_DuplicateState_SkipsPush() {
     // Arrange
-    var initial = new List<EnvironmentVariable>();
+    var initial = new List<EnvironmentVariableModel>();
     var variables = new[] {
       EnvironmentVariableBuilder.Default().WithName("TEST").Build(),
     };
@@ -67,7 +69,7 @@ public class UndoRedoServiceTests {
     service.CanUndo.Should().BeFalse("duplicate push was skipped");
   }
 
-  [TestMethod]
+  [Fact]
   public void PushState_ClearsRedoStack() {
     // Arrange
     var initial = new[] {
@@ -92,7 +94,7 @@ public class UndoRedoServiceTests {
     service.CanRedo.Should().BeFalse("new state clears redo stack");
   }
 
-  [TestMethod]
+  [Fact]
   public void Undo_WithEmptyStack_ReturnsNull() {
     // Act
     var result = service.Undo();
@@ -101,7 +103,7 @@ public class UndoRedoServiceTests {
     result.Should().BeNull("undo stack is empty");
   }
 
-  [TestMethod]
+  [Fact]
   public void Undo_RestoresPreviousState() {
     // Arrange
     var initial = new[] {
@@ -124,7 +126,7 @@ public class UndoRedoServiceTests {
     restored!.First().Data.Should().Be("Initial");
   }
 
-  [TestMethod]
+  [Fact]
   public void Redo_WithEmptyStack_ReturnsNull() {
     // Act
     var result = service.Redo();
@@ -133,7 +135,7 @@ public class UndoRedoServiceTests {
     result.Should().BeNull("redo stack is empty");
   }
 
-  [TestMethod]
+  [Fact]
   public void Redo_RestoresNextState() {
     // Arrange
     var initial = new[] {
@@ -157,7 +159,7 @@ public class UndoRedoServiceTests {
     restored!.First().Data.Should().Be("Modified");
   }
 
-  [TestMethod]
+  [Fact]
   public void ClearHistory_ClearsBothStacks() {
     // Arrange
     var initial = new[] {
@@ -179,10 +181,10 @@ public class UndoRedoServiceTests {
     service.CanRedo.Should().BeFalse("redo stack cleared");
   }
 
-  [TestMethod]
+  [Fact]
   public void PushState_EnforcesMaxDepth() {
     // Arrange
-    var initial = new List<EnvironmentVariable>();
+    var initial = new List<EnvironmentVariableModel>();
     service.Reset(initial);
 
     // Act - Push 60 states
@@ -203,7 +205,7 @@ public class UndoRedoServiceTests {
     count.Should().Be(50, "max history depth is 50");
   }
 
-  [TestMethod]
+  [Fact]
   public void DeepCopy_CreatesIndependentCopy() {
     // Arrange
     var initial = new[] {
@@ -234,7 +236,7 @@ public class UndoRedoServiceTests {
     restored!.First().Data.Should().Be("Initial", "Undo should return the stored copy");
   }
 
-  [TestMethod]
+  [Fact]
   public void DeepCopy_PreservesAllProperties() {
     // Arrange
     var initial = new[] {
@@ -249,7 +251,7 @@ public class UndoRedoServiceTests {
         .Build(),
     };
 
-    var modified = new List<EnvironmentVariable>(); // Empty state
+    var modified = new List<EnvironmentVariableModel>(); // Empty state
 
     service.Reset(initial);
     service.PushState(modified);
@@ -271,10 +273,10 @@ public class UndoRedoServiceTests {
 
   #region Internal Helper Tests
 
-  [TestMethod]
+  [Fact]
   public void DeepCopy_CreatesIndependentInstances() {
     // Arrange
-    var original = new List<EnvironmentVariable> {
+    var original = new List<EnvironmentVariableModel> {
       new() { Name = "VAR", Data = "val" }
     };
 
@@ -287,24 +289,258 @@ public class UndoRedoServiceTests {
     copy[0].Name.Should().Be(original[0].Name);
   }
 
-  [TestMethod]
-  public void VariablesMatch_IdentifiesMatchingVariables() {
+  [Fact]
+  public void ComputeDelta_NoChanges_ReturnsEmptyDelta() {
     // Arrange
-    var v1 = new EnvironmentVariable { Name = "A", Data = "B", Scope = VariableScope.User };
-    var v2 = new EnvironmentVariable { Name = "A", Data = "B", Scope = VariableScope.User };
+    var state = new List<EnvironmentVariableModel> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("value1").Build(),
+    };
 
-    // Act & Assert
-    UndoRedoService.VariablesMatch(v1, v2).Should().BeTrue();
+    // Act
+    var delta = UndoRedoService.ComputeDelta(state, state);
+
+    // Assert
+    delta.IsEmpty.Should().BeTrue("no changes between identical states");
   }
 
-  [TestMethod]
-  public void StatesAreEqual_IdentifiesMatchingStates() {
+  [Fact]
+  public void ComputeDelta_AddedVariable_CreatesVariableAdded() {
     // Arrange
-    var s1 = new List<EnvironmentVariable> { new() { Name = "A", Data = "1" } };
-    var s2 = new List<EnvironmentVariable> { new() { Name = "A", Data = "1" } };
+    var fromState = new List<EnvironmentVariableModel>();
+    var toState = new List<EnvironmentVariableModel> {
+      EnvironmentVariableBuilder.Default().WithName("NEW_VAR").WithData("value").Build(),
+    };
 
-    // Act & Assert
-    UndoRedoService.StatesAreEqual(s1, s2).Should().BeTrue();
+    // Act
+    var delta = UndoRedoService.ComputeDelta(fromState, toState);
+
+    // Assert
+    delta.Changes.Should().HaveCount(1);
+    delta.Changes[0].Should().BeOfType<VariableAdded>();
+    var added = (VariableAdded)delta.Changes[0];
+    added.Name.Should().Be("NEW_VAR");
+    added.Data.Should().Be("value");
+  }
+
+  [Fact]
+  public void ComputeDelta_RemovedVariable_CreatesVariableRemoved() {
+    // Arrange
+    var fromState = new List<EnvironmentVariableModel> {
+      EnvironmentVariableBuilder.Default().WithName("OLD_VAR").WithData("value").Build(),
+    };
+    var toState = new List<EnvironmentVariableModel>();
+
+    // Act
+    var delta = UndoRedoService.ComputeDelta(fromState, toState);
+
+    // Assert
+    delta.Changes.Should().HaveCount(1);
+    delta.Changes[0].Should().BeOfType<VariableRemoved>();
+    var removed = (VariableRemoved)delta.Changes[0];
+    removed.Name.Should().Be("OLD_VAR");
+    removed.Data.Should().Be("value");
+  }
+
+  [Fact]
+  public void ComputeDelta_ModifiedVariable_CreatesVariableModified() {
+    // Arrange
+    var fromState = new List<EnvironmentVariableModel> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("old").Build(),
+    };
+    var toState = new List<EnvironmentVariableModel> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("new").Build(),
+    };
+
+    // Act
+    var delta = UndoRedoService.ComputeDelta(fromState, toState);
+
+    // Assert
+    delta.Changes.Should().HaveCount(1);
+    delta.Changes[0].Should().BeOfType<VariableModified>();
+    var modified = (VariableModified)delta.Changes[0];
+    modified.Name.Should().Be("VAR1");
+    modified.OldData.Should().Be("old");
+    modified.NewData.Should().Be("new");
+  }
+
+  [Fact]
+  public void ApplyDelta_VariableAdded_AddsVariable() {
+    // Arrange
+    var state = new List<EnvironmentVariableModel>();
+    var delta = new StateDelta([
+      new VariableAdded(VariableScope.User, "NEW_VAR", "value", RegistryValueKind.String, false, false, false)
+    ]);
+
+    // Act
+    var result = UndoRedoService.ApplyDelta(state, delta);
+
+    // Assert
+    result.Should().HaveCount(1);
+    result[0].Name.Should().Be("NEW_VAR");
+    result[0].Data.Should().Be("value");
+  }
+
+  [Fact]
+  public void ApplyDelta_VariableRemoved_RemovesVariable() {
+    // Arrange
+    var state = new List<EnvironmentVariableModel> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").Build(),
+    };
+    var delta = new StateDelta([
+      new VariableRemoved(VariableScope.User, "VAR1", "data", RegistryValueKind.String, false, false, false)
+    ]);
+
+    // Act
+    var result = UndoRedoService.ApplyDelta(state, delta);
+
+    // Assert
+    result.Should().BeEmpty();
+  }
+
+  [Fact]
+  public void ApplyDelta_VariableModified_UpdatesVariable() {
+    // Arrange
+    var state = new List<EnvironmentVariableModel> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("old").Build(),
+    };
+    var delta = new StateDelta([
+      new VariableModified(VariableScope.User, "VAR1", "old", "new", RegistryValueKind.String, RegistryValueKind.String)
+    ]);
+
+    // Act
+    var result = UndoRedoService.ApplyDelta(state, delta);
+
+    // Assert
+    result.Should().HaveCount(1);
+    result[0].Data.Should().Be("new");
+  }
+
+  [Fact]
+  public void ReverseDelta_VariableAdded_BecomesVariableRemoved() {
+    // Arrange
+    var delta = new StateDelta([
+      new VariableAdded(VariableScope.User, "VAR1", "value", RegistryValueKind.String, false, true, false)
+    ]);
+
+    // Act
+    var reversed = UndoRedoService.ReverseDelta(delta);
+
+    // Assert
+    reversed.Changes.Should().HaveCount(1);
+    reversed.Changes[0].Should().BeOfType<VariableRemoved>();
+    var removed = (VariableRemoved)reversed.Changes[0];
+    removed.Name.Should().Be("VAR1");
+    removed.IsAdded.Should().BeTrue("flags should be preserved");
+  }
+
+  [Fact]
+  public void ReverseDelta_VariableRemoved_BecomesVariableAdded() {
+    // Arrange
+    var delta = new StateDelta([
+      new VariableRemoved(VariableScope.User, "VAR1", "value", RegistryValueKind.String, true, false, false)
+    ]);
+
+    // Act
+    var reversed = UndoRedoService.ReverseDelta(delta);
+
+    // Assert
+    reversed.Changes.Should().HaveCount(1);
+    reversed.Changes[0].Should().BeOfType<VariableAdded>();
+    var added = (VariableAdded)reversed.Changes[0];
+    added.Name.Should().Be("VAR1");
+    added.IsVolatile.Should().BeTrue("flags should be preserved");
+  }
+
+  [Fact]
+  public void ReverseDelta_VariableModified_SwapsOldAndNew() {
+    // Arrange
+    var delta = new StateDelta([
+      new VariableModified(VariableScope.User, "VAR1", "old", "new", RegistryValueKind.String, RegistryValueKind.ExpandString)
+    ]);
+
+    // Act
+    var reversed = UndoRedoService.ReverseDelta(delta);
+
+    // Assert
+    reversed.Changes.Should().HaveCount(1);
+    reversed.Changes[0].Should().BeOfType<VariableModified>();
+    var modified = (VariableModified)reversed.Changes[0];
+    modified.OldData.Should().Be("new", "old and new should be swapped");
+    modified.NewData.Should().Be("old", "old and new should be swapped");
+    modified.OldType.Should().Be(RegistryValueKind.ExpandString);
+    modified.NewType.Should().Be(RegistryValueKind.String);
+  }
+
+  [Fact]
+  public void ApplyDelta_MultipleChanges_ProcessesAll() {
+    // Arrange - Start with one variable
+    var state = new List<EnvironmentVariableModel> {
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("old").Build(),
+    };
+
+    // Create delta with THREE changes
+    var delta = new StateDelta([
+      new VariableAdded(VariableScope.User, "VAR2", "value2", RegistryValueKind.String, false, false, false),
+      new VariableAdded(VariableScope.User, "VAR3", "value3", RegistryValueKind.String, false, false, false),
+      new VariableModified(VariableScope.User, "VAR1", "old", "new", RegistryValueKind.String, RegistryValueKind.String)
+    ]);
+
+    // Act
+    var result = UndoRedoService.ApplyDelta(state, delta);
+
+    // Assert - All THREE changes should be applied
+    result.Should().HaveCount(3, "all three changes should be processed");
+    result.Should().Contain(v => v.Name == "VAR1" && v.Data == "new", "VAR1 should be modified");
+    result.Should().Contain(v => v.Name == "VAR2" && v.Data == "value2", "VAR2 should be added");
+    result.Should().Contain(v => v.Name == "VAR3" && v.Data == "value3", "VAR3 should be added");
+  }
+
+  [Fact]
+  public void UndoRedo_ChangeBackAndForth_WorksCorrectly() {
+    // Arrange
+    var stateA = new[] {
+      EnvironmentVariableBuilder.Default().WithName("TEST").WithData("A").Build(),
+    };
+    var stateB = new[] {
+      EnvironmentVariableBuilder.Default().WithName("TEST").WithData("B").Build(),
+    };
+    // Note: stateA is also the third state
+
+    service.Reset(stateA);
+    service.PushState(stateB); // A -> B
+    service.PushState(stateA); // B -> A
+
+    // Assert initial state
+    service.CanUndo.Should().BeTrue();
+    service.CanRedo.Should().BeFalse();
+
+    // Act - Undo 1 (Back to B)
+    var undo1 = service.Undo();
+    undo1.Should().NotBeNull();
+    undo1!.First(v => v.Name == "TEST").Data.Should().Be("B");
+    service.CanUndo.Should().BeTrue();
+    service.CanRedo.Should().BeTrue();
+
+    // Act - Undo 2 (Back to A)
+    var undo2 = service.Undo();
+    undo2.Should().NotBeNull();
+    undo2!.First(v => v.Name == "TEST").Data.Should().Be("A");
+    service.CanUndo.Should().BeFalse();
+    service.CanRedo.Should().BeTrue();
+
+    // Act - Redo 1 (Forward to B)
+    var redo1 = service.Redo();
+    redo1.Should().NotBeNull();
+    redo1!.First(v => v.Name == "TEST").Data.Should().Be("B");
+    service.CanUndo.Should().BeTrue();
+    service.CanRedo.Should().BeTrue();
+
+    // Act - Redo 2 (Forward to A)
+    var redo2 = service.Redo();
+    redo2.Should().NotBeNull();
+    redo2!.First(v => v.Name == "TEST").Data.Should().Be("A");
+    service.CanUndo.Should().BeTrue();
+    service.CanRedo.Should().BeFalse();
   }
 
   #endregion

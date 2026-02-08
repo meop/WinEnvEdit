@@ -1,8 +1,10 @@
 using Microsoft.Win32;
 
-namespace WinEnvEdit.Models;
+using WinEnvEdit.Core.Types;
 
-public class EnvironmentVariable {
+namespace WinEnvEdit.Core.Models;
+
+public class EnvironmentVariableModel {
   public string Name { get; set; } = string.Empty;
   public string Data { get; set; } = string.Empty;
   public VariableScope Scope { get; init; }

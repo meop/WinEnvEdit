@@ -1,14 +1,15 @@
 using FluentAssertions;
 
-using WinEnvEdit.Validation;
+using WinEnvEdit.Core.Validators;
 
-namespace WinEnvEdit.Tests.Validation;
+using Xunit;
 
-[TestClass]
+namespace WinEnvEdit.Tests.Validators;
+
 public class VariableValidatorTests {
   #region ValidateName Tests
 
-  [TestMethod]
+  [Fact]
   public void ValidateName_Empty_ReturnsError() {
     // Act
     var result = VariableValidator.ValidateName(string.Empty);
@@ -18,7 +19,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().Be("cannot be empty");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateName_WithEquals_ReturnsError() {
     // Act
     var result = VariableValidator.ValidateName("TEST=VALUE");
@@ -28,7 +29,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().Be("cannot contain '=' characters");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateName_WithNullChar_ReturnsError() {
     // Act
     var result = VariableValidator.ValidateName("TEST\0VAR");
@@ -38,7 +39,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().Be("cannot contain null characters");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateName_WithSpace_ReturnsError() {
     // Act
     var result = VariableValidator.ValidateName("TEST VAR");
@@ -48,7 +49,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().Be("cannot contain spaces");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateName_SingleSpace_ReturnsSpacesError() {
     // Act
     var result = VariableValidator.ValidateName(" ");
@@ -58,7 +59,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().Be("cannot contain spaces");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateName_Tab_ReturnsSpacesError() {
     // Act
     var result = VariableValidator.ValidateName("TEST\tVAR");
@@ -68,7 +69,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().Be("cannot contain spaces");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateName_WithSemicolon_ReturnsError() {
     // Act
     var result = VariableValidator.ValidateName("TEST;VAR");
@@ -78,7 +79,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().Be("cannot contain ';' characters");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateName_WithPercent_ReturnsError() {
     // Act
     var result = VariableValidator.ValidateName("TEST%VAR");
@@ -88,7 +89,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().Be("cannot contain '%' characters");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateName_ExceedsMaxLength_ReturnsError() {
     // Arrange - create name with 256 characters (exceeds 255 limit)
     var longName = new string('A', 256);
@@ -101,7 +102,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().Be("cannot exceed 255 characters");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateName_AtMaxLength_ReturnsSuccess() {
     // Arrange - create name with exactly 255 characters
     var maxLengthName = new string('A', 255);
@@ -114,7 +115,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().BeEmpty();
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateName_Valid_ReturnsSuccess() {
     // Act
     var result = VariableValidator.ValidateName("VALID_VAR_NAME");
@@ -124,7 +125,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().BeEmpty();
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateNameAllErrors_ReturnsMultipleErrors() {
     // Act
     var errors = VariableValidator.ValidateNameAllErrors("INVALID=NAME WITH SPACE;");
@@ -139,7 +140,7 @@ public class VariableValidatorTests {
 
   #region ValidateData Tests
 
-  [TestMethod]
+  [Fact]
   public void ValidateData_WithNullChar_ReturnsError() {
     // Act
     var result = VariableValidator.ValidateData("test\0value");
@@ -149,7 +150,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().Be("cannot contain null characters");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateData_ExceedsMaxLength_ReturnsError() {
     // Arrange - create value with 32768 characters (exceeds 32767 limit)
     var longValue = new string('A', 32768);
@@ -162,7 +163,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().Be("cannot exceed 32767 characters");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateData_AtMaxLength_ReturnsSuccess() {
     // Arrange - create value with exactly 32767 characters
     var maxLengthValue = new string('A', 32767);
@@ -175,7 +176,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().BeEmpty();
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateData_Valid_ReturnsSuccess() {
     // Act
     var result = VariableValidator.ValidateData("valid value with spaces and special chars !@#$");
@@ -185,7 +186,7 @@ public class VariableValidatorTests {
     result.ErrorMessage.Should().BeEmpty();
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateDataAllErrors_ReturnsMultipleErrors() {
     // Arrange
     var longValueWithNull = new string('A', 32768) + "\0";
@@ -202,7 +203,7 @@ public class VariableValidatorTests {
 
   #region ValidateForAdd Tests
 
-  [TestMethod]
+  [Fact]
   public void ValidateForAdd_InvalidName_ReturnsNameError() {
     // Act
     var (isValid, message) = VariableValidator.ValidateForAdd("INVALID=NAME", "value");
@@ -212,7 +213,7 @@ public class VariableValidatorTests {
     message.Should().Be("cannot contain '=' characters");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateForAdd_InvalidData_ReturnsDataError() {
     // Act
     var (isValid, message) = VariableValidator.ValidateForAdd("VALID_NAME", "invalid\0value");
@@ -222,7 +223,7 @@ public class VariableValidatorTests {
     message.Should().Be("cannot contain null characters");
   }
 
-  [TestMethod]
+  [Fact]
   public void ValidateForAdd_ValidNameAndData_ReturnsSuccess() {
     // Act
     var (isValid, message) = VariableValidator.ValidateForAdd("VALID_NAME", "valid value");

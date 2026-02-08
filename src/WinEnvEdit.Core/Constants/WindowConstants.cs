@@ -1,4 +1,4 @@
-namespace WinEnvEdit.Helpers;
+namespace WinEnvEdit.Core.Constants;
 
 public static class WindowConstants {
   public const int MinWindowWidth = 1280;
