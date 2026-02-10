@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 using Microsoft.UI;
@@ -51,13 +48,13 @@ public sealed partial class MainWindow : Window {
 
     // Try multiple possible locations for the icon
     var possiblePaths = new[] {
-      System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico"),
-      System.IO.Path.Combine(AppContext.BaseDirectory, "app.ico"),
-      System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "", "Assets", "app.ico")
+      Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico"),
+      Path.Combine(AppContext.BaseDirectory, "app.ico"),
+      Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "", "Assets", "app.ico")
     };
 
     foreach (var path in possiblePaths) {
-      if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path)) {
+      if (!string.IsNullOrEmpty(path) && File.Exists(path)) {
         appWindow.SetIcon(path);
         break;
       }

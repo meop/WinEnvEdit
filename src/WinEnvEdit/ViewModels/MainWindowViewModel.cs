@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -350,7 +346,7 @@ public partial class MainWindowViewModel : ObservableObject {
     var descriptionGrid = DialogHelper.CreateLabelValueGrid("Description", DialogHelper.CreateDialogValue(description, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
     var versionGrid = DialogHelper.CreateLabelValueGrid("Version", DialogHelper.CreateDialogValue(version));
 
-    var llmCredit = "Developed with help from Anthropic Claude, Google Gemini, and Z.ai GLM";
+    var llmCredit = "Developed with help from Claude, Gemini, GLM, and Qwen";
     var creditsGrid = DialogHelper.CreateLabelValueGrid("Credit", DialogHelper.CreateDialogValue(llmCredit, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
 
     var contentPanel = DialogHelper.CreateDialogPanel([

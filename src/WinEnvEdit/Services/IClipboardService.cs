@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace WinEnvEdit.Services;
 
 public interface IClipboardService {
