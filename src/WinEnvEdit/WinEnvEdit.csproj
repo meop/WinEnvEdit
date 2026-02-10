@@ -1,12 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\App.ico</ApplicationIcon>
     <ApplicationManifest>App.manifest</ApplicationManifest>
     <AssemblyName>WinEnvEdit</AssemblyName>
+    <Company>meop</Company>
     <Description>Modern Windows Environment Editor</Description>
-    <EnableMsixTooling>false</EnableMsixTooling>
-    <LangVersion>Preview</LangVersion>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
     <Nullable>enable</Nullable>
     <OutputType>WinExe</OutputType>
     <Platforms>ARM64;x64</Platforms>
@@ -20,9 +23,12 @@
     <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <UseWinUI>true</UseWinUI>
+    <WebView2EnableCsWinRTProjection>false</WebView2EnableCsWinRTProjection>
+    <WindowsAppSDKBootstrapInitialize>true</WindowsAppSDKBootstrapInitialize>
+    <WindowsAppSDKDeploymentManagerInitialize>false</WindowsAppSDKDeploymentManagerInitialize>
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <WindowsPackageType>None</WindowsPackageType>
-    <WinUISDKReferences>false</WinUISDKReferences>
+    <WinUISDKReferences>true</WinUISDKReferences>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,13 +38,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Assets\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="..\..\LICENSE.txt">
       <Link>LICENSE.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Content Include="Assets\**\*">
+    <None Include="..\..\USAGE.md">
+      <Link>USAGE.md</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -46,8 +56,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260101001" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
 
   <ItemGroup>

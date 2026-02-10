@@ -2,8 +2,6 @@
   <PropertyGroup>
     <VersionFile>$(MSBuildThisFileDirectory)..\VERSION</VersionFile>
     <RawVersion>$([System.IO.File]::ReadAllText($(VersionFile)).Trim())</RawVersion>
-    
-    <!-- Use RawVersion for public metadata, append .0 for Windows Assembly versions if needed -->
     <Version>$(RawVersion)</Version>
     <AssemblyVersion Condition="$(RawVersion.Split('.').Length) == 3">$(RawVersion).0</AssemblyVersion>
     <AssemblyVersion Condition="$(RawVersion.Split('.').Length) != 3">$(RawVersion)</AssemblyVersion>
