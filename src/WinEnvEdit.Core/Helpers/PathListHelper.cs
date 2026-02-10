@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-
 namespace WinEnvEdit.Core.Helpers;
 
 /// <summary>
@@ -18,7 +15,7 @@ public static class PathListHelper {
     }
 
     return pathList
-      .Split(';', System.StringSplitOptions.RemoveEmptyEntries)
+      .Split(';', StringSplitOptions.RemoveEmptyEntries)
       .Select(p => p.Trim())
       .ToList();
   }

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace WinEnvEdit.Core.Helpers;
 
 /// <summary>

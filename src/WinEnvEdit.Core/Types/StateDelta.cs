@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 using Microsoft.Win32;
 
 namespace WinEnvEdit.Core.Types;

@@ -1,11 +1,6 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 using Microsoft.Win32;
 
@@ -26,8 +21,8 @@ public class FileService : IFileService {
   public static string SuggestedFileName => suggestedFileName;
 
   private static string GetSuggestedFileName() {
-    var assembly = Assembly.GetExecutingAssembly();
-    var product = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? "environment";
+    var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+    var product = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? "WinEnvEdit";
     return $"{product}{fileExtension}";
   }
 
