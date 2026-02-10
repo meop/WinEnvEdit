@@ -1,9 +1,8 @@
 # WinEnvEdit
 
 Modern Windows 11 environment editor built with WinUI 3 and .NET 10.
-Distributed via [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget) for easy installation and updates.
 
-![WinEnvEdit](src/WinEnvEdit/Assets/StoreLogo.png)
+Distributed via [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget) for easy installation and updates.
 
 ## Inspiration
 

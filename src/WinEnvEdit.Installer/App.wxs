@@ -1,5 +1,5 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
-  <Package Id="WinEnvEdit.Package"
+  <Package Id="meop.WinEnvEdit"
            Name="WinEnvEdit"
            Version="$(var.Version)"
            Manufacturer="meop"

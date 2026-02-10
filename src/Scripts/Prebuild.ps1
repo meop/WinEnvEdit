@@ -266,18 +266,6 @@ function Sync-Versions {
 
   $winVersion = if ($version.Split('.').Count -eq 3) { "$version.0" } else { $version }
 
-  $versionProps = Join-Path $srcDir 'Directory.Packages.props'
-  $versionPropsContent = Get-Content $versionProps -Raw
-  if ($versionPropsContent -match '<PackageVersion\s+Include="Microsoft\.WindowsAppSDK"\s+Version="([^"]+)"') {
-    $appSdkVersion = $matches[1]
-    $appSdkParts = $appSdkVersion.Split('.')
-    $appSdkMajor = [int]$appSdkParts[0]
-    $appSdkMinor = [int]$appSdkParts[1]
-  } else {
-    Write-Host "Error: Could not find Windows App SDK version in $versionProps" -ForegroundColor Red
-    exit 1
-  }
-
   Sync-XmlManifest `
     -path (Join-Path $srcDir 'WinEnvEdit\App.manifest') `
     -regex '(<assemblyIdentity\s+[^>]*version=")[0-9.]*(")' `
@@ -287,20 +275,6 @@ function Sync-Versions {
     -path (Join-Path $srcDir 'WinEnvEdit\Package.appxmanifest') `
     -regex '(<Identity\s+[^>]*Version=")[0-9.]*(")' `
     -value $winVersion
-
-  $yamlFile = Join-Path $srcDir 'WinEnvEdit.yaml'
-  if (Test-Path $yamlFile) {
-    $relYamlPath = $yamlFile.Replace("$srcDir\", "")
-    Write-Host "Processing: $relYamlPath" -ForegroundColor Gray
-    $content = Get-Content $yamlFile -Raw
-    $content = $content -replace '(PackageVersion:\s+)[^\s\r\n]*', ('${1}' + $version)
-    $content = $content -replace '(releases\/download\/v)[0-9.]*(\/WinEnvEdit)', ('${1}' + $version + '${2}')
-    $content = $content -replace '(- PackageIdentifier:\s+Microsoft\.WindowsAppRuntime\.)[^\s\r\n]*', ('${1}' + "$appSdkMajor.$appSdkMinor")
-    $content = $content.TrimEnd() + "`n"
-
-    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-    [System.IO.File]::WriteAllText($yamlFile, $content, $utf8NoBom)
-  }
 
   Write-Host 'Synchronizing versions completed.' -ForegroundColor Yellow
 }
