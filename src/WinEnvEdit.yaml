@@ -4,7 +4,7 @@ Publisher: meop
 PackageName: WinEnvEdit
 License: MIT
 ShortDescription: Modern Windows Environment Editor
-Description: A modern Windows 11+ environment editor built with WinUI 3 and .NET 10.
+Description: Modern Windows 11 environment editor built with WinUI 3 and .NET 10
 Moniker: wineditedit
 Tags:
   - environment

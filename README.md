@@ -1,6 +1,6 @@
 # WinEnvEdit
 
-A modern Windows 11 environment variable editor built with WinUI 3 and .NET 10.
+Modern Windows 11 environment editor built with WinUI 3 and .NET 10.
 Distributed via [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget) for easy installation and updates.
 
 ![WinEnvEdit](src/WinEnvEdit/Assets/StoreLogo.png)
@@ -36,7 +36,7 @@ Several frameworks were considered to achieve the best balance of performance an
 ## Getting Started
 
 ### Prerequisites
-- **Windows 11 or later**
+- **Windows 11**
 - **.NET 10 SDK** (for development)
 
 ### Build & Run

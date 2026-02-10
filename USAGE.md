@@ -1,6 +1,6 @@
 # User Guide
 
-WinEnvEdit is a modern Windows 11 environment variable editor designed for safety, speed, and ease of use.
+Modern Windows 11 environment editor designed for safety, speed, and ease of use.
 
 ## Main Window
 
@@ -38,17 +38,17 @@ Variables containing multiple paths (semicolon-separated, like `PATH`) can be ex
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-| --- | --- |
-| `F5` | Refresh from Registry |
-| `Ctrl+S` | Save Changes |
-| `Ctrl+Z` | Undo |
-| `Ctrl+Y` | Redo |
-| `Ctrl+F` | Search |
-| `Ctrl+T` | Toggle Type |
-| `Ctrl+E` | Export to File |
-| `Ctrl+I` | Import from File |
-| `Ctrl+Shift+P` | Toggle All Path Views |
-| `Ctrl+Shift+V` | Toggle Volatile Variables |
-| `Ctrl+C` | Copy Variable (Name=Value) |
-| `Ctrl+V` | Paste Variable Value |
+| Shortcut       | Action                     |
+| -------------- | -------------------------- |
+| `F5`           | Refresh from Registry      |
+| `Ctrl+S`       | Save Changes               |
+| `Ctrl+Z`       | Undo                       |
+| `Ctrl+Y`       | Redo                       |
+| `Ctrl+F`       | Search                     |
+| `Ctrl+T`       | Toggle Type                |
+| `Ctrl+E`       | Export to File             |
+| `Ctrl+I`       | Import from File           |
+| `Ctrl+Shift+P` | Toggle All Path Views      |
+| `Ctrl+Shift+V` | Toggle Volatile Variables  |
+| `Ctrl+C`       | Copy Variable (Name=Value) |
+| `Ctrl+V`       | Paste Variable Value       |
