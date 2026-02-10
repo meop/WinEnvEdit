@@ -31,7 +31,6 @@ Several frameworks were considered to achieve the best balance of performance an
 - **Validation**: Real-time checking for path existence and variable name validity.
 - **Async Registry Operations**: Safe, non-blocking saves with UAC elevation support.
 - **Full History**: Unlimited Undo/Redo until changes are saved or refreshed.
-- **Import/Export**: Backup and restore environment configurations via **TOML**.
 - **Modern UI**: Fully responsive design with Mica backdrop and Windows 11 design language.
 
 ## Getting Started
@@ -46,8 +45,8 @@ To build and run the application from the command line:
 **Note**: `<Platform>` is auto-detected via `powershell -c 'Write-Output $Env:PROCESSOR_ARCHITECTURE'` (maps `AMD64` → `x64`, `ARM64` → `ARM64`).
 
 ```bash
-# Format the code
-./src/Scripts/Format.ps1
+# Run prebuild (format, icons, version sync)
+./src/Scripts/Prebuild.ps1
 
 # Build the solution
 dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=<Platform>
@@ -60,38 +59,29 @@ bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
 
 ### Version Management
 
-**Single Source of Truth**: The `VERSION` file contains the version number (currently `1.0.0.0`).
+**Single Source of Truth**: The `VERSION` file contains the version number (currently `1.0.0`).
 
 **To update version**:
-1. Edit `VERSION` file
-2. Commit changes
-3. Push to `main`
-4. GitHub Actions will automatically:
-   - Build and create releases using this version
-   - Update winget manifest automatically
+1. Edit the `VERSION` file.
+2. Run **`./src/Scripts/Prebuild.ps1`** to synchronize manifests.
+3. Commit and push to `main`.
+4. GitHub Actions will automatically build releases and update WinGet.
 
 ### GitHub Actions CI/CD
 
-**Workflow**: `.github/workflows/pipeline.yml`
-
-**Automated Process**:
-- Triggers on any push to `main` or versioned tag
-- Reads `VERSION` file to get version number
-- Builds x64 + ARM64 MSI installers
-- Creates GitHub Release with both MSIs on version tag
-- Updates winget manifest `src/WinEnvEdit.yaml` with new version
+**Automated Workflow**:
+- **version**: Detects version changes via Git tags.
+- **validate**: Enforces code formatting, version synchronization, and runs unit tests.
+- **package**: Builds x64 and ARM64 MSI installers using WiX v6.
+- **release**: Creates a GitHub Release and attaches the installers and LICENSE.
 
 ### Creating a Release
 
 The release process is fully automated:
-1. Update the version number in the **`VERSION`** file
-2. Commit and push the change to the `main` branch
-3. GitHub Actions will automatically:
-   - Detect the version change
-   - Build x64 and ARM64 MSI installers
-   - Create a new Git Tag (e.g., `v1.0.1`)
-   - Create a GitHub Release with the MSIs attached
-   - Update the WinGet manifest and commit it back to the repo
+1. Update the version number in the **`VERSION`** file.
+2. Run **`./src/Scripts/Prebuild.ps1`** locally.
+3. Commit and push the change to the `main` branch.
+4. GitHub Actions will handle the rest, creating a tag and release.
 
 ### Winget Distribution
 
@@ -105,29 +95,27 @@ winget install WinEnvEdit
 winget upgrade WinEnvEdit
 ```
 
-Winget scans GitHub releases for updates - no app code needed.
+Winget scans GitHub releases for updates - no manual manifest submission required.
 
 ## Development
 
-Detailed development guidelines, including standard workflows and MVVM/XAML best practices, are maintained in **[CLAUDE.md](CLAUDE.md)**.
+Detailed project development guidelines, architecture rules, and standard workflows are maintained in **[CLAUDE.md](CLAUDE.md)**.
+
+For more general AI agent rules and behavioral guidelines, see **[AGENTS.md](AGENTS.md)**.
 
 ### Testing
-Stability is verified by a suite of over 160 unit tests.
+Stability is verified by a suite of over 180 unit tests.
 
 ```bash
 # Run the unit tests
-dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -p:Platform=<Platform> --no-build
+dotnet test src/WinEnvEdit.slnx -p:Platform=<Platform>
 ```
 
 ### Implementation Patterns
-High-performance WinUI 3 patterns used in this project are documented in **[PATTERNS.md](PATTERNS.md)**, covering:
-- Non-shared Context Menus for ListView items.
-- Incremental List Reconciliation.
-- Background System Notification broadcasts.
-- Elevated Script Launching without window flicker.
+High-performance WinUI 3 patterns used in this project are documented in **[PATTERNS.md](PATTERNS.md)**.
 
-## User Guide
-For detailed instructions on all features and keyboard shortcuts, see the **[User Guide](USAGE.md)**.
+## Usage
+For detailed instructions on all features and keyboard shortcuts, see the **[USAGE.md](USAGE.md)** file.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
@@ -137,5 +125,6 @@ This project was developed with help from multiple Large Language Models:
 - **Anthropic Claude**: Architecture, code generation, and documentation.
 - **Google Gemini**: Refactoring, test optimization, and troubleshooting.
 - **Z.ai GLM**: Feature implementation and specialized code assistance.
+- **Alibaba Qwen**: Minor edits and refinements.
 
 WinEnvEdit was heavily inspired by the original **Rapid Environment Editor**.

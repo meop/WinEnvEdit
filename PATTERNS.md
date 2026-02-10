@@ -190,11 +190,11 @@ Need to allow users to reorder items in a ListView, especially when items contai
 
 ### Key Properties
 
-| Property | Purpose |
-|----------|---------|
+| Property                 | Purpose                                       |
+| ------------------------ | --------------------------------------------- |
 | `CanReorderItems="True"` | Enables user to reorder items within the list |
-| `AllowDrop="True"` | Allows items to be dropped onto the control |
-| `CanDragItems="True"` | Allows items to be dragged from the control |
+| `AllowDrop="True"`       | Allows items to be dropped onto the control   |
+| `CanDragItems="True"`    | Allows items to be dragged from the control   |
 
 ### Backend Integration
 
@@ -422,8 +422,249 @@ public MyViewModel() {
 
 ---
 
+## XAML Binding Rules
+
+### x:Bind vs {Binding}
+
+**Use `x:Bind` in Window/Page XAML** (e.g. MainWindow.xaml):
+```xaml
+<TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}"/>
+```
+
+**Use `{Binding}` in ResourceDictionary/DataTemplate** (e.g. VariableTemplates.xaml):
+```xaml
+<TextBlock Text="{Binding Name}"/>
+```
+
+Never use `x:Bind` in ResourceDictionary files — it won't work reliably without a code-behind compilation context.
+
+### Binding Modes
+
+| Syntax | Default Mode | Use for |
+|--------|-------------|---------|
+| `{x:Bind}` | OneTime | Static values, computed properties |
+| `{x:Bind ..., Mode=OneWay}` | OneWay | Observable properties (read-only UI) |
+| `{x:Bind ..., Mode=TwoWay}` | TwoWay | Editable controls (TextBox, CheckBox) |
+| `{Binding}` | OneWay | ResourceDictionary templates |
+
+### Converter Declaration Order
+
+Converters MUST be declared BEFORE MergedDictionaries in App.xaml:
+
+```xaml
+<Application.Resources>
+  <ResourceDictionary>
+    <!-- 1. Converters FIRST -->
+    <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+
+    <!-- 2. THEN merged dictionaries that use them -->
+    <ResourceDictionary.MergedDictionaries>
+      <ResourceDictionary Source="Resources/VariableTemplates.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+  </ResourceDictionary>
+</Application.Resources>
+```
+
+### ResourceDictionary Code-Behind
+
+ResourceDictionaries using DataTemplates must have a code-behind class:
+
+```csharp
+namespace WinEnvEdit.Resources;
+
+public partial class VariableTemplates : ResourceDictionary {
+  public VariableTemplates() {
+    InitializeComponent();
+  }
+}
+```
+
+---
+
+## Unpackaged Framework-Dependent Deployment Pattern
+
+Configure WinUI 3 apps for minimal-size MSI deployment with external runtime dependencies.
+
+### Goal
+
+Create an **unpackaged, framework-dependent MSI** that:
+- Is small (~10 MB) and doesn't bundle runtimes
+- Relies on user-installed .NET 10 Desktop Runtime and Windows App SDK 1.8
+- Benefits from system-level runtime patching and updates
+- Distributes via WinGet with minimal dependencies
+
+### Problem
+
+WinUI 3 unpackaged apps have conflicting deployment requirements:
+1. **Trimming doesn't work** - WinUI dependencies (WebView2, Windows SDK, WinRT) aren't trim-compatible, causing build errors
+2. **Publish doesn't copy .pri files** - `dotnet publish` fails to include Package Resource Index files needed for WinUI initialization
+3. **Self-contained is huge** - Bundling runtimes creates ~50-100 MB installers without trimming benefits
+4. **Documentation is sparse** - Microsoft docs focus on packaged (MSIX) or self-contained deployments, not framework-dependent unpackaged
+
+### Solution
+
+Use **MSI (not MSIX)** for unsigned distribution via WinGet, with these **exact project properties**:
+
+```xml
+<!-- .NET Configuration -->
+<SelfContained>false</SelfContained>
+<PublishTrimmed>false</PublishTrimmed>
+<PublishAot>false</PublishAot>
+
+<!-- Windows App SDK Configuration -->
+<WindowsPackageType>None</WindowsPackageType>
+<WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+<WindowsAppSDKBootstrapInitialize>true</WindowsAppSDKBootstrapInitialize>
+<WindowsAppSDKDeploymentManagerInitialize>false</WindowsAppSDKDeploymentManagerInitialize>
+
+<!-- Critical: Required for .pri file generation in publish -->
+<EnableMsixTooling>true</EnableMsixTooling>
+```
+
+**Publish command:**
+```powershell
+dotnet publish -c Release -p:Platform=x64
+# Note: NO -r flag (see "Why No Runtime Identifier?" below)
+```
+
+### Property Explanations
+
+| Property | Value | Reason |
+|----------|-------|--------|
+| `SelfContained` | `false` | Framework-dependent - requires .NET 10 installed |
+| `PublishTrimmed` | `false` | Trimming fails with WinUI dependencies (see below) |
+| `WindowsPackageType` | `None` | Unpackaged app (not MSIX) |
+| `WindowsAppSDKSelfContained` | `false` | Framework-dependent - requires Windows App SDK 1.8 installed |
+| `WindowsAppSDKBootstrapInitialize` | `true` | Auto-initialize Bootstrap for framework-dependent apps |
+| `WindowsAppSDKDeploymentManagerInitialize` | `false` | DeploymentManager requires package identity (we're unpackaged) |
+| **`EnableMsixTooling`** | **`true`** | **CRITICAL:** Makes `dotnet publish` copy .pri files to output |
+
+### Why EnableMsixTooling=true?
+
+**Without this property**, `dotnet publish` fails to copy the Package Resource Index (.pri) file to the publish directory, causing WinUI initialization failures:
+
+```
+Exception code: 0xc000027b
+Faulting module: Microsoft.UI.Xaml.dll
+```
+
+The .pri file contains embedded compiled XAML (.xbf) and resource metadata. WinUI can't initialize without it.
+
+**With EnableMsixTooling=true**, the publish process correctly copies `WinEnvEdit.pri` even for unpackaged apps.
+
+**Reference:** [WindowsAppSDK #3451 - Missing .pri file in publish](https://github.com/microsoft/WindowsAppSDK/issues/3451)
+
+### Why No Runtime Identifier (-r flag)?
+
+**Do NOT use** `dotnet publish -r win-x64` even for framework-dependent apps. The `-r` flag creates runtime-specific output that causes Windows App SDK bootstrap initialization failures.
+
+**What happens with `-r win-x64`:**
+- Creates `bin/.../win-x64/publish/` output (nested folders)
+- Includes runtime-specific native binaries even with `SelfContained=false`
+- **Breaks** Windows App SDK bootstrap with "package identity" errors:
+  ```
+  Exception code: 0xc000027b (DLL_INIT_FAILED)
+  Faulting module: Microsoft.UI.Xaml.dll
+  ```
+
+**What happens without `-r`:**
+- Creates `bin/.../publish/` output (clean structure)
+- Pure managed assemblies (platform-agnostic)
+- **Works** - Bootstrap initializes correctly
+
+**Why the `-r` flag breaks framework-dependent apps:**
+- The runtime identifier creates a hybrid deployment mode
+- Windows App SDK bootstrap expects either fully self-contained OR fully framework-dependent
+- The hybrid mode confuses the bootstrap initialization sequence
+
+**When to use `-r`:**
+- Self-contained deployments (`SelfContained=true`)
+- Cross-platform apps targeting Linux/macOS
+- Not for Windows-only framework-dependent WinUI apps
+
+**For WinUI framework-dependent:** Use `dotnet publish` **without** `-r` for clean, working output.
+
+### Why MSI Instead of MSIX?
+
+**MSIX (packaged apps)** offer benefits like sandboxing, auto-updates, and cleaner installs, but have critical drawbacks for open-source distribution:
+
+| Format | Signing Required? | Distribution | End-User Experience |
+|--------|------------------|--------------|---------------------|
+| **MSI (unpackaged)** | No (optional) | WinGet, direct download | ⚠️ SmartScreen warning (unsigned), but installs normally |
+| **MSIX (packaged)** | **Yes** (for production) | Microsoft Store, WinGet | ✅ No warnings if signed, ❌ Requires Developer Mode if unsigned |
+
+**Why MSI for this project:**
+
+1. **No signing cost** - Code signing certificates cost $100-400/year
+   - EV certificates (~$300-400/year) give instant SmartScreen reputation
+   - OV certificates (~$100-200/year) require weeks/months to build reputation
+
+2. **WinGet mitigates SmartScreen** - Installing via `winget install` provides inherent trust, reducing warnings
+
+3. **Unsigned MSIX is impractical** - Requires end-users to enable Developer Mode (sideloading), which is a non-starter for general distribution
+
+4. **MSI works everywhere** - Traditional installer, no special modes required
+
+**Could we use MSIX?** Yes, if we had a code signing certificate. But for **unsigned open-source distribution**, MSI + WinGet is the practical choice.
+
+**Reference:** [Windows packaging overview](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/)
+
+### Why No Trimming?
+
+Trimming (`PublishTrimmed=true`) **requires** `SelfContained=true` and fails with WinUI 3 apps due to incompatible dependencies:
+
+**Trim errors:**
+```
+error IL2104: Assembly 'Microsoft.Web.WebView2.Core' produced trim warnings
+error IL2104: Assembly 'Microsoft.Windows.SDK.NET' produced trim warnings
+error IL2104: Assembly 'WinRT.Runtime' produced trim warnings
+error NETSDK1144: Optimizing assemblies for size failed
+```
+
+**Why it fails:**
+- WinUI dependencies use reflection and dynamic code generation
+- WebView2, Windows SDK projections, and WinRT runtime aren't marked as trim-safe
+- Even with `TrimMode=partial`, critical assemblies produce errors
+
+**Alternatives considered:**
+- Self-contained without trimming: ~50-100 MB MSI (too large)
+- Self-contained with trimming: Build fails completely (not viable)
+- Framework-dependent with trimming: Error "requires self-contained app" (not allowed)
+
+**Conclusion:** Accept the ~10 MB framework-dependent output as the minimal viable size for WinUI 3 unpackaged apps.
+
+**References:**
+- [WindowsAppSDK #2478 - IL trimming support](https://github.com/microsoft/WindowsAppSDK/issues/2478)
+- [WindowsAppSDK #5969 - Remove ML libraries from build](https://github.com/microsoft/WindowsAppSDK/issues/5969)
+- [.NET Trimming documentation](https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trim-self-contained)
+
+### Deployment Dependencies
+
+**WinGet manifest dependencies:**
+```yaml
+Dependencies:
+  PackageDependencies:
+    - PackageIdentifier: Microsoft.DotNet.DesktopRuntime.10
+    - PackageIdentifier: Microsoft.WindowsAppRuntime.1.8
+```
+
+Users must install these runtimes (typically via WinGet) before running the app. The installer is small (~10 MB) and benefits from system-level runtime patching.
+
+### Key Points
+
+- **10 MB is excellent** for a WinUI 3 app with framework dependencies
+- `dotnet publish` (without `-r` flag) creates clean, platform-agnostic output
+- EnableMsixTooling=true is **required** even for unpackaged apps
+- Trimming is **not viable** for WinUI 3 as of Windows App SDK 1.8
+- Framework-dependent is the **recommended approach** for distribution via package managers
+
+---
+
 ## Additional Resources
 
 - [Microsoft Learn: Data template selection](https://learn.microsoft.com/en-us/windows/apps/develop/ui/controls/data-template-selector)
-- [Windows App SDK: ContentDialog API](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.contentdialog?view=windows-app-sdk-1.8)
+- [Windows App SDK: ContentDialog API](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.contentdialog?view=windows-app-sdk-1-8)
 - [microsoft-ui-xaml GitHub Issues](https://github.com/microsoft/microsoft-ui-xaml/issues) - Check for known WinUI 3 bugs and workarounds
+- [WindowsAppSDK #3451: Missing .pri file in publish](https://github.com/microsoft/WindowsAppSDK/issues/3451)
+- [WindowsAppSDK #2478: IL trimming support](https://github.com/microsoft/WindowsAppSDK/issues/2478)
+- [Deploy unpackaged apps guide](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/deploy-unpackaged-apps)
