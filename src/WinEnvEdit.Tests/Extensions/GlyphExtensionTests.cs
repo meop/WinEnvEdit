@@ -6,7 +6,7 @@ using Xunit;
 
 namespace WinEnvEdit.Tests.Extensions;
 
-public class GlyphTests {
+public class GlyphExtensionTests {
   [Fact]
   public void Glyph_ConstantsAreDefined() {
     // Assert - Verify that key glyph constants exist and are non-empty

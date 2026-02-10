@@ -5,7 +5,7 @@ using Microsoft.Win32;
 using WinEnvEdit.Core.Models;
 using WinEnvEdit.Core.Services;
 using WinEnvEdit.Core.Types;
-using WinEnvEdit.Tests.Helpers;
+using WinEnvEdit.Tests.Builders;
 
 using Xunit;
 

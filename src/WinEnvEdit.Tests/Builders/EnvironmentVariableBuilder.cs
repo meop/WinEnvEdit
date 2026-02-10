@@ -3,7 +3,7 @@ using Microsoft.Win32;
 using WinEnvEdit.Core.Models;
 using WinEnvEdit.Core.Types;
 
-namespace WinEnvEdit.Tests.Helpers;
+namespace WinEnvEdit.Tests.Builders;
 
 /// <summary>Builder for EnvironmentVariableModel test instances.</summary>
 public class EnvironmentVariableBuilder {
