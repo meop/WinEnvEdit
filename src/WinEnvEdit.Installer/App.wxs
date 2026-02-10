@@ -14,9 +14,12 @@
       <ComponentGroupRef Id="AppComponents" />
     </Feature>
 
-    <Icon Id="AppIcon" SourceFile="$(var.SourceDir)\Assets\app.ico" />
+    <Icon Id="AppIcon" SourceFile="$(var.SourceDir)\Assets\App.ico" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon" />
 
+    <WixVariable Id="WixUIBannerBmp" Value="Assets\Banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="Assets\Dialog.bmp" />
+    <WixVariable Id="WixUILicenseRtf" Value="Assets\LICENSE.rtf" />
     <ui:WixUI Id="WixUI_Minimal" />
   </Package>
 
