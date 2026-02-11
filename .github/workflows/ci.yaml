@@ -114,13 +114,38 @@ jobs:
         with:
           path: ./artifacts
 
-      - name: Create Release and tag
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_tag_gpgsign: true
+
+      - name: Create signed tag
+        run: |
+          git tag -s v${{ needs.version.outputs.new_version }} -m "Release v${{ needs.version.outputs.new_version }}"
+          git push origin v${{ needs.version.outputs.new_version }}
+
+      - name: Build Changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v5
+        with:
+          commitMode: true
+          configuration: |
+            {
+              "commit_template": "- #{{SUMMARY}} ([#{{SHA}}](https://github.com/${{github.repository}}/commit/#{{SHA}}))"
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.version.outputs.new_version }}
+          body: ${{ steps.changelog.outputs.changelog }}
           files: |
             ./artifacts/**/*.msi
             LICENSE.txt
-          generate_release_notes: true
           draft: false
           prerelease: false
