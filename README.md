@@ -35,13 +35,14 @@ Several frameworks were considered to achieve the best balance of performance an
 ## Getting Started
 
 ### Prerequisites
-- **Windows 11**
-- **.NET 10 SDK** (for development)
+- **Microsoft Windows 11**
+- **Microsoft Windows App SDK 1.8** (for development)
+- **Microsoft .NET SDK 10.0** (for development)
 
 ### Build & Run
 To build and run the application from the command line:
 
-**Note**: `<Platform>` is auto-detected via `powershell -c 'Write-Output $Env:PROCESSOR_ARCHITECTURE'` (maps `AMD64` → `x64`, `ARM64` → `ARM64`).
+**Note**: `<Platform>` is auto-detected via `powershell -c 'Write-Output $Env:PROCESSOR_ARCHITECTURE'` (maps `ARM64` → `ARM64`, `AMD64` → `x64`).
 
 ```bash
 # Run prebuild (format, icons, version sync)
