@@ -2,7 +2,7 @@
 
 Guidance for Claude Code when working with WinEnvEdit.
 
-**See also:** [AGENTS.md](AGENTS.md) for git safety rules, [PATTERNS.md](PATTERNS.md) for MVVM, XAML binding, and WinUI implementation patterns.
+**See also:** [PATTERNS.md](PATTERNS.md) for MVVM, XAML binding, and WinUI implementation patterns.
 
 ---
 
@@ -51,18 +51,19 @@ Solution: `src/WinEnvEdit.slnx`
 
 ---
 
-## CI/CD
+## Workflows
 
-**Workflow:** `.github/workflows/ci.yaml`
+**Pipeline:** `.github/workflows/pipeline.yaml`
 
 | Job          | Runs on        | Condition                                             |
 | ------------ | -------------- | ----------------------------------------------------- |
 | **version**  | all pushes/PRs | Detects if `VERSION` has a new tag                    |
 | **validate** | all pushes/PRs | Checks formatting, version sync, builds, tests        |
-| **package**  | main only      | Builds MSI for all platforms (if version changed)     |
+| **publish**  | main only      | Builds MSI for all platforms (if version changed)     |
 | **release**  | main only      | Creates GitHub release with MSIs (if version changed) |
+| **package**  | main only      | Submits WinGet update PR via wingetcreate             |
 
-The validate job runs `Prebuild.ps1` and fails if it produces uncommitted changes. Always run it locally and commit before pushing.
+Always run `Prebuild.ps1` locally and commit before pushing — the validate job fails if it produces uncommitted changes.
 
 ---
 

@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Pipeline
 
 on:
   push:
@@ -149,3 +149,23 @@ jobs:
             LICENSE.txt
           draft: false
           prerelease: false
+
+  package:
+    name: Package
+    needs: [version, release]
+    if: github.ref == 'refs/heads/main' && needs.version.outputs.changed == 'true'
+    runs-on: windows-latest
+    steps:
+      - name: Submit WinGet update
+        shell: pwsh
+        run: |
+          $version = "${{ needs.version.outputs.new_version }}"
+          $baseUrl = "https://github.com/${{ github.repository }}/releases/download/v$version"
+
+          Invoke-WebRequest -Uri https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+
+          .\wingetcreate.exe update meop.WinEnvEdit `
+            --version $version `
+            --urls "$baseUrl/WinEnvEdit-x64.msi" "$baseUrl/WinEnvEdit-arm64.msi" `
+            --token ${{ secrets.PAT_REPO }} `
+            --submit

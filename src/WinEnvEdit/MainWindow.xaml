@@ -27,17 +27,6 @@
 
             <CommandBar Grid.Column="0" Style="{StaticResource StandardCommandBarStyle}">
                 <AppBarButton
-                    Command="{x:Bind ViewModel.RefreshCommand}"
-                    Style="{StaticResource CommandBarIconButton}"
-                    ToolTipService.ToolTip="Refresh (F5)">
-                    <AppBarButton.Icon>
-                        <FontIcon Glyph="{markup:Glyph Name=Refresh}" Style="{StaticResource CommandBarIconStyle}" />
-                    </AppBarButton.Icon>
-                    <AppBarButton.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="F5" />
-                    </AppBarButton.KeyboardAccelerators>
-                </AppBarButton>
-                <AppBarButton
                     Command="{x:Bind ViewModel.ImportCommand}"
                     Style="{StaticResource CommandBarIconButton}"
                     ToolTipService.ToolTip="Import (Ctrl+I)">
@@ -60,14 +49,14 @@
                     </AppBarButton.KeyboardAccelerators>
                 </AppBarButton>
                 <AppBarButton
-                    Command="{x:Bind ViewModel.SaveCommand}"
+                    Command="{x:Bind ViewModel.RefreshCommand}"
                     Style="{StaticResource CommandBarIconButton}"
-                    ToolTipService.ToolTip="Save (Ctrl+S)">
+                    ToolTipService.ToolTip="Refresh (F5)">
                     <AppBarButton.Icon>
-                        <FontIcon Glyph="{markup:Glyph Name=Save}" Style="{StaticResource CommandBarIconStyle}" />
+                        <FontIcon Glyph="{markup:Glyph Name=Refresh}" Style="{StaticResource CommandBarIconStyle}" />
                     </AppBarButton.Icon>
                     <AppBarButton.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="S" Modifiers="Control" />
+                        <KeyboardAccelerator Key="F5" />
                     </AppBarButton.KeyboardAccelerators>
                 </AppBarButton>
                 <AppBarButton
@@ -90,6 +79,17 @@
                     </AppBarButton.Icon>
                     <AppBarButton.KeyboardAccelerators>
                         <KeyboardAccelerator Key="Y" Modifiers="Control" />
+                    </AppBarButton.KeyboardAccelerators>
+                </AppBarButton>
+                <AppBarButton
+                    Command="{x:Bind ViewModel.SaveCommand}"
+                    Style="{StaticResource CommandBarIconButton}"
+                    ToolTipService.ToolTip="Save (Ctrl+S)">
+                    <AppBarButton.Icon>
+                        <FontIcon Glyph="{markup:Glyph Name=Save}" Style="{StaticResource CommandBarIconStyle}" />
+                    </AppBarButton.Icon>
+                    <AppBarButton.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="S" Modifiers="Control" />
                     </AppBarButton.KeyboardAccelerators>
                 </AppBarButton>
             </CommandBar>
