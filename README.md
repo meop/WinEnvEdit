@@ -54,14 +54,14 @@ Several frameworks were considered to achieve the best balance of performance an
 
 ```bash
 ./src/Scripts/Prebuild.ps1
-dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=<Platform>
-bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
+dotnet build WinEnvEdit.slnx -c Debug -p:Platform=<Platform>
+src/WinEnvEdit/bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
 ```
 
 ### Testing
 
 ```bash
-dotnet test src/WinEnvEdit.slnx -p:Platform=<Platform>
+dotnet test WinEnvEdit.slnx -p:Platform=<Platform>
 ```
 
 ### Releasing

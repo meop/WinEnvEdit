@@ -3,13 +3,13 @@
     <Platform Name="ARM64" />
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="WinEnvEdit/WinEnvEdit.csproj">
+  <Project Path="src/WinEnvEdit/WinEnvEdit.csproj">
     <Platform Solution="*|ARM64" Project="ARM64" />
     <Platform Solution="*|x64" Project="x64" />
     <Deploy />
   </Project>
-  <Project Path="WinEnvEdit.Core/WinEnvEdit.Core.csproj" />
-  <Project Path="WinEnvEdit.Tests/WinEnvEdit.Tests.csproj">
+  <Project Path="src/WinEnvEdit.Core/WinEnvEdit.Core.csproj" />
+  <Project Path="src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj">
     <Platform Solution="*|ARM64" Project="ARM64" />
     <Platform Solution="*|x64" Project="x64" />
     <Deploy />

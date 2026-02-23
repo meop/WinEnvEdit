@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <VersionFile>$(MSBuildThisFileDirectory)..\VERSION</VersionFile>
+    <VersionFile>$(MSBuildThisFileDirectory)VERSION</VersionFile>
     <RawVersion>$([System.IO.File]::ReadAllText($(VersionFile)).Trim())</RawVersion>
     <Version>$(RawVersion)</Version>
     <AssemblyVersion Condition="$(RawVersion.Split('.').Length) == 3">$(RawVersion).0</AssemblyVersion>

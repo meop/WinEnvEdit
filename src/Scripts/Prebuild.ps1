@@ -19,34 +19,40 @@ param (
 $ErrorActionPreference = 'Stop'
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$rootDir = (Get-Item $scriptDir).Parent.Parent.FullName
-$srcDir = Join-Path $rootDir 'src'
-$baseDir = Join-Path $scriptDir '..'
+$srcDir = (Get-Item $scriptDir).Parent.FullName
+$rootDir = (Get-Item $srcDir).Parent.FullName
 
 Write-Host 'Prebuild started.' -ForegroundColor Cyan
 
 function Format-Code {
   Write-Host 'Formatting code started.' -ForegroundColor Yellow
 
-  Push-Location $baseDir
+  Push-Location $rootDir
 
   dotnet format WinEnvEdit.slnx
   if ($LASTEXITCODE -ne 0) {
     Pop-Location
+
     Write-Host 'Error: dotnet format failed' -ForegroundColor Red
     exit 1
   }
 
   dotnet tool restore
 
+  Pop-Location
+
+  Push-Location $srcDir
+
   $projects = Get-ChildItem -Directory | Where-Object { $_.Name -like 'WinEnvEdit*' }
+  $xamlStylerConfig = Join-Path $scriptDir 'Settings.XamlStyler'
 
   foreach ($project in $projects) {
     Write-Host "Styling: $($project.Name)" -ForegroundColor Gray
 
-    dotnet tool run xstyler --directory $project.Name --recursive --config Settings.XamlStyler
+    dotnet tool run xstyler --directory $project.Name --recursive --config $xamlStylerConfig
     if ($LASTEXITCODE -ne 0) {
       Pop-Location
+
       Write-Host "Error: XAML styler run failed for $($project.Name)" -ForegroundColor Red
       exit 1
     }
@@ -64,6 +70,7 @@ function Format-Code {
   }
 
   Pop-Location
+
   Write-Host 'Formatting code completed.' -ForegroundColor Yellow
 }
 
@@ -133,7 +140,7 @@ function New-Assets {
   $sourceTime = (Get-Item $sourcePath).LastWriteTime
   $sourceImage = $null
 
-  # 1. Process App.ico
+  # Process App.ico
   $icoPath = Join-Path $outputDir 'App.ico'
   $relIcoPath = $icoPath.Replace("$srcDir\", "")
   $needsIco = $Force -or -not (Test-Path $icoPath) -or ($sourceTime -gt (Get-Item $icoPath).LastWriteTime)
@@ -198,7 +205,7 @@ function New-Assets {
     Write-Host "Up to date: $relIcoPath" -ForegroundColor Gray
   }
 
-  # 2. Process PNG assets
+  # Process PNG assets
   $pngVariations = @(
     @{ Name = 'Square44x44Logo.scale-200.png'; Width = 88; Height = 88; Wide = $false },
     @{ Name = 'Square150x150Logo.scale-200.png'; Width = 300; Height = 300; Wide = $false },
@@ -264,6 +271,7 @@ function Sync-Versions {
   Write-Host "Version: $version" -ForegroundColor Gray
   Write-Host 'Synchronizing versions started.' -ForegroundColor Yellow
 
+  # Windows manifests and identities MANDATE 4 parts (Major.Minor.Build.Revision)
   $winVersion = if ($version.Split('.').Count -eq 3) { "$version.0" } else { $version }
 
   Sync-XmlManifest `

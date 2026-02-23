@@ -26,8 +26,8 @@ param (
 $ErrorActionPreference = 'Stop'
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$rootDir = (Get-Item $scriptDir).Parent.Parent.FullName
-$srcDir = Join-Path $rootDir 'src'
+$srcDir = (Get-Item $scriptDir).Parent.FullName
+$rootDir = (Get-Item $srcDir).Parent.FullName
 $projectFile = Join-Path $srcDir 'WinEnvEdit\WinEnvEdit.csproj'
 $wixProj = Join-Path $srcDir 'WinEnvEdit.Installer\WinEnvEdit.Installer.wixproj'
 $installerDir = Join-Path $srcDir 'WinEnvEdit.Installer'

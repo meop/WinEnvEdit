@@ -22,15 +22,15 @@ All build/test commands require `-p:Platform=<Platform>`.
 **Develop** (prebuild, build, test, run):
 ```bash
 ./src/Scripts/Prebuild.ps1
-dotnet build src/WinEnvEdit.slnx -c Debug -p:Platform=<Platform>
-dotnet test src/WinEnvEdit.slnx -c Debug -p:Platform=<Platform>
-bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
+dotnet build WinEnvEdit.slnx -c Debug -p:Platform=<Platform>
+dotnet test WinEnvEdit.slnx -c Debug -p:Platform=<Platform>
+src/WinEnvEdit/bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
 ```
 
 **Release** (self-contained):
 ```bash
-dotnet build src/WinEnvEdit.slnx -c Release -p:Platform=<Platform>
-bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
+dotnet build WinEnvEdit.slnx -c Release -p:Platform=<Platform>
+src/WinEnvEdit/bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 ```
 
 **Scripts** (all in `src/Scripts/`):
@@ -47,7 +47,7 @@ bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 - **WinEnvEdit.Tests** – Pure unit tests (xUnit, FluentAssertions, no mocks needed)
 - **WinEnvEdit.Installer** – WiX v6 MSI installer project
 
-Solution: `src/WinEnvEdit.slnx`
+Solution: `WinEnvEdit.slnx`
 
 ---
 

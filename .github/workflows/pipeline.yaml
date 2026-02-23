@@ -64,7 +64,7 @@ jobs:
           }
 
       - name: Run Tests
-        run: dotnet test src/WinEnvEdit.slnx -c Debug -p:Platform=x64 --verbosity normal
+        run: dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug -p:Platform=x64 --verbosity normal
 
   publish:
     name: Publish

@@ -337,7 +337,8 @@ public partial class MainWindowViewModel : ObservableObject {
     var assembly = Assembly.GetExecutingAssembly();
     var product = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? string.Empty;
     var description = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? string.Empty;
-    var version = assembly.GetName().Version?.ToString() ?? string.Empty;
+    var v = assembly.GetName().Version;
+    var version = v != null ? (v.Revision > 0 ? v.ToString() : $"{v.Major}.{v.Minor}.{v.Build}") : string.Empty;
 
     var productValue = DialogHelper.CreateDialogValue(product);
     productValue.Name = "ProductText";
