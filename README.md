@@ -22,6 +22,60 @@ winget upgrade meop.WinEnvEdit
 - **Full History**: Unlimited Undo/Redo until changes are saved or refreshed.
 - **Modern UI**: Fully responsive design with Mica backdrop and Windows 11 design language.
 
+## Usage
+
+The application displays a dual-pane view:
+- **Left Pane**: System environment variables (requires elevation to save).
+- **Right Pane**: Current User environment variables.
+
+### Variable Editing
+
+- **Modify**: Edit the name or value of any variable directly in the text box.
+- **Add**: Click the **+** button in either the System or User header to add a new variable.
+- **Remove**: Click the **X** button on a variable card to mark it for removal.
+- **Toggle Type (Ctrl+T)**: Right-click a variable card and select **Toggle Type** to switch between a standard String (`REG_SZ`) and an Expandable String (`REG_EXPAND_SZ`).
+
+### Path List View
+
+Variables containing multiple paths (semicolon-separated, like `PATH`) can be expanded into a dedicated list view:
+- **Expand/Collapse**: Click the chevron button on the variable card.
+- **Validation**: Individual paths are checked for existence. Invalid paths are highlighted with a red border.
+- **Reordering**: Drag and drop paths within the list to change their order.
+- **Add/Remove Rows**: Use the plus and minus buttons within the expanded view to manage individual path entries.
+
+### Search and Filter
+
+- **Search (Ctrl+F)**: Click the search icon to filter variables in both panes by name or value.
+- **Volatile Variables (Ctrl+Shift+V)**: Click the eye icon to show/hide volatile (read-only, session-based) variables.
+
+### Import and Export
+
+- **Export (Ctrl+E)**: Save your current environment variables to a `.toml` file for backup or sharing.
+- **Import (Ctrl+I)**: Load variables from a `.toml` file. This allows you to sync environments between machines.
+
+### Safety and History
+
+- **Undo/Redo (Ctrl+Z / Ctrl+Y)**: Full history of changes is maintained until you save or refresh.
+- **Pending Changes**: The **Save** button is only enabled when there are changes to apply.
+- **Elevation**: Saving System variables will trigger a standard Windows UAC prompt.
+
+## Keyboard Shortcuts
+
+| Shortcut       | Action                     |
+| -------------- | -------------------------- |
+| `F5`           | Refresh from Registry      |
+| `Ctrl+S`       | Save Changes               |
+| `Ctrl+Z`       | Undo                       |
+| `Ctrl+Y`       | Redo                       |
+| `Ctrl+F`       | Search                     |
+| `Ctrl+T`       | Toggle Type                |
+| `Ctrl+E`       | Export to File             |
+| `Ctrl+I`       | Import from File           |
+| `Ctrl+Shift+P` | Toggle All Path Views      |
+| `Ctrl+Shift+V` | Toggle Volatile Variables  |
+| `Ctrl+C`       | Copy Variable (Name=Value) |
+| `Ctrl+V`       | Paste Variable Value       |
+
 ## Inspiration
 
 WinEnvEdit was heavily inspired by **Rapid Environment Editor**, a powerful tool that was widely used until its development slowed around 2018. While RapidEE is still functional, it is a legacy application that struggles with modern high-DPI display scaling and lacks a native Windows 11 aesthetic.
@@ -39,52 +93,6 @@ Several frameworks were considered to achieve the best balance of performance an
 - **Uno Platform**: Powerful for multi-platform apps, but considered overkill for a dedicated Windows utility.
 - **Tauri**: Offers a fancy UI but relies on Node.js/NPM which, while functional on ARM64, has a larger dependency footprint than pure .NET.
 - **WPF / WinForms / Electron**: Considered legacy or overly resource-heavy for a modern system utility.
-
-## Development
-
-### Prerequisites
-
-- **Microsoft Windows 11**
-- **Microsoft Windows App SDK 1.8**
-- **Microsoft .NET SDK 10.0**
-
-### Build & Run
-
-`<Platform>` is `ARM64` or `x64` — run `./src/Scripts/Platform.ps1` to detect.
-
-```bash
-./src/Scripts/Prebuild.ps1
-dotnet build WinEnvEdit.slnx -c Debug -p:Platform=<Platform>
-src/WinEnvEdit/bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
-```
-
-### Testing
-
-```bash
-dotnet test WinEnvEdit.slnx -p:Platform=<Platform>
-```
-
-### Releasing
-
-Bump the `VERSION` file, run `./src/Scripts/Prebuild.ps1`, commit and push to `main`. GitHub Actions handles the rest.
-
-**Pipeline** (`.github/workflows/pipeline.yaml`):
-
-| Job          | Runs on        | Condition                                             |
-| ------------ | -------------- | ----------------------------------------------------- |
-| **version**  | all pushes/PRs | Detects if `VERSION` has a new tag                    |
-| **validate** | all pushes/PRs | Checks formatting, version sync, builds, tests        |
-| **publish**  | main only      | Builds x64 and ARM64 MSI installers                   |
-| **release**  | main only      | Creates GitHub Release with installers and LICENSE    |
-| **package**  | main only      | Submits WinGet update PR via wingetcreate             |
-
-### Implementation Patterns
-
-High-performance WinUI 3 patterns used in this project are documented in **[PATTERNS.md](PATTERNS.md)**.
-
-## Usage
-
-For detailed instructions on all features and keyboard shortcuts, see **[USAGE.md](USAGE.md)**.
 
 ## License
 

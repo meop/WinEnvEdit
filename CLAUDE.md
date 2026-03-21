@@ -2,7 +2,7 @@
 
 Guidance for Claude Code when working with WinEnvEdit.
 
-**See also:** [PATTERNS.md](PATTERNS.md) for MVVM, XAML binding, and WinUI implementation patterns.
+**See also:** [docs/xaml.md](docs/xaml.md), [docs/mvvm.md](docs/mvvm.md), [docs/deployment.md](docs/deployment.md) for WinUI, MVVM, and deployment patterns.
 
 ---
 
@@ -82,7 +82,7 @@ Always run `Prebuild.ps1` locally and commit before pushing — the validate job
 2. **Naming**: camelCase fields (no underscore), PascalCase public members, no `Async` suffix
 3. **Usings**: System → Third-party → Project (blank lines between groups), no fully qualified names
 4. **Expressions**: `=>` for simple members, `[]` for collections when type is known
-5. **Initialization**: Simple types inline, complex types/collections in constructors (see [PATTERNS.md](PATTERNS.md))
+5. **Initialization**: Simple types inline, complex types/collections in constructors (see [docs/mvvm.md](docs/mvvm.md))
 6. **Style**: 2-space indent, LF line endings, UTF-8 without BOM, K&R braces, trailing commas
 7. **Tests**: Pure unit tests only (no registry, OS APIs, file system access)
 8. **CLI-first**: All tasks must work without Visual Studio
