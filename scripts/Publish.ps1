@@ -26,17 +26,16 @@ param (
 $ErrorActionPreference = 'Stop'
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$srcDir = (Get-Item $scriptDir).Parent.FullName
-$rootDir = (Get-Item $srcDir).Parent.FullName
-$projectFile = Join-Path $srcDir 'WinEnvEdit\WinEnvEdit.csproj'
-$wixProj = Join-Path $srcDir 'WinEnvEdit.Installer\WinEnvEdit.Installer.wixproj'
-$installerDir = Join-Path $srcDir 'WinEnvEdit.Installer'
+$rootDir = (Get-Item $scriptDir).Parent.FullName
+$projectFile = Join-Path $rootDir 'WinEnvEdit\WinEnvEdit.csproj'
+$wixProj = Join-Path $rootDir 'WinEnvEdit.Installer\WinEnvEdit.Installer.wixproj'
+$installerDir = Join-Path $rootDir 'WinEnvEdit.Installer'
 
 Write-Host 'Publishing started.' -ForegroundColor Cyan
 
 function New-LicenseRtf {
   $licenseRtfPath = Join-Path $installerDir 'Assets\LICENSE.rtf'
-  $relPath = $licenseRtfPath.Replace("$srcDir\", "")
+  $relPath = $licenseRtfPath.Replace("$rootDir\", "")
   Write-Host "Generating: $relPath" -ForegroundColor Gray
 
   $licenseText = Get-Content (Join-Path $rootDir 'LICENSE.txt') -Raw
@@ -62,7 +61,7 @@ function New-BannerBitmap {
   )
 
   $bannerPath = Join-Path $installerDir 'Assets\Banner.bmp'
-  $relPath = $bannerPath.Replace("$srcDir\", "")
+  $relPath = $bannerPath.Replace("$rootDir\", "")
   Write-Host "Generating: $relPath" -ForegroundColor Gray
 
   $bannerWidth = 493
@@ -111,7 +110,7 @@ function New-DialogBitmap {
   )
 
   $dialogPath = Join-Path $installerDir 'Assets\Dialog.bmp'
-  $relPath = $dialogPath.Replace("$srcDir\", "")
+  $relPath = $dialogPath.Replace("$rootDir\", "")
   Write-Host "Generating: $relPath" -ForegroundColor Gray
 
   $dialogWidth = 493
@@ -186,7 +185,7 @@ function New-Assets {
   if ($needsLicense) {
     New-LicenseRtf
   } else {
-    $relPath = $licenseRtfPath.Replace("$srcDir\", "")
+    $relPath = $licenseRtfPath.Replace("$rootDir\", "")
     Write-Host "Up to date: $relPath" -ForegroundColor Gray
   }
 
@@ -201,7 +200,7 @@ function New-Assets {
 
   foreach ($asset in $bitmapAssets) {
     $needsGen = $Force -or -not (Test-Path $asset.Path) -or ($sourceTime -gt (Get-Item $asset.Path).LastWriteTime)
-    $relPath = $asset.Path.Replace("$srcDir\", "")
+    $relPath = $asset.Path.Replace("$rootDir\", "")
 
     if ($needsGen) {
       if ($asset.Name -eq 'Banner.bmp') {
@@ -230,7 +229,7 @@ Write-Host 'MSI building started.' -ForegroundColor Yellow
 dotnet build $wixProj -c Release -p:Platform=$Platform
 Write-Host 'MSI building completed.' -ForegroundColor Yellow
 
-$outputMsi = Join-Path $rootDir "src\WinEnvEdit.Installer\bin\$Platform\Release\WinEnvEdit-$Platform.msi"
+$outputMsi = Join-Path $rootDir "WinEnvEdit.Installer\bin\$Platform\Release\WinEnvEdit-$Platform.msi"
 if (-not (Test-Path $outputMsi)) {
   Write-Host "Error: MSI file not found at $outputMsi" -ForegroundColor Red
   exit 1

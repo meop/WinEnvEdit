@@ -10,7 +10,7 @@ Guidance for Claude Code when working with WinEnvEdit.
 
 `<Platform>` is used throughout this document. Detect once per session:
 ```bash
-./src/Scripts/Platform.ps1   # prints "ARM64" or "x64" to stdout
+./scripts/Platform.ps1   # prints "ARM64" or "x64" to stdout
 ```
 
 ---
@@ -21,19 +21,19 @@ All build/test commands require `-p:Platform=<Platform>`.
 
 **Develop** (prebuild, build, test, run):
 ```bash
-./src/Scripts/Prebuild.ps1
+./scripts/Prebuild.ps1
 dotnet build WinEnvEdit.slnx -c Debug -p:Platform=<Platform>
 dotnet test WinEnvEdit.slnx -c Debug -p:Platform=<Platform>
-src/WinEnvEdit/bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
+WinEnvEdit/bin/<Platform>/Debug/net10.0-windows10.0.26100.0/WinEnvEdit.exe
 ```
 
 **Release** (self-contained):
 ```bash
 dotnet build WinEnvEdit.slnx -c Release -p:Platform=<Platform>
-src/WinEnvEdit/bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
+WinEnvEdit/bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/WinEnvEdit.exe
 ```
 
-**Scripts** (all in `src/Scripts/`):
+**Scripts** (all in `scripts/`):
 - `Platform.ps1` – Detects host platform (`ARM64` or `x64`)
 - `Prebuild.ps1` – Formats code, generates icons, syncs versions. **Run before full builds or after changing VERSION**
 - `Publish.ps1 -Platform <Platform>` – Builds MSI via WiX v6

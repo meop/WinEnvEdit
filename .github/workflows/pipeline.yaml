@@ -55,16 +55,16 @@ jobs:
       - name: Run Prebuild script and check
         shell: pwsh
         run: |
-          ./src/Scripts/Prebuild.ps1
+          ./scripts/Prebuild.ps1
           $status = git status --porcelain
           if ($status) {
-            Write-Host 'Error: Please run ./src/Scripts/Prebuild.ps1 locally and commit the changes.' -ForegroundColor Red
+            Write-Host 'Error: Please run ./scripts/Prebuild.ps1 locally and commit the changes.' -ForegroundColor Red
             Write-Host $status
             exit 1
           }
 
       - name: Run Tests
-        run: dotnet test src/WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug -p:Platform=x64 --verbosity normal
+        run: dotnet test WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug -p:Platform=x64 --verbosity normal
 
   publish:
     name: Publish
@@ -86,7 +86,7 @@ jobs:
       - name: Run Publish script and check
         shell: pwsh
         run: |
-          ./src/Scripts/Publish.ps1 -Platform ${{ matrix.platform }}
+          ./scripts/Publish.ps1 -Platform ${{ matrix.platform }}
           $status = git status --porcelain
           if ($status) {
             Write-Host 'Error: Uncommitted changes detected after running Publish.ps1.' -ForegroundColor Red
@@ -98,7 +98,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: WinEnvEdit-${{ matrix.platform }}-MSI
-          path: src/WinEnvEdit.Installer/bin/${{ matrix.platform }}/Release/WinEnvEdit-*.msi
+          path: WinEnvEdit.Installer/bin/${{ matrix.platform }}/Release/WinEnvEdit-*.msi
 
   release:
     name: Release

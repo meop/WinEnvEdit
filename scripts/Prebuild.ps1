@@ -19,8 +19,7 @@ param (
 $ErrorActionPreference = 'Stop'
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$srcDir = (Get-Item $scriptDir).Parent.FullName
-$rootDir = (Get-Item $srcDir).Parent.FullName
+$rootDir = (Get-Item $scriptDir).Parent.FullName
 
 Write-Host 'Prebuild started.' -ForegroundColor Cyan
 
@@ -41,7 +40,7 @@ function Format-Code {
 
   Pop-Location
 
-  Push-Location $srcDir
+  Push-Location $rootDir
 
   $projects = Get-ChildItem -Directory | Where-Object { $_.Name -like 'WinEnvEdit*' }
   $xamlStylerConfig = Join-Path $scriptDir 'Settings.XamlStyler'
@@ -126,7 +125,7 @@ function New-Assets {
   Write-Host 'Generating assets started.' -ForegroundColor Yellow
 
   $sourcePath = Join-Path $scriptDir 'App.png'
-  $outputDir = Join-Path $srcDir 'WinEnvEdit\Assets'
+  $outputDir = Join-Path $rootDir 'WinEnvEdit\Assets'
 
   if (-not (Test-Path $sourcePath)) {
     Write-Host "Error: Source file not found at $sourcePath" -ForegroundColor Red
@@ -142,7 +141,7 @@ function New-Assets {
 
   # Process App.ico
   $icoPath = Join-Path $outputDir 'App.ico'
-  $relIcoPath = $icoPath.Replace("$srcDir\", "")
+  $relIcoPath = $icoPath.Replace("$rootDir\", "")
   $needsIco = $Force -or -not (Test-Path $icoPath) -or ($sourceTime -gt (Get-Item $icoPath).LastWriteTime)
 
   if ($needsIco) {
@@ -218,7 +217,7 @@ function New-Assets {
 
   foreach ($var in $pngVariations) {
     $outputPath = Join-Path $outputDir $var.Name
-    $relOutputPath = $outputPath.Replace("$srcDir\", "")
+    $relOutputPath = $outputPath.Replace("$rootDir\", "")
     $needsPng = $Force -or -not (Test-Path $outputPath) -or ($sourceTime -gt (Get-Item $outputPath).LastWriteTime)
 
     if ($needsPng) {
@@ -254,7 +253,7 @@ function Sync-XmlManifest($path, $regex, $value) {
     exit 1
   }
 
-  $relPath = $path.Replace("$srcDir\", "")
+  $relPath = $path.Replace("$rootDir\", "")
   Write-Host "Processing: $relPath" -ForegroundColor Gray
 
   $content = Get-Content $path -Raw
@@ -275,12 +274,12 @@ function Sync-Versions {
   $winVersion = if ($version.Split('.').Count -eq 3) { "$version.0" } else { $version }
 
   Sync-XmlManifest `
-    -path (Join-Path $srcDir 'WinEnvEdit\App.manifest') `
+    -path (Join-Path $rootDir 'WinEnvEdit\App.manifest') `
     -regex '(<assemblyIdentity\s+[^>]*version=")[0-9.]*(")' `
     -value $winVersion
 
   Sync-XmlManifest `
-    -path (Join-Path $srcDir 'WinEnvEdit\Package.appxmanifest') `
+    -path (Join-Path $rootDir 'WinEnvEdit\Package.appxmanifest') `
     -regex '(<Identity\s+[^>]*Version=")[0-9.]*(")' `
     -value $winVersion
 
