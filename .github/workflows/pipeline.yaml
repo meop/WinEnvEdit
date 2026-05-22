@@ -21,7 +21,7 @@ jobs:
       new_version: ${{ steps.check.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Check for version tag
@@ -44,9 +44,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
       - name: Run Prebuild script and check
@@ -73,9 +73,9 @@ jobs:
         platform: [ arm64, x64 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
       - name: Run Publish script and check
@@ -89,7 +89,7 @@ jobs:
             exit 1
           }
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: WinEnvEdit-${{ matrix.platform }}-MSI
           path: WinEnvEdit.Installer/bin/${{ matrix.platform }}/Release/WinEnvEdit-*.msi
@@ -103,13 +103,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: ./artifacts
       - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@v7
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -121,7 +121,7 @@ jobs:
           git push origin v${{ needs.version.outputs.new_version }}
       - name: Build Changelog
         id: changelog
-        uses: mikepenz/release-changelog-builder-action@v5
+        uses: mikepenz/release-changelog-builder-action@v6
         with:
           commitMode: true
           configuration: |
