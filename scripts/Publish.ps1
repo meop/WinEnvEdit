@@ -223,10 +223,18 @@ New-Assets -Force:$Force
 Write-Host "Platform: $Platform" -ForegroundColor Gray
 Write-Host 'Binary publishing started.' -ForegroundColor Yellow
 dotnet publish $projectFile -c Release -p:Platform=$Platform
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "Error: dotnet publish failed (exit code $LASTEXITCODE)." -ForegroundColor Red
+  exit $LASTEXITCODE
+}
 Write-Host 'Binary publishing completed.' -ForegroundColor Yellow
 
 Write-Host 'MSI building started.' -ForegroundColor Yellow
 dotnet build $wixProj -c Release -p:Platform=$Platform
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "Error: dotnet build failed (exit code $LASTEXITCODE)." -ForegroundColor Red
+  exit $LASTEXITCODE
+}
 Write-Host 'MSI building completed.' -ForegroundColor Yellow
 
 $outputMsi = Join-Path $rootDir "WinEnvEdit.Installer\bin\$Platform\Release\WinEnvEdit-$Platform.msi"
