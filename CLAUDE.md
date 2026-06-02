@@ -36,7 +36,7 @@ WinEnvEdit/bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/Win
 **Scripts** (all in `scripts/`):
 - `Platform.ps1` – Detects host platform (`ARM64` or `x64`)
 - `Prebuild.ps1` – Formats code, generates icons, syncs versions. **Run before full builds or after changing VERSION**
-- `Publish.ps1 -Platform <Platform>` – Builds MSI via WiX v6
+- `Publish.ps1 -Platform <Platform>` – Builds MSI via WiX
 
 ---
 
@@ -45,7 +45,7 @@ WinEnvEdit/bin/<Platform>/Release/net10.0-windows10.0.26100.0/win-<Platform>/Win
 - **WinEnvEdit.Core** – Business logic library (no UI dependencies, fully testable)
 - **WinEnvEdit** – WinUI 3 application (UI, ViewModels, integration)
 - **WinEnvEdit.Tests** – Pure unit tests (xUnit, FluentAssertions, no mocks needed)
-- **WinEnvEdit.Installer** – WiX v6 MSI installer project
+- **WinEnvEdit.Installer** – WiX MSI installer project
 
 Solution: `WinEnvEdit.slnx`
 

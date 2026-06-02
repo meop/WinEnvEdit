@@ -402,6 +402,34 @@ data = ""valid_value""
     }
   }
 
+  [Theory]
+  [InlineData(@"C:\Program Files\app")] // backslashes must survive TOML escaping
+  [InlineData(@"%SystemRoot%\System32;%USERPROFILE%\go\bin")] // PATH-style with backslashes and macros
+  [InlineData("value with \"quotes\"")] // embedded double quotes
+  [InlineData("tab\tand\nnewline")] // control characters
+  [InlineData("ünïcödé ✓ 値")] // non-ASCII
+  public async Task ImportFromStream_RoundTripPreservesSpecialCharacters(string data) {
+    // Arrange
+    var originalVariables = new List<EnvironmentVariableModel> {
+      EnvironmentVariableBuilder.Default()
+        .WithName("SPECIAL_VAR")
+        .WithData(data)
+        .WithScope(VariableScope.User)
+        .WithType(RegistryValueKind.String)
+        .Build(),
+    };
+    using var stream = new MemoryStream();
+
+    // Act
+    await fileService.ExportToStream(stream, originalVariables);
+    stream.Position = 0;
+    var imported = (await fileService.ImportFromStream(stream)).ToList();
+
+    // Assert
+    imported.Should().ContainSingle();
+    imported[0].Data.Should().Be(data);
+  }
+
   #endregion
 
   #region FormatTomlOutput Tests

@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Win32;
 
 using Tomlyn;
+using Tomlyn.Model;
 
 using WinEnvEdit.Core.Models;
 using WinEnvEdit.Core.Types;
@@ -32,19 +33,17 @@ public class FileService : IFileService {
   }
 
   public async Task ExportToStream(Stream stream, IEnumerable<EnvironmentVariableModel> variables) {
-    var model = variables
-      .Where(v => !v.IsRemoved && !v.IsVolatile)
-      .GroupBy(v => v.Scope.ToString())
-      .ToDictionary(
-        g => g.Key,
-        g => g.Select(v => new Dictionary<string, object> {
-          ["name"] = v.Name,
-          ["data"] = v.Data,
-          ["type"] = v.Type.ToString()
-        }).ToList()
-      );
+    var root = new TomlTable();
+    foreach (var group in variables.Where(v => !v.IsRemoved && !v.IsVolatile).GroupBy(v => v.Scope.ToString())) {
+      var tableArray = new TomlTableArray();
+      foreach (var v in group) {
+        var entry = new TomlTable { ["name"] = v.Name, ["data"] = v.Data, ["type"] = v.Type.ToString() };
+        tableArray.Add(entry);
+      }
+      root[group.Key] = tableArray;
+    }
 
-    var tomlContent = Toml.FromModel(model);
+    var tomlContent = TomlSerializer.Serialize(root);
     var formattedContent = FormatTomlOutput(tomlContent);
 
     // Write with LF line endings and UTF-8 encoding (no BOM)
@@ -83,7 +82,7 @@ public class FileService : IFileService {
   public async Task<IEnumerable<EnvironmentVariableModel>> ImportFromStream(Stream stream) {
     using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 4096, leaveOpen: true);
     var content = await reader.ReadToEndAsync();
-    var model = Toml.ToModel(content);
+    var model = TomlSerializer.Deserialize<TomlTable>(content) ?? [];
     var result = new List<EnvironmentVariableModel>();
     var sections = new[] { ("System", VariableScope.System), ("User", VariableScope.User) };
 

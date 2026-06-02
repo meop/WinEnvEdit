@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-  Builds the MSI installer using WiX v6.
+  Builds the MSI installer using WiX.
 
 .DESCRIPTION
   Generates installer resources, publishes binaries for the specified platform,

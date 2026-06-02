@@ -7,6 +7,44 @@ using Xunit;
 namespace WinEnvEdit.Tests.Validators;
 
 public class VariableValidatorTests {
+  #region LooksLikePath Tests
+
+  [Theory]
+  [InlineData(@"C:\path")]
+  [InlineData("D:")]
+  [InlineData("z:\\temp")] // lowercase drive letter
+  [InlineData("%USERPROFILE%\\go")]
+  [InlineData("%USERPROFILE2%\\go")]
+  [InlineData("%ProgramFiles(x86)%")]
+  [InlineData("%MY_VAR%\\path")]
+  [InlineData("%SystemRoot%")]
+  [InlineData("%A%")] // minimal valid macro
+  [InlineData("%A%B%")] // closes at first matching percent
+  [InlineData("  C:\\path  ")] // surrounding whitespace is trimmed
+  [InlineData("  %VAR%  ")]
+  public void LooksLikePath_PathLikeValues_ReturnsTrue(string value) {
+    VariableValidator.LooksLikePath(value).Should().BeTrue();
+  }
+
+  [Theory]
+  [InlineData("")]
+  [InlineData("   ")]
+  [InlineData("\t")] // whitespace-only
+  [InlineData("hello")]
+  [InlineData("%%")]
+  [InlineData("%")] // bare percent
+  [InlineData("%AB")] // no closing percent
+  [InlineData("%=VAR%")]
+  [InlineData("%AB=CD%")] // '=' terminates the scan before a closing percent
+  [InlineData("1:\\temp")] // non-letter drive prefix
+  [InlineData("foo%BAR%")] // macro not at start
+  [InlineData("not a path")]
+  public void LooksLikePath_NonPathValues_ReturnsFalse(string value) {
+    VariableValidator.LooksLikePath(value).Should().BeFalse();
+  }
+
+  #endregion
+
   #region ValidateName Tests
 
   [Fact]
@@ -126,6 +164,15 @@ public class VariableValidatorTests {
   }
 
   [Fact]
+  public void ValidateName_WithParentheses_ReturnsSuccess() {
+    // Windows permits parentheses in names (e.g. "ProgramFiles(x86)")
+    var result = VariableValidator.ValidateName("ProgramFiles(x86)");
+
+    result.IsValid.Should().BeTrue();
+    result.ErrorMessage.Should().BeEmpty();
+  }
+
+  [Fact]
   public void ValidateNameAllErrors_ReturnsMultipleErrors() {
     // Act
     var errors = VariableValidator.ValidateNameAllErrors("INVALID=NAME WITH SPACE;");
@@ -172,6 +219,15 @@ public class VariableValidatorTests {
     var result = VariableValidator.ValidateData(maxLengthValue);
 
     // Assert
+    result.IsValid.Should().BeTrue();
+    result.ErrorMessage.Should().BeEmpty();
+  }
+
+  [Fact]
+  public void ValidateData_Empty_ReturnsSuccess() {
+    // Empty values are valid (e.g. clearing a variable's data)
+    var result = VariableValidator.ValidateData(string.Empty);
+
     result.IsValid.Should().BeTrue();
     result.ErrorMessage.Should().BeEmpty();
   }

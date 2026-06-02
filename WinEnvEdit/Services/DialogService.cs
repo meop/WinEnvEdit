@@ -1,11 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-
-using Windows.Storage.Pickers;
+using Microsoft.Windows.Storage.Pickers;
 
 using WinEnvEdit.Helpers;
-
-using WinRT.Interop;
 
 namespace WinEnvEdit.Services;
 
@@ -31,9 +28,7 @@ public class DialogService(Window window) : IDialogService {
   }
 
   public async Task<string?> PickOpenFile(string extension) {
-    var hwnd = WindowNative.GetWindowHandle(window);
-    var openPicker = new FileOpenPicker();
-    InitializeWithWindow.Initialize(openPicker, hwnd);
+    var openPicker = new FileOpenPicker(window.AppWindow.Id);
     openPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
     openPicker.FileTypeFilter.Add(extension);
 
@@ -42,9 +37,7 @@ public class DialogService(Window window) : IDialogService {
   }
 
   public async Task<string?> PickSaveFile(string description, string extension, string suggestedFileName) {
-    var hwnd = WindowNative.GetWindowHandle(window);
-    var savePicker = new FileSavePicker();
-    InitializeWithWindow.Initialize(savePicker, hwnd);
+    var savePicker = new FileSavePicker(window.AppWindow.Id);
     savePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
     savePicker.FileTypeChoices.Add(description, [extension]);
     savePicker.SuggestedFileName = suggestedFileName;

@@ -34,13 +34,14 @@ public static class VariableValidator {
       return true;
     }
 
-    // Environment variable macro: %LETTERS% (e.g., "%SystemRoot%", "%USERPROFILE%\go")
+    // Environment variable macro: %VAR% (e.g., "%SystemRoot%", "%ProgramFiles(x86)%\go")
+    // Windows allows all chars in env var names except '\0' and '='
     if (trimmed.Length >= 3 && trimmed[0] == '%') {
       for (var i = 1; i < trimmed.Length; i++) {
         if (trimmed[i] == '%') {
           return i > 1;
         }
-        if (!char.IsAsciiLetter(trimmed[i])) {
+        if (trimmed[i] == '\0' || trimmed[i] == '=') {
           break;
         }
       }
