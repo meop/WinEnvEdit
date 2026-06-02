@@ -74,7 +74,7 @@ dotnet publish -c Release -p:Platform=x64
 | `SelfContained` | `false` | Framework-dependent — requires .NET 10 installed |
 | `PublishTrimmed` | `false` | Trimming fails with WinUI dependencies |
 | `WindowsPackageType` | `None` | Unpackaged app (not MSIX) |
-| `WindowsAppSDKSelfContained` | `false` | Requires Windows App SDK 1.8 installed |
+| `WindowsAppSDKSelfContained` | `false` | Requires the Windows App SDK 2.x runtime installed |
 | `WindowsAppSDKBootstrapInitialize` | `true` | Auto-initializes Bootstrap for framework-dependent apps |
 | `WindowsAppSDKDeploymentManagerInitialize` | `false` | DeploymentManager requires package identity (we're unpackaged) |
 | **`EnableMsixTooling`** | **`true`** | **CRITICAL:** Makes `dotnet publish` copy `.pri` files to output |
@@ -124,5 +124,19 @@ References: [WindowsAppSDK #2478](https://github.com/microsoft/WindowsAppSDK/iss
 Dependencies:
   PackageDependencies:
     - PackageIdentifier: Microsoft.DotNet.DesktopRuntime.10
-    - PackageIdentifier: Microsoft.WindowsAppRuntime.1.8
+    - PackageIdentifier: Microsoft.WindowsAppRuntime.2.0
+```
+
+---
+
+## SDK Component References
+
+Reference only the components the app uses — **not** the `Microsoft.WindowsAppSDK`
+metapackage, which transitively bundles the unused Windows ML libraries (`onnxruntime.dll`,
+`DirectML.dll`, ~40 MB) with no supported way to strip them
+([WindowsAppSDK #6464](https://github.com/microsoft/WindowsAppSDK/issues/6464)).
+
+```xml
+<PackageReference Include="Microsoft.WindowsAppSDK.WinUI" />
+<PackageReference Include="Microsoft.WindowsAppSDK.Runtime" />
 ```
