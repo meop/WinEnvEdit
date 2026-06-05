@@ -3,16 +3,20 @@ using CommunityToolkit.Mvvm.Input;
 
 using WinEnvEdit.Core.Validators;
 
+using WinRT;
+
 namespace WinEnvEdit.ViewModels;
 
+[GeneratedBindableCustomProperty]
 public partial class PathItemViewModel : ObservableObject {
   private readonly VariableViewModel parent;
-  private bool isInitializing = true;
+  private readonly bool isInitializing = true;
 
   public PathItemViewModel(string pathValue, VariableViewModel parentViewModel) {
     parent = parentViewModel;
     PathValue = pathValue;
     Exists = !VariableValidator.LooksLikePath(pathValue) || VariableValidator.IsValidPath(pathValue);
+    RemoveCommand = new RelayCommand(() => parent.RemovePath(this));
     isInitializing = false;
   }
 
@@ -23,6 +27,8 @@ public partial class PathItemViewModel : ObservableObject {
   public partial bool Exists { get; set; }
 
   public bool IsReadOnly => parent.VisualIsLocked;
+
+  public IRelayCommand RemoveCommand { get; }
 
   partial void OnPathValueChanged(string value) {
     if (isInitializing) {
@@ -37,7 +43,4 @@ public partial class PathItemViewModel : ObservableObject {
   /// Validation applies if the value looks like a filesystem path.
   /// </summary>
   public void UpdateExists() => Exists = !VariableValidator.LooksLikePath(PathValue) || VariableValidator.IsValidPath(PathValue);
-
-  [RelayCommand]
-  private void Remove() => parent.RemovePath(this);
 }

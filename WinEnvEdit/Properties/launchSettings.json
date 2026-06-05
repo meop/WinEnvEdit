@@ -4,7 +4,9 @@
       "commandName": "MsixPackage"
     },
     "WinEnvEdit (Unpackaged)": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "debugEngines": "managed,native",
+      "hotReloadEnabled": true
     }
   }
 }

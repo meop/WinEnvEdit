@@ -1,7 +1,7 @@
 using System.Collections;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Text;
 
 using Microsoft.Win32;
 
@@ -44,106 +44,126 @@ public partial class EnvironmentService : IEnvironmentService {
     var userVarsList = varsList.Where(v => v.Scope == VariableScope.User).ToList();
     var systemVarsList = varsList.Where(v => v.Scope == VariableScope.System).ToList();
 
-    var scriptPath = Path.Combine(Path.GetTempPath(), $"WinEnvEdit_Save_{Guid.NewGuid()}.ps1");
+    // HKCU is writable without elevation; HKLM requires admin.
+    if (userVarsList.Count != 0) {
+      await Task.Run(() => WriteUserVariables(userVarsList));
+    }
+
+    if (systemVarsList.Count != 0) {
+      await Task.Run(() => SaveSystemVariablesElevated(systemVarsList));
+    }
+
+    // Fire-and-forget: other apps reloading shouldn't block the save completing.
+    _ = Task.Run(NotifySystemOfChanges);
+  }
+
+  private static void WriteUserVariables(List<EnvironmentVariableModel> variables) {
+    using var key = Registry.CurrentUser.OpenSubKey(UserEnvironmentKey, writable: true)
+      ?? Registry.CurrentUser.CreateSubKey(UserEnvironmentKey);
+
+    foreach (var variable in variables) {
+      ApplyVariableToKey(key, variable);
+    }
+  }
+
+  private static void ApplyVariableToKey(RegistryKey key, EnvironmentVariableModel variable) {
+    // Delete first so a ValueKind change (String <-> ExpandString) takes effect.
+    key.DeleteValue(variable.Name, throwOnMissingValue: false);
+
+    if (variable.IsRemoved) {
+      return;
+    }
+
+    var data = variable.Data ?? string.Empty;
+    object value = variable.Type switch {
+      RegistryValueKind.MultiString => data.Split(';', StringSplitOptions.RemoveEmptyEntries),
+      RegistryValueKind.DWord => int.TryParse(data, out var dword) ? dword : 0,
+      _ => data,
+    };
+
+    key.SetValue(variable.Name, value, variable.Type);
+  }
+
+  // Elevation argument: the app relaunches itself elevated with this verb to write HKLM (see Program.Main).
+  public const string ElevatedApplyArg = "--apply-system";
+
+  private static void SaveSystemVariablesElevated(List<EnvironmentVariableModel> systemVars) {
+    var changesPath = Path.Combine(Path.GetTempPath(), $"WinEnvEdit_Sys_{Guid.NewGuid()}.dat");
 
     try {
-      var scriptLines = new List<string> {
-        "$ErrorActionPreference = 'Stop'"
-      };
+      File.WriteAllText(changesPath, SerializeChanges(systemVars));
 
-      if (userVarsList.Count != 0) {
-        scriptLines.Add("Write-Host 'Saving User environment variables...'");
-        var userRegistryPath = @"HKCU:\Environment";
-        foreach (var variable in userVarsList) {
-          AddVariableToScript(scriptLines, userRegistryPath, variable);
-        }
-      }
+      var exePath = Environment.ProcessPath
+        ?? throw new InvalidOperationException("Could not resolve the application path for elevation");
 
-      if (systemVarsList.Count != 0) {
-        scriptLines.Add("Write-Host 'Saving System environment variables...'");
-        var systemRegistryPath = @"HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment";
-        foreach (var variable in systemVarsList) {
-          AddVariableToScript(scriptLines, systemRegistryPath, variable);
-        }
-      }
-
-      scriptLines.Add("Write-Host 'Environment variables saved successfully!'");
-
-      var scriptContent = string.Join("\r\n", scriptLines);
-      File.WriteAllText(scriptPath, scriptContent);
-
-      var exitCode = systemVarsList.Count != 0
-        ? await Task.Run(() => RunScriptElevated(scriptPath))
-        : await Task.Run(() => RunScriptHidden(scriptPath));
-
-      if (exitCode != 0) {
-        throw new InvalidOperationException("PowerShell script execution failed");
+      if (RunElevated(exePath, $"{ElevatedApplyArg} \"{changesPath}\"") != 0) {
+        throw new InvalidOperationException("Elevated registry update failed");
       }
     }
     finally {
       try {
-        if (File.Exists(scriptPath)) {
-          File.Delete(scriptPath);
+        if (File.Exists(changesPath)) {
+          File.Delete(changesPath);
         }
       }
       catch {
       }
     }
-
-    await Task.Run(NotifySystemOfChanges);
   }
 
-  private static void AddVariableToScript(List<string> scriptLines, string registryPath, EnvironmentVariableModel variable) {
-    var value = variable.Data?.Replace("'", "''") ?? string.Empty;
+  /// <summary>
+  /// Applies serialized system-variable changes by writing HKLM directly. Invoked by the elevated relaunch.
+  /// Returns 0 on success, non-zero on failure.
+  /// </summary>
+  public static int ApplySystemVariablesFromFile(string path) {
+    try {
+      var changes = DeserializeChanges(File.ReadAllText(path));
+      using var key = Registry.LocalMachine.OpenSubKey(SystemEnvironmentKey, writable: true)
+        ?? throw new InvalidOperationException("Could not open the system environment key");
 
-    if (variable.IsRemoved) {
-      scriptLines.Add($"Remove-ItemProperty -Path '{registryPath}' -Name '{variable.Name}' -ErrorAction SilentlyContinue");
-      scriptLines.Add($"Write-Host 'Deleted: {variable.Name}'");
-      return;
-    }
+      foreach (var variable in changes) {
+        ApplyVariableToKey(key, variable);
+      }
 
-    // Remove first, then re-create: neither Set-ItemProperty nor New-ItemProperty -Force
-    // actually changes the ValueKind of an existing registry value.  A delete + create is
-    // the only way to guarantee the type persists through a toggle.
-    scriptLines.Add($"Remove-ItemProperty -Path '{registryPath}' -Name '{variable.Name}' -ErrorAction SilentlyContinue");
-
-    if (variable.Type == RegistryValueKind.MultiString) {
-      var values = value.Split([';'], StringSplitOptions.RemoveEmptyEntries);
-      var quotedValues = string.Join(", ", values.Select(v => $"'{v}'"));
-      scriptLines.Add($"New-ItemProperty -Path '{registryPath}' -Name '{variable.Name}' -Value @({quotedValues}) -PropertyType MultiString -Force");
+      return 0;
     }
-    else if (variable.Type == RegistryValueKind.DWord) {
-      scriptLines.Add($"New-ItemProperty -Path '{registryPath}' -Name '{variable.Name}' -Value {value} -PropertyType DWord -Force");
+    catch {
+      return 1;
     }
-    else if (variable.Type == RegistryValueKind.ExpandString) {
-      scriptLines.Add($"New-ItemProperty -Path '{registryPath}' -Name '{variable.Name}' -Value '{value}' -PropertyType ExpandString -Force");
-    }
-    else {
-      scriptLines.Add($"New-ItemProperty -Path '{registryPath}' -Name '{variable.Name}' -Value '{value}' -PropertyType String -Force");
-    }
-
-    scriptLines.Add($"Write-Host 'Saved: {variable.Name}'");
   }
 
-  private static int RunScriptHidden(string scriptPath) {
-    using var process = Process.Start(new ProcessStartInfo {
-      FileName = "powershell.exe",
-      Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
-      UseShellExecute = false,
-      CreateNoWindow = true,
-    })!;
-
-    process.WaitForExit();
-    return process.ExitCode;
+  internal static string SerializeChanges(IEnumerable<EnvironmentVariableModel> variables) {
+    static string Encode(string value) => Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
+    return string.Join("\n", variables.Select(v =>
+      $"{(v.IsRemoved ? "D" : "S")}\t{Encode(v.Name)}\t{(int)v.Type}\t{Encode(v.Data ?? string.Empty)}"));
   }
 
-  // Uses ShellExecuteEx rather than Process.Start(Verb="runas") because -WindowStyle Hidden
-  // is a race: the shell creates the window before PowerShell processes the flag. ShellExecuteEx
-  // with SW_HIDE suppresses it at the shell level. See PATTERNS.md → Elevated Script Launch.
-  private static int RunScriptElevated(string scriptPath) {
+  internal static List<EnvironmentVariableModel> DeserializeChanges(string content) {
+    static string Decode(string value) => Encoding.UTF8.GetString(Convert.FromBase64String(value));
+    var result = new List<EnvironmentVariableModel>();
+
+    foreach (var line in content.Split('\n', StringSplitOptions.RemoveEmptyEntries)) {
+      var parts = line.Split('\t');
+      if (parts.Length != 4) {
+        continue;
+      }
+
+      result.Add(new EnvironmentVariableModel {
+        Scope = VariableScope.System,
+        IsRemoved = parts[0] == "D",
+        Name = Decode(parts[1]),
+        Type = (RegistryValueKind)int.Parse(parts[2]),
+        Data = Decode(parts[3]),
+      });
+    }
+
+    return result;
+  }
+
+  private static int RunElevated(string fileName, string arguments) {
     var verbPtr = Marshal.StringToHGlobalUni("runas");
-    var filePtr = Marshal.StringToHGlobalUni("powershell.exe");
-    var argsPtr = Marshal.StringToHGlobalUni($"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"");
+    var filePtr = Marshal.StringToHGlobalUni(fileName);
+    var argsPtr = Marshal.StringToHGlobalUni(arguments);
 
     try {
       var info = new ShellExecuteInfo {
@@ -290,7 +310,7 @@ public partial class EnvironmentService : IEnvironmentService {
       IntPtr.Zero,
       "Environment",
       SMTO_ABORTIFHUNG,
-      5000,
+      1000,
       out _
     );
   }

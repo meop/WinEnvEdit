@@ -149,6 +149,25 @@ public class StateSnapshotServiceTests {
   }
 
   [Fact]
+  public void IsDirty_ImportedVariableNotInSnapshot_ReturnsTrue() {
+    // Arrange - snapshot has no variables (e.g. one was deleted and saved)
+    service.CaptureSnapshot([]);
+
+    // An imported variable is present but flagged IsAdded=false (as the import path produces)
+    var imported = EnvironmentVariableBuilder.Default()
+      .WithName("REIMPORTED")
+      .WithData("value")
+      .WithIsAdded(false)
+      .Build();
+
+    // Act
+    var result = service.IsDirty(new[] { imported });
+
+    // Assert
+    result.Should().BeTrue("a variable present now but absent from the snapshot is a pending change");
+  }
+
+  [Fact]
   public void IsDirty_NoChanges_ReturnsFalse() {
     // Arrange
     var variable = EnvironmentVariableBuilder.Default()
@@ -285,6 +304,25 @@ public class StateSnapshotServiceTests {
     // Assert
     changed.Should().HaveCount(1);
     changed[0].Data.Should().Be("modified");
+  }
+
+  [Fact]
+  public void GetChangedVariables_ImportedVariableNotInSnapshot_Included() {
+    // Arrange - snapshot has no variables (the variable was previously deleted and saved)
+    service.CaptureSnapshot([]);
+
+    var imported = EnvironmentVariableBuilder.Default()
+      .WithName("REIMPORTED")
+      .WithData("value")
+      .WithIsAdded(false)
+      .Build();
+
+    // Act
+    var changed = service.GetChangedVariables(new[] { imported }).ToList();
+
+    // Assert
+    changed.Should().HaveCount(1, "an imported variable absent from the snapshot must be saved");
+    changed[0].Name.Should().Be("REIMPORTED");
   }
 
   [Fact]

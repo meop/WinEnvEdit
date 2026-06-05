@@ -19,9 +19,7 @@ public static class VariableValidator {
     (data => !data!.Contains('\0'), "cannot contain null characters"),
   ];
 
-  /// <summary>
-  /// Returns true if the value looks like a filesystem path (drive letter or %MACRO%).
-  /// </summary>
+  /// <summary>Returns true if the value looks like a path worth existence-checking (see VariableValidatorTests).</summary>
   public static bool LooksLikePath(string value) {
     if (string.IsNullOrWhiteSpace(value)) {
       return false;
@@ -29,13 +27,12 @@ public static class VariableValidator {
 
     var trimmed = value.Trim();
 
-    // Drive letter pattern: single letter followed by colon (e.g., "C:\", "D:")
-    if (trimmed.Length >= 2 && char.IsAsciiLetter(trimmed[0]) && trimmed[1] == ':') {
+    // Drive-letter path in backslash form: letter + ':' + '\'
+    if (trimmed.Length >= 3 && char.IsAsciiLetter(trimmed[0]) && trimmed[1] == ':' && trimmed[2] == '\\') {
       return true;
     }
 
-    // Environment variable macro: %VAR% (e.g., "%SystemRoot%", "%ProgramFiles(x86)%\go")
-    // Windows allows all chars in env var names except '\0' and '='
+    // Environment variable macro: %VAR%
     if (trimmed.Length >= 3 && trimmed[0] == '%') {
       for (var i = 1; i < trimmed.Length; i++) {
         if (trimmed[i] == '%') {

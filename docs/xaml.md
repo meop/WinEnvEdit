@@ -1,8 +1,16 @@
 # XAML & WinUI Patterns
 
+> **Native AOT note:** WinEnvEdit ships as Native AOT, where several patterns below behave
+> differently or fail silently. The **DataTemplateSelector** and **Non-Shared Context Menu**
+> sections are JIT-era and are *not* used in the AOT build. See [aot.md](aot.md) for what works.
+
 ---
 
 ## DataTemplateSelector
+
+> ⚠️ **Not used under AOT.** A selector-applied template gets no per-template codegen — `x:Bind` is
+> dead and nested lists won't realize. The app uses one `DataTemplate` with `Visibility`-gated layout
+> roots instead. See [aot.md](aot.md) → "No selector".
 
 DataTemplateSelector classes MUST be marked `partial` for C#/WinRT compatibility.
 
@@ -113,6 +121,10 @@ MyListView.DragItemsCompleted += (s, e) => LogReorder(e.Items, e.NewPosition);
 ---
 
 ## Non-Shared Context Menu
+
+> ⚠️ **Not used under AOT.** A `MenuFlyout` in a `Style` setter is not in the visual tree, so its
+> `{Binding}`s see a null DataContext. The app builds the card menu in code on `ContextRequested`
+> (`VariableTemplates.OnCardContextRequested`). See [aot.md](aot.md).
 
 Define context menus in a `Style` to ensure each list item gets a unique instance.
 

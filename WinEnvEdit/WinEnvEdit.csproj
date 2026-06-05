@@ -1,35 +1,59 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- App identity & target platform -->
   <PropertyGroup>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <ApplicationIcon>Assets\App.ico</ApplicationIcon>
-    <ApplicationManifest>App.manifest</ApplicationManifest>
+    <OutputType>WinExe</OutputType>
     <AssemblyName>WinEnvEdit</AssemblyName>
     <Company>meop</Company>
     <Description>Modern Windows Environment Editor</Description>
-    <EnableMsixTooling>true</EnableMsixTooling>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>preview</LangVersion>
-    <NoWarn>$(NoWarn);MSB3277</NoWarn>
-    <Nullable>enable</Nullable>
-    <OutputType>WinExe</OutputType>
-    <Platforms>ARM64;x64</Platforms>
-    <PublishAot>false</PublishAot>
-    <PublishReadyToRun>false</PublishReadyToRun>
-    <PublishTrimmed>false</PublishTrimmed>
-    <RuntimeIdentifiers>win-arm64;win-x64</RuntimeIdentifiers>
-    <SelfContained>false</SelfContained>
-    <SupportedOSPlatformVersion>10.0.22000.0</SupportedOSPlatformVersion>
+    <ApplicationIcon>Assets\App.ico</ApplicationIcon>
+    <ApplicationManifest>App.manifest</ApplicationManifest>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <UseWinUI>true</UseWinUI>
-    <WebView2EnableCsWinRTProjection>false</WebView2EnableCsWinRTProjection>
-    <WindowsAppSDKBootstrapInitialize>true</WindowsAppSDKBootstrapInitialize>
-    <WindowsAppSDKDeploymentManagerInitialize>false</WindowsAppSDKDeploymentManagerInitialize>
-    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
-    <WindowsPackageType>None</WindowsPackageType>
-    <WinUISDKReferences>true</WinUISDKReferences>
+    <SupportedOSPlatformVersion>10.0.22000.0</SupportedOSPlatformVersion>
+    <Platforms>ARM64;x64</Platforms>
+    <RuntimeIdentifiers>win-arm64;win-x64</RuntimeIdentifiers>
   </PropertyGroup>
+
+  <!-- Language & compiler -->
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Custom entry point (Program.Main) so an elevated relaunch can apply system vars headless. -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+  </PropertyGroup>
+
+  <!-- WinUI / Windows App SDK (mode-independent) -->
+  <PropertyGroup>
+    <UseWinUI>true</UseWinUI>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WinUISDKReferences>true</WinUISDKReferences>
+    <WebView2EnableCsWinRTProjection>false</WebView2EnableCsWinRTProjection>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKDeploymentManagerInitialize>false</WindowsAppSDKDeploymentManagerInitialize>
+  </PropertyGroup>
+
+  <!-- Deployment toggles: self-contained + Native AOT (set both false for the framework-dependent MSI) -->
+  <PropertyGroup>
+    <SelfContained>true</SelfContained>
+    <PublishAot>true</PublishAot>
+  </PropertyGroup>
+
+  <!-- Derived from the toggles above (separate group so the conditions see the values set above) -->
+  <PropertyGroup>
+    <WindowsAppSDKSelfContained>$(SelfContained)</WindowsAppSDKSelfContained>
+    <!-- self-contained bundles the runtime; the bootstrapper hunts for an installed one and fail-fasts (0xC0000602) -->
+    <WindowsAppSDKBootstrapInitialize Condition="'$(SelfContained)' == 'true'">false</WindowsAppSDKBootstrapInitialize>
+    <WindowsAppSDKBootstrapInitialize Condition="'$(SelfContained)' != 'true'">true</WindowsAppSDKBootstrapInitialize>
+    <!-- AOT needs the CsWinRT optimizer; level 2 surfaces all AOT/trim binding warnings at build -->
+    <CsWinRTAotOptimizerEnabled Condition="'$(PublishAot)' == 'true'">true</CsWinRTAotOptimizerEnabled>
+    <CsWinRTAotWarningLevel Condition="'$(PublishAot)' == 'true'">2</CsWinRTAotWarningLevel>
+    <PublishReadyToRun>false</PublishReadyToRun>
+  </PropertyGroup>
+
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
@@ -60,4 +84,24 @@
   <ItemGroup>
     <ProjectReference Include="..\WinEnvEdit.Core\WinEnvEdit.Core.csproj" />
   </ItemGroup>
+
+  <!-- Bindings are made AOT-safe with the CsWinRT source generators ([GeneratedBindableCustomProperty],
+       x:Bind). Those do NOT cover types reached only dynamically (code-hosted DataTemplates, converters and
+       markup extensions resolved via XAML) — full trim strips them (e.g. path rows render as ToString()).
+       WinUI offers no per-type alternative, so root the two small app assemblies: robust (covers every
+       XAML-reached type) and cheap (the bulk of the bundle is the native WinUI runtime, which still trims). -->
+  <ItemGroup Condition="'$(PublishAot)' == 'true'">
+    <TrimmerRootAssembly Include="WinEnvEdit" />
+    <TrimmerRootAssembly Include="WinEnvEdit.Core" />
+  </ItemGroup>
+
+  <!-- WinUI uses only the Core WebView2 assembly; the transitive WPF/WinForms WebView2 assemblies are built
+       against legacy WindowsBase and cause an MSB3277 version-conflict warning. The app uses neither, so drop
+       them before reference resolution to remove the conflict at its source. -->
+  <Target Name="RemoveUnusedWebView2Assemblies" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)"
+                 Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf' Or '%(Filename)' == 'Microsoft.Web.WebView2.WinForms'" />
+    </ItemGroup>
+  </Target>
 </Project>

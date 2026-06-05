@@ -2,7 +2,9 @@
 
 Guidance for Claude Code when working with WinEnvEdit.
 
-**See also:** [docs/xaml.md](docs/xaml.md), [docs/mvvm.md](docs/mvvm.md), [docs/deployment.md](docs/deployment.md) for WinUI, MVVM, and deployment patterns.
+**See also:** [docs/xaml.md](docs/xaml.md), [docs/mvvm.md](docs/mvvm.md), [docs/deployment.md](docs/deployment.md), [docs/aot.md](docs/aot.md) for WinUI, MVVM, deployment, and Native AOT patterns.
+
+> This app ships as self-contained Native AOT. Several common WinUI patterns fail **silently** under AOT (`x:Bind`/`x:Load` in templates, `DataTemplateSelector`, in-template event handlers, lists nested in a `DataTemplate`). Read [docs/aot.md](docs/aot.md) before touching `Resources/VariableTemplates.xaml` or adding bound/templated UI.
 
 ---
 

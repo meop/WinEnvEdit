@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
 using WinEnvEdit.Core.Constants;
+using WinEnvEdit.Core.Helpers;
 using WinEnvEdit.Core.Models;
 using WinEnvEdit.Core.Services;
 using WinEnvEdit.Core.Types;
@@ -23,8 +24,8 @@ public partial class MainWindowViewModel : ObservableObject {
   private readonly IUndoRedoService undoRedoService;
   private readonly IClipboardService clipboardService;
   private readonly IDialogService dialogService;
-  // Prevents UpdatePendingChangesState from pushing intermediate states to undo stack during restore.
   private bool isRestoringState = false;
+  private bool isBatching = false;
 
   public XamlRoot? XamlRoot => window?.Content?.XamlRoot;
 
@@ -37,6 +38,34 @@ public partial class MainWindowViewModel : ObservableObject {
   [ObservableProperty]
   [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
   public partial bool HasPendingChanges { get; set; } = false;
+
+  // Guards against commands interleaving with an in-flight save; also drives the input-block overlay.
+  [ObservableProperty]
+  [NotifyPropertyChangedFor(nameof(BusyVisibility))]
+  [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+  [NotifyCanExecuteChangedFor(nameof(UndoCommand))]
+  [NotifyCanExecuteChangedFor(nameof(RedoCommand))]
+  [NotifyCanExecuteChangedFor(nameof(ImportCommand))]
+  [NotifyCanExecuteChangedFor(nameof(RefreshCommand))]
+  [NotifyCanExecuteChangedFor(nameof(ExportCommand))]
+  public partial bool IsBusy { get; set; } = false;
+
+  public Visibility BusyVisibility => IsBusy ? Visibility.Visible : Visibility.Collapsed;
+
+  // Cached clipboard text, refreshed by the window on clipboard changes/activation. Paste availability is
+  // derived from it with the same parsers the paste actions use, so an enabled Paste always does something.
+  [ObservableProperty]
+  [NotifyPropertyChangedFor(nameof(CanPasteValue))]
+  [NotifyPropertyChangedFor(nameof(CanPasteVariables))]
+  public partial string ClipboardText { get; set; } = string.Empty;
+
+  public bool CanPasteValue => !string.IsNullOrWhiteSpace(ClipboardText);
+  public bool CanPasteVariables => ClipboardFormatHelper.ParseMultiLine(ClipboardText).Count > 0;
+
+  private bool CanSave() => HasPendingChanges && !IsBusy;
+  private bool CanUndo() => CanUndoState && !IsBusy;
+  private bool CanRedo() => CanRedoState && !IsBusy;
+  private bool CanInteract() => !IsBusy;
 
   [ObservableProperty]
   [NotifyPropertyChangedFor(nameof(VolatileToggleGlyph))]
@@ -129,7 +158,24 @@ public partial class MainWindowViewModel : ObservableObject {
     HasPendingChanges = false;
   }
 
+  /// <summary>Runs a multi-item mutation as a single undo/dirty step.</summary>
+  public void RunBatch(Action action) {
+    isBatching = true;
+    try {
+      action();
+    }
+    finally {
+      isBatching = false;
+    }
+
+    UpdatePendingChangesState();
+  }
+
   public void UpdatePendingChangesState() {
+    if (isBatching) {
+      return;
+    }
+
     var allVariables = AllVariables().ToList();
     var isDirty = stateService.IsDirty(allVariables);
     HasPendingChanges = isDirty;
@@ -145,7 +191,7 @@ public partial class MainWindowViewModel : ObservableObject {
     CanRedoState = undoRedoService.CanRedo;
   }
 
-  [RelayCommand]
+  [RelayCommand(CanExecute = nameof(CanInteract))]
   private async Task Import() {
     if (HasPendingChanges) {
       if (!await dialogService.ShowConfirmation("Import", "This will overwrite any unsaved changes")) {
@@ -158,64 +204,80 @@ public partial class MainWindowViewModel : ObservableObject {
       return;
     }
 
-    var importedVars = (await fileService.ImportFromFile(filePath)).ToList();
-
-    // Preserve existing volatile variables (they're not in the file)
-    var systemVolatile = SystemVariables.Variables
-      .Where(v => v.Model.IsVolatile)
-      .Select(v => v.Model);
-    var userVolatile = UserVariables.Variables
-      .Where(v => v.Model.IsVolatile)
-      .Select(v => v.Model);
-
-    // Combine imported vars with volatile vars, then sort by name
-    var systemImported = new List<EnvironmentVariableModel>();
-    systemImported.AddRange(importedVars.Where(v => v.Scope == VariableScope.System));
-    systemImported.AddRange(systemVolatile);
-    systemImported = [.. systemImported.OrderBy(v => v.Name)];
-
-    var userImported = new List<EnvironmentVariableModel>();
-    userImported.AddRange(importedVars.Where(v => v.Scope == VariableScope.User));
-    userImported.AddRange(userVolatile);
-    userImported = [.. userImported.OrderBy(v => v.Name)];
-
-    isRestoringState = true;
+    IsBusy = true;
     try {
-      // Use unified restoration for minimal UI updates
-      SystemVariables.RestoreFromVariables(systemImported);
-      UserVariables.RestoreFromVariables(userImported);
+      var importedVars = (await fileService.ImportFromFile(filePath)).ToList();
+
+      // Preserve existing volatile variables (they're not in the file)
+      var systemVolatile = SystemVariables.Variables
+        .Where(v => v.Model.IsVolatile)
+        .Select(v => v.Model);
+      var userVolatile = UserVariables.Variables
+        .Where(v => v.Model.IsVolatile)
+        .Select(v => v.Model);
+
+      var systemImported = new List<EnvironmentVariableModel>();
+      systemImported.AddRange(importedVars.Where(v => v.Scope == VariableScope.System));
+      systemImported.AddRange(systemVolatile);
+      systemImported = [.. systemImported.OrderBy(v => v.Name)];
+
+      var userImported = new List<EnvironmentVariableModel>();
+      userImported.AddRange(importedVars.Where(v => v.Scope == VariableScope.User));
+      userImported.AddRange(userVolatile);
+      userImported = [.. userImported.OrderBy(v => v.Name)];
+
+      isRestoringState = true;
+      try {
+        SystemVariables.RestoreFromVariables(systemImported);
+        UserVariables.RestoreFromVariables(userImported);
+      }
+      finally {
+        isRestoringState = false;
+      }
+
+      // Imported values are pending changes; push to undo and update dirty state (no snapshot capture).
+      UpdatePendingChangesState();
     }
     finally {
-      isRestoringState = false;
+      IsBusy = false;
     }
-
-    // Update state after import - do NOT capture snapshot as these are pending changes
-    // This pushes the state to the undo stack and updates HasPendingChanges
-    UpdatePendingChangesState();
   }
 
-  [RelayCommand]
+  [RelayCommand(CanExecute = nameof(CanInteract))]
   private async Task Export() {
     var filePath = await dialogService.PickSaveFile(FileService.FileDescription, FileService.FileExtension, FileService.SuggestedFileName);
     if (filePath == null) {
       return;
     }
 
-    var allVars = AllVariables().Where(v => !v.IsRemoved && !v.IsVolatile);
-    await fileService.ExportToFile(filePath, allVars);
+    IsBusy = true;
+    try {
+      var allVars = AllVariables().Where(v => !v.IsRemoved && !v.IsVolatile);
+      await fileService.ExportToFile(filePath, allVars);
+    }
+    finally {
+      IsBusy = false;
+    }
   }
 
-  [RelayCommand]
+  [RelayCommand(CanExecute = nameof(CanInteract))]
   private async Task Refresh() {
     if (HasPendingChanges) {
       if (!await dialogService.ShowConfirmation("Refresh", "This will overwrite any unsaved changes")) {
         return;
       }
     }
-    LoadVariables();
+
+    IsBusy = true;
+    try {
+      LoadVariables();
+    }
+    finally {
+      IsBusy = false;
+    }
   }
 
-  [RelayCommand(CanExecute = nameof(HasPendingChanges))]
+  [RelayCommand(CanExecute = nameof(CanSave))]
   private async Task Save() {
     var changedVars = stateService.GetChangedVariables(AllVariables()).ToList();
     var hasSystemChanges = changedVars.Any(v => v.Scope == VariableScope.System);
@@ -231,6 +293,9 @@ public partial class MainWindowViewModel : ObservableObject {
       return;
     }
 
+    // IsBusy drives a full-window input block (see MainWindow) so nothing interleaves with the in-flight save.
+    IsBusy = true;
+    Exception? error = null;
     try {
       await environmentService.SaveVariables(changedVars);
 
@@ -244,7 +309,14 @@ public partial class MainWindowViewModel : ObservableObject {
       HasPendingChanges = false;
     }
     catch (Exception ex) {
-      await dialogService.ShowError("Save Error", "An error occurred while saving environment variables:", ex.Message);
+      error = ex;
+    }
+    finally {
+      IsBusy = false;
+    }
+
+    if (error != null) {
+      await dialogService.ShowError("Save Error", "An error occurred while saving environment variables:", error.Message);
     }
   }
 

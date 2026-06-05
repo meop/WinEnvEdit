@@ -39,7 +39,8 @@ public class DialogService(Window window) : IDialogService {
   public async Task<string?> PickSaveFile(string description, string extension, string suggestedFileName) {
     var savePicker = new FileSavePicker(window.AppWindow.Id);
     savePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-    savePicker.FileTypeChoices.Add(description, [extension]);
+    // Explicit List<string> (not a collection expression) — required for the WinRT picker under AOT.
+    savePicker.FileTypeChoices.Add(description, new List<string> { extension });
     savePicker.SuggestedFileName = suggestedFileName;
 
     var file = await savePicker.PickSaveFileAsync();

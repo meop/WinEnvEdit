@@ -2,9 +2,12 @@
   <PropertyGroup>
     <VersionFile>$(MSBuildThisFileDirectory)VERSION</VersionFile>
     <RawVersion>$([System.IO.File]::ReadAllText($(VersionFile)).Trim())</RawVersion>
-    <Version>$(RawVersion)</Version>
-    <AssemblyVersion Condition="$(RawVersion.Split('.').Length) == 3">$(RawVersion).0</AssemblyVersion>
-    <AssemblyVersion Condition="$(RawVersion.Split('.').Length) != 3">$(RawVersion)</AssemblyVersion>
+    <!-- AssemblyVersion/FileVersion/Version must be numeric; strip any semver prerelease suffix
+         (e.g. 1.1.0-rc.1 -> 1.1.0). The full string is carried only on InformationalVersion. -->
+    <NumericVersion>$([System.Text.RegularExpressions.Regex]::Match($(RawVersion), '^\d+\.\d+\.\d+').Value)</NumericVersion>
+    <Version>$(NumericVersion)</Version>
+    <AssemblyVersion>$(NumericVersion).0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
+    <InformationalVersion>$(RawVersion)</InformationalVersion>
   </PropertyGroup>
 </Project>

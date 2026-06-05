@@ -11,7 +11,7 @@ public class VariableValidatorTests {
 
   [Theory]
   [InlineData(@"C:\path")]
-  [InlineData("D:")]
+  [InlineData(@"C:\")] // drive root in backslash form
   [InlineData("z:\\temp")] // lowercase drive letter
   [InlineData("%USERPROFILE%\\go")]
   [InlineData("%USERPROFILE2%\\go")]
@@ -37,6 +37,9 @@ public class VariableValidatorTests {
   [InlineData("%=VAR%")]
   [InlineData("%AB=CD%")] // '=' terminates the scan before a closing percent
   [InlineData("1:\\temp")] // non-letter drive prefix
+  [InlineData("D:")] // bare drive, no path
+  [InlineData("C:relative")] // drive-relative, not canonical
+  [InlineData("C:/forward")] // forward-slash form is not treated as a path
   [InlineData("foo%BAR%")] // macro not at start
   [InlineData("not a path")]
   public void LooksLikePath_NonPathValues_ReturnsFalse(string value) {

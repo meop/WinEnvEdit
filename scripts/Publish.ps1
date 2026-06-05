@@ -222,7 +222,9 @@ New-Assets -Force:$Force
 
 Write-Host "Platform: $Platform" -ForegroundColor Gray
 Write-Host 'Binary publishing started.' -ForegroundColor Yellow
-dotnet publish $projectFile -c Release -p:Platform=$Platform
+# Native AOT requires an explicit RID; output lands in bin\<Platform>\Release\<tfm>\win-<rid>\publish\.
+$rid = if ($Platform -eq 'ARM64') { 'win-arm64' } else { 'win-x64' }
+dotnet publish $projectFile -c Release -p:Platform=$Platform -r $rid
 if ($LASTEXITCODE -ne 0) {
   Write-Host "Error: dotnet publish failed (exit code $LASTEXITCODE)." -ForegroundColor Red
   exit $LASTEXITCODE

@@ -270,8 +270,10 @@ function Sync-Versions {
   Write-Host "Version: $version" -ForegroundColor Gray
   Write-Host 'Synchronizing versions started.' -ForegroundColor Yellow
 
-  # Windows manifests and identities MANDATE 4 parts (Major.Minor.Build.Revision)
-  $winVersion = if ($version.Split('.').Count -eq 3) { "$version.0" } else { $version }
+  # Windows manifests and identities MANDATE 4 numeric parts (Major.Minor.Build.Revision).
+  # Strip any semver prerelease suffix (e.g. 1.1.0-rc.1 -> 1.1.0) — manifests can't hold it.
+  $numeric = ($version -split '-')[0]
+  $winVersion = if ($numeric.Split('.').Count -eq 3) { "$numeric.0" } else { $numeric }
 
   Sync-XmlManifest `
     -path (Join-Path $rootDir 'WinEnvEdit\App.manifest') `

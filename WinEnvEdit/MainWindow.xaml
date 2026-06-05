@@ -7,11 +7,7 @@
         xmlns:vm="using:WinEnvEdit.ViewModels"
         Title="WinEnvEdit">
 
-  <Window.SystemBackdrop>
-    <MicaBackdrop />
-  </Window.SystemBackdrop>
-
-  <Grid x:Name="RootGrid">
+  <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
@@ -156,7 +152,9 @@
                   <KeyboardAccelerator Key="S" Modifiers="Control,Shift" />
                 </MenuFlyoutItem.KeyboardAccelerators>
               </MenuFlyoutItem>
-              <MenuFlyoutItem Command="{x:Bind ViewModel.SystemVariables.PasteAllCommand}" Text="Paste (System)">
+              <MenuFlyoutItem Command="{x:Bind ViewModel.SystemVariables.PasteAllCommand}"
+                              IsEnabled="{x:Bind ViewModel.CanPasteVariables, Mode=OneWay}"
+                              Text="Paste (System)">
                 <MenuFlyoutItem.KeyboardAccelerators>
                   <KeyboardAccelerator Key="X" Modifiers="Control,Shift" />
                 </MenuFlyoutItem.KeyboardAccelerators>
@@ -190,6 +188,7 @@
                     Style="{StaticResource VariableListViewStyle}"
                     AllowDrop="True"
                     CanDragItems="True"
+                    ContextRequested="ListView_ContextRequested"
                     DragEnter="ListView_DragEnter"
                     DragItemsStarting="ListView_DragItemsStarting"
                     DragLeave="ListView_DragLeave"
@@ -208,7 +207,9 @@
                   <KeyboardAccelerator Key="U" Modifiers="Control,Shift" />
                 </MenuFlyoutItem.KeyboardAccelerators>
               </MenuFlyoutItem>
-              <MenuFlyoutItem Command="{x:Bind ViewModel.UserVariables.PasteAllCommand}" Text="Paste (User)">
+              <MenuFlyoutItem Command="{x:Bind ViewModel.UserVariables.PasteAllCommand}"
+                              IsEnabled="{x:Bind ViewModel.CanPasteVariables, Mode=OneWay}"
+                              Text="Paste (User)">
                 <MenuFlyoutItem.KeyboardAccelerators>
                   <KeyboardAccelerator Key="J" Modifiers="Control,Shift" />
                 </MenuFlyoutItem.KeyboardAccelerators>
@@ -242,6 +243,7 @@
                     Style="{StaticResource VariableListViewStyle}"
                     AllowDrop="True"
                     CanDragItems="True"
+                    ContextRequested="ListView_ContextRequested"
                     DragEnter="ListView_DragEnter"
                     DragItemsStarting="ListView_DragItemsStarting"
                     DragLeave="ListView_DragLeave"
@@ -251,5 +253,11 @@
         </Grid>
       </Border>
     </Grid>
+
+    <!--  Input block while a save is in flight (no message; the save was already confirmed).  -->
+    <Border Grid.Row="0"
+            Grid.RowSpan="2"
+            Background="{ThemeResource SmokeFillColorDefaultBrush}"
+            Visibility="{x:Bind ViewModel.BusyVisibility, Mode=OneWay}" />
   </Grid>
 </Window>

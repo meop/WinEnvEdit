@@ -322,6 +322,15 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
     }
   }
 
+  /// <summary>Rebuilds the bound list in sorted order, resyncing the ListView visual after a drop.</summary>
+  public void ResyncFilteredVariables() {
+    var ordered = FilteredVariables.OrderBy(v => v.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    FilteredVariables.Clear();
+    foreach (var variable in ordered) {
+      FilteredVariables.Add(variable);
+    }
+  }
+
   /// <summary>
   /// Gets all variable models for this scope.
   /// </summary>
@@ -435,10 +444,8 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
     nameTextBox.TextChanged += (s, e) => ValidateInput();
     valueTextBox.TextChanged += (s, e) => ValidateInput();
 
-    dialog.Opened += (s, e) => {
-      nameTextBox.Focus(FocusState.Programmatic);
-      ValidateInput();
-    };
+    nameTextBox.Loaded += (s, e) => nameTextBox.Focus(FocusState.Programmatic);
+    dialog.Opened += (s, e) => ValidateInput();
 
     var result = await dialog.ShowAsync();
 
@@ -469,9 +476,18 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
     }
 
     var parsed = ClipboardFormatHelper.ParseMultiLine(text);
-    foreach (var (name, value) in parsed) {
-      // AddVariable handles existing (active or deleted) and new variables
-      AddVariable(name, value, RegistryValueKind.String);
+
+    void ApplyAll() {
+      foreach (var (name, value) in parsed) {
+        AddVariable(name, value, RegistryValueKind.String);
+      }
+    }
+
+    if (parentViewModel is not null) {
+      parentViewModel.RunBatch(ApplyAll);
+    }
+    else {
+      ApplyAll();
     }
   }
 }

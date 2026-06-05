@@ -13,8 +13,11 @@ using WinEnvEdit.Core.Models;
 using WinEnvEdit.Core.Validators;
 using WinEnvEdit.Services;
 
+using WinRT;
+
 namespace WinEnvEdit.ViewModels;
 
+[GeneratedBindableCustomProperty]
 public partial class VariableViewModel : ObservableObject {
   private readonly IClipboardService clipboardService;
   private readonly Action<VariableViewModel>? deleteCallback;
@@ -30,12 +33,22 @@ public partial class VariableViewModel : ObservableObject {
   public partial string Data { get; set; } = string.Empty;
 
   [ObservableProperty]
+  [NotifyPropertyChangedFor(nameof(ShowReadOnly))]
+  [NotifyPropertyChangedFor(nameof(ShowEditable))]
   public partial bool IsLocked { get; private set; } = false;
 
   public bool VisualIsLocked => IsLocked;
 
   [ObservableProperty]
+  [NotifyPropertyChangedFor(nameof(ShowPathList))]
+  [NotifyPropertyChangedFor(nameof(ShowReadOnly))]
+  [NotifyPropertyChangedFor(nameof(ShowEditable))]
   public partial bool IsPathList { get; set; } = false;
+
+  // Visibility gates that select which layout the item template shows.
+  public bool ShowPathList => IsPathList;
+  public bool ShowReadOnly => !IsPathList && IsLocked;
+  public bool ShowEditable => !IsPathList && !IsLocked;
 
   [ObservableProperty]
   [NotifyPropertyChangedFor(nameof(ExpandTooltip))]
@@ -71,12 +84,25 @@ public partial class VariableViewModel : ObservableObject {
 
   public EnvironmentVariableModel Model { get; init; }
 
+  public IRelayCommand ToggleExpandCommand { get; }
+  public IRelayCommand AddPathCommand { get; }
+  public IRelayCommand RemoveCommand { get; }
+  public IRelayCommand ToggleTypeCommand { get; }
+  public IRelayCommand CopyDataCommand { get; }
+  public IAsyncRelayCommand PasteDataCommand { get; }
+
   public VariableViewModel(EnvironmentVariableModel model, IClipboardService clipboardService, Action<VariableViewModel>? deleteCallback = null, Action? changeCallback = null, Action<VariableViewModel>? refreshCallback = null) {
     Model = model;
     this.clipboardService = clipboardService;
     this.deleteCallback = deleteCallback;
     this.changeCallback = changeCallback;
     this.refreshCallback = refreshCallback;
+    ToggleExpandCommand = new RelayCommand(ToggleExpand);
+    AddPathCommand = new RelayCommand(AddPath);
+    RemoveCommand = new RelayCommand(Remove);
+    ToggleTypeCommand = new RelayCommand(ToggleType);
+    CopyDataCommand = new RelayCommand(CopyData);
+    PasteDataCommand = new AsyncRelayCommand(PasteData);
     Name = model.Name;
     Data = model.Data;
     UpdateIsLocked();
@@ -147,7 +173,6 @@ public partial class VariableViewModel : ObservableObject {
     }
   }
 
-  [RelayCommand]
   private void ToggleExpand() {
     IsExpanded = !IsExpanded;
     if (IsExpanded && IsPathList) {
@@ -155,23 +180,19 @@ public partial class VariableViewModel : ObservableObject {
     }
   }
 
-  [RelayCommand]
   private void AddPath() =>
     // Sync and change callback handled by OnPathItemsCollectionChanged
     PathItems.Add(new PathItemViewModel(string.Empty, this));
 
-  [RelayCommand]
   public void RemovePath(PathItemViewModel pathItem) =>
     // Sync and change callback handled by OnPathItemsCollectionChanged
     PathItems.Remove(pathItem);
 
-  [RelayCommand]
   private void Remove() {
     deleteCallback?.Invoke(this);
     changeCallback?.Invoke();
   }
 
-  [RelayCommand]
   private void ToggleType() {
     if (IsLocked) {
       return;
@@ -200,13 +221,11 @@ public partial class VariableViewModel : ObservableObject {
     refreshCallback?.Invoke(this);
   }
 
-  [RelayCommand]
   private void CopyData() {
     var text = $"{Name}={Data}";
     clipboardService.SetText(text);
   }
 
-  [RelayCommand]
   private async Task PasteData() {
     var clipboardText = await clipboardService.GetText();
     if (string.IsNullOrWhiteSpace(clipboardText)) {

@@ -155,7 +155,7 @@
         <Setter Property="SelectionMode" Value="None" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource ListViewItemStyle}" />
-        <Setter Property="ItemTemplateSelector" Value="{StaticResource VariableTemplateSelector}" />
+        <Setter Property="ItemTemplate" Value="{StaticResource VariableTemplate}" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="TabNavigation" Value="Local" />
       </Style>
@@ -251,30 +251,6 @@
         <Setter Property="CornerRadius" Value="4" />
         <Setter Property="Margin" Value="4" />
         <Setter Property="Padding" Value="6" />
-        <Setter Property="ContextFlyout">
-          <Setter.Value>
-            <MenuFlyout>
-              <MenuFlyoutItem Command="{Binding CopyDataCommand}" Text="Copy">
-                <MenuFlyoutItem.KeyboardAccelerators>
-                  <KeyboardAccelerator Key="C" Modifiers="Control" />
-                </MenuFlyoutItem.KeyboardAccelerators>
-              </MenuFlyoutItem>
-              <MenuFlyoutItem Command="{Binding PasteDataCommand}" Text="Paste">
-                <MenuFlyoutItem.KeyboardAccelerators>
-                  <KeyboardAccelerator Key="V" Modifiers="Control" />
-                </MenuFlyoutItem.KeyboardAccelerators>
-              </MenuFlyoutItem>
-              <MenuFlyoutSeparator Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityInverseConverter}}" />
-              <MenuFlyoutItem Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityInverseConverter}}"
-                              Command="{Binding ToggleTypeCommand}"
-                              Text="Toggle type">
-                <MenuFlyoutItem.KeyboardAccelerators>
-                  <KeyboardAccelerator Key="T" Modifiers="Control" />
-                </MenuFlyoutItem.KeyboardAccelerators>
-              </MenuFlyoutItem>
-            </MenuFlyout>
-          </Setter.Value>
-        </Setter>
       </Style>
     </ResourceDictionary>
   </Application.Resources>

@@ -25,31 +25,24 @@ public class StateSnapshotService : IStateSnapshotService {
   }
 
   public bool IsDirty(IEnumerable<EnvironmentVariableModel> currentVariables) {
-    var current = currentVariables.Where(v => !v.IsVolatile).ToList();
+    var presentKeys = new HashSet<SnapshotKey>(new SnapshotKeyComparer());
 
-    // Check for removed variables (in snapshot but marked removed or not in current)
-    foreach (var variable in current) {
-      if (variable.IsRemoved) {
-        var key = new SnapshotKey(variable.Scope, variable.Name);
-        if (snapshot.ContainsKey(key)) {
-          return true;
-        }
+    foreach (var variable in currentVariables.Where(v => !v.IsVolatile && !v.IsRemoved)) {
+      var key = new SnapshotKey(variable.Scope, variable.Name);
+      presentKeys.Add(key);
+
+      if (!snapshot.TryGetValue(key, out var snapshotValue)) {
+        return true;
+      }
+
+      if (variable.IsAdded || HasChanged(variable, snapshotValue)) {
+        return true;
       }
     }
 
-    // Check for added variables
-    var addedVars = current.Where(v => v.IsAdded && !v.IsRemoved);
-    if (addedVars.Any()) {
-      return true;
-    }
-
-    // Check for modified variables
-    foreach (var variable in current.Where(v => !v.IsAdded && !v.IsRemoved)) {
-      var key = new SnapshotKey(variable.Scope, variable.Name);
-      if (snapshot.TryGetValue(key, out var snapshotValue)) {
-        if (HasChanged(variable, snapshotValue)) {
-          return true;
-        }
+    foreach (var key in snapshot.Keys) {
+      if (!presentKeys.Contains(key)) {
+        return true;
       }
     }
 
@@ -58,30 +51,27 @@ public class StateSnapshotService : IStateSnapshotService {
 
   public IEnumerable<EnvironmentVariableModel> GetChangedVariables(IEnumerable<EnvironmentVariableModel> currentVariables) {
     var changed = new List<EnvironmentVariableModel>();
-    var current = currentVariables.Where(v => !v.IsVolatile).ToList();
+    var presentKeys = new HashSet<SnapshotKey>(new SnapshotKeyComparer());
 
-    foreach (var variable in current) {
-      if (variable.IsRemoved) {
-        // Variable marked for deletion - only include if it was in original snapshot
-        var key = new SnapshotKey(variable.Scope, variable.Name);
-        if (snapshot.ContainsKey(key)) {
-          changed.Add(variable);
-        }
-        continue;
-      }
+    foreach (var variable in currentVariables.Where(v => !v.IsVolatile && !v.IsRemoved)) {
+      var key = new SnapshotKey(variable.Scope, variable.Name);
+      presentKeys.Add(key);
 
-      if (variable.IsAdded) {
-        // Newly added variable
+      if (!snapshot.TryGetValue(key, out var snapshotValue) || variable.IsAdded || HasChanged(variable, snapshotValue)) {
         changed.Add(variable);
-        continue;
       }
+    }
 
-      // Check if existing variable was modified
-      var lookupKey = new SnapshotKey(variable.Scope, variable.Name);
-      if (snapshot.TryGetValue(lookupKey, out var snapshotValue)) {
-        if (HasChanged(variable, snapshotValue)) {
-          changed.Add(variable);
-        }
+    // Saved variables no longer present are pending deletes; rebuild a removal model from the snapshot.
+    foreach (var (key, snapshotValue) in snapshot) {
+      if (!presentKeys.Contains(key)) {
+        changed.Add(new EnvironmentVariableModel {
+          Name = snapshotValue.Name,
+          Data = snapshotValue.Data,
+          Type = snapshotValue.Type,
+          Scope = snapshotValue.Scope,
+          IsRemoved = true,
+        });
       }
     }
 

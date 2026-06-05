@@ -43,7 +43,8 @@ public class FileService : IFileService {
       root[group.Key] = tableArray;
     }
 
-    var tomlContent = TomlSerializer.Serialize(root);
+    // Serialize the model through the source-gen context: AOT-safe overload + model writer (keeps [[..]] layout).
+    var tomlContent = TomlSerializer.Serialize(root, TomlExportContext.Default.TomlTable);
     var formattedContent = FormatTomlOutput(tomlContent);
 
     // Write with LF line endings and UTF-8 encoding (no BOM)
@@ -59,11 +60,20 @@ public class FileService : IFileService {
     var lines = normalized.Split('\n', StringSplitOptions.None);
     var result = new List<string>();
 
-    for (var i = 0; i < lines.Length; i++) {
-      var line = lines[i];
+    foreach (var line in lines) {
+      // Collapse consecutive blank lines (and drop leading blanks): the serializer already emits a blank
+      // line before each [[..]] header, so without this we get a double gap between variables.
+      if (string.IsNullOrWhiteSpace(line)) {
+        if (result.Count == 0 || result[^1].Length == 0) {
+          continue;
+        }
 
-      // Add empty line before array table definitions ([[), but not for first line
-      if (line.StartsWith("[[") && result.Count > 0) {
+        result.Add("");
+        continue;
+      }
+
+      // Ensure exactly one blank line before each array-table header
+      if (line.StartsWith("[[") && result.Count > 0 && result[^1].Length != 0) {
         result.Add("");
       }
 
@@ -82,7 +92,7 @@ public class FileService : IFileService {
   public async Task<IEnumerable<EnvironmentVariableModel>> ImportFromStream(Stream stream) {
     using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 4096, leaveOpen: true);
     var content = await reader.ReadToEndAsync();
-    var model = TomlSerializer.Deserialize<TomlTable>(content) ?? [];
+    var model = TomlSerializer.Deserialize(content, TomlExportContext.Default.TomlTable) ?? [];
     var result = new List<EnvironmentVariableModel>();
     var sections = new[] { ("System", VariableScope.System), ("User", VariableScope.User) };
 

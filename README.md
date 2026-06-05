@@ -17,8 +17,9 @@ winget upgrade meop.WinEnvEdit
 - **Dual-Pane Interface**: Side-by-side management of System and User variables.
 - **Incremental Refresh**: Blazing fast UI updates that only refresh changed items using $O(N)$ reconciliation.
 - **Path List Management**: Expand semicolon-separated variables (like `PATH`) into a list with drag-and-drop reordering.
-- **Validation**: Real-time checking for path existence and variable name validity.
-- **Async Registry Operations**: Safe, non-blocking saves with UAC elevation support.
+- **Validation**: Real-time checking for path existence (canonical `C:\…` paths and `%MACRO%` references) and variable name validity.
+- **Fast Saves**: User variables are written directly and instantly with no elevation; only System variables require a UAC prompt. The window is briefly blocked while a save (or import/export/refresh) is in progress.
+- **Move Between Panes**: Drag a variable from one pane to the other to move it between User and System scope.
 - **Full History**: Unlimited Undo/Redo until changes are saved or refreshed.
 - **Modern UI**: Fully responsive design with Mica backdrop and Windows 11 design language.
 
@@ -34,6 +35,9 @@ The application displays a dual-pane view:
 - **Add**: Click the **+** button in either the System or User header to add a new variable.
 - **Remove**: Click the **X** button on a variable card to mark it for removal.
 - **Toggle Type (Ctrl+T)**: Right-click a variable card and select **Toggle Type** to switch between a standard String (`REG_SZ`) and an Expandable String (`REG_EXPAND_SZ`).
+- **Copy / Paste (Ctrl+C / Ctrl+V)**: Right-click a card to copy it as `Name=Value`, or paste a value into it. Paste is disabled when the clipboard has nothing pasteable or the target is read-only.
+- **Move Between Panes**: Drag a variable card to the other pane. If a variable of the same name already exists there it is overwritten (and removed from the source); read-only targets are not overwritten.
+- **Copy All / Paste All**: Right-click an empty area of a pane to copy every variable or paste a block of `Name=Value` lines (applied as a single undo step).
 
 ### Path List View
 
@@ -55,9 +59,9 @@ Variables containing multiple paths (semicolon-separated, like `PATH`) can be ex
 
 ### Safety and History
 
-- **Undo/Redo (Ctrl+Z / Ctrl+Y)**: Full history of changes is maintained until you save or refresh.
+- **Undo/Redo (Ctrl+Z / Ctrl+Y)**: Full history of changes is maintained until you save or refresh. Batch operations (Import, Paste All, Move) undo as a single step. Export does not affect history.
 - **Pending Changes**: The **Save** button is only enabled when there are changes to apply.
-- **Elevation**: Saving System variables will trigger a standard Windows UAC prompt.
+- **Elevation**: User variables save instantly with no prompt. Saving System variables requires administrator rights, so it triggers a standard Windows UAC prompt (subject to your UAC settings).
 
 ## Keyboard Shortcuts
 

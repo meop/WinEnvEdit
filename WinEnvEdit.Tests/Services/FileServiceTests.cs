@@ -448,6 +448,19 @@ data = ""valid_value""
   }
 
   [Fact]
+  public void FormatTomlOutput_CollapsesExistingBlankLineBeforeArrayTable() {
+    // Arrange - the serializer already emits a blank line before each [[..]]; the formatter must not double it
+    var input = "[[System]]\nname = \"v1\"\n\n[[System]]\nname = \"v2\"";
+
+    // Act
+    var result = FileService.FormatTomlOutput(input);
+
+    // Assert - exactly one blank line, never two
+    result.Should().Contain("\n\n[[System]]");
+    result.Should().NotContain("\n\n\n");
+  }
+
+  [Fact]
   public void FormatTomlOutput_HandlesEmptyString() {
     // Act
     var result = FileService.FormatTomlOutput(string.Empty);
