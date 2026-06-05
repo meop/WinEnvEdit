@@ -104,11 +104,12 @@ jobs:
         run: |
           $platform = "${{ matrix.platform }}"
           $rid = if ($platform -eq 'ARM64') { 'win-arm64' } else { 'win-x64' }
+          $label = $platform.ToLowerInvariant()   # release file names use lowercase x64 / arm64
           $publishDir = "WinEnvEdit/bin/$platform/Release/net10.0-windows10.0.26100.0/$rid/publish"
           New-Item -ItemType Directory -Force -Path staging | Out-Null
-          Copy-Item "WinEnvEdit.Installer/bin/$platform/Release/WinEnvEdit-$platform.msi" staging/
+          Copy-Item "WinEnvEdit.Installer/bin/$platform/Release/WinEnvEdit-$platform.msi" "staging/WinEnvEdit-$label.msi"
           # Portable: zip the whole self-contained publish folder (the exe needs its sibling files).
-          Compress-Archive -Path "$publishDir/*" -DestinationPath "staging/WinEnvEdit-$platform-portable.zip" -Force
+          Compress-Archive -Path "$publishDir/*" -DestinationPath "staging/WinEnvEdit-$label-portable.zip" -Force
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
         with:
@@ -129,14 +130,6 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           path: ./artifacts
-      - name: Normalize release file names (lowercase platform)
-        shell: bash
-        run: |
-          mkdir -p release
-          find artifacts -type f \( -name '*.msi' -o -name '*.zip' \) | while read -r f; do
-            cp "$f" "release/$(basename "${f//ARM64/arm64}")"
-          done
-          ls -la release
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v7
         with:
@@ -165,7 +158,8 @@ jobs:
           tag_name: v${{ needs.version.outputs.new_version }}
           body: ${{ steps.changelog.outputs.changelog }}
           files: |
-            release/*
+            artifacts/**/*.msi
+            artifacts/**/*.zip
             LICENSE.txt
           draft: false
           prerelease: ${{ needs.version.outputs.prerelease }}
