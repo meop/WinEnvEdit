@@ -9,7 +9,10 @@
   and builds the MSI installer via the .wixproj project.
 
 .PARAMETER Platform
-  The platform to build for (x64 or ARM64).
+  The platform to build for (ARM64 or x64).
+
+.PARAMETER Runtime
+  The .NET runtime identifier to publish for (win-arm64 or win-x64).
 
 .PARAMETER Force
   Force regeneration of installer resources even if they appear up to date.
@@ -19,6 +22,10 @@ param (
   [Parameter(Mandatory = $true)]
   [ValidateSet('ARM64', 'x64')]
   [string]$Platform,
+
+  [Parameter(Mandatory = $true)]
+  [ValidateSet('win-arm64', 'win-x64')]
+  [string]$Runtime,
 
   [switch]$Force
 )
@@ -221,10 +228,10 @@ function New-Assets {
 New-Assets -Force:$Force
 
 Write-Host "Platform: $Platform" -ForegroundColor Gray
+Write-Host "Runtime: $Runtime" -ForegroundColor Gray
 Write-Host 'Binary publishing started.' -ForegroundColor Yellow
-# Native AOT requires an explicit RID; output lands in bin\<Platform>\Release\<tfm>\win-<rid>\publish\.
-$rid = if ($Platform -eq 'ARM64') { 'win-arm64' } else { 'win-x64' }
-dotnet publish $projectFile -c Release -p:Platform=$Platform -r $rid
+# Native AOT requires an explicit runtime; output lands in bin\<Platform>\Release\<tfm>\<Runtime>\publish\.
+dotnet publish $projectFile -c Release -p:Platform=$Platform -r $Runtime
 if ($LASTEXITCODE -ne 0) {
   Write-Host "Error: dotnet publish failed (exit code $LASTEXITCODE)." -ForegroundColor Red
   exit $LASTEXITCODE
@@ -232,7 +239,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host 'Binary publishing completed.' -ForegroundColor Yellow
 
 Write-Host 'MSI building started.' -ForegroundColor Yellow
-dotnet build $wixProj -c Release -p:Platform=$Platform
+dotnet build $wixProj -c Release -p:Platform=$Platform -p:Runtime=$Runtime
 if ($LASTEXITCODE -ne 0) {
   Write-Host "Error: dotnet build failed (exit code $LASTEXITCODE)." -ForegroundColor Red
   exit $LASTEXITCODE
