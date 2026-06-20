@@ -1,11 +1,9 @@
-using System.Collections;
 using System.Reflection;
 using System.Text;
 
 using Microsoft.Win32;
 
 using Tomlyn;
-using Tomlyn.Model;
 
 using WinEnvEdit.Core.Models;
 using WinEnvEdit.Core.Types;
@@ -33,18 +31,14 @@ public class FileService : IFileService {
   }
 
   public async Task ExportToStream(Stream stream, IEnumerable<EnvironmentVariableModel> variables) {
-    var root = new TomlTable();
-    foreach (var group in variables.Where(v => !v.IsRemoved && !v.IsVolatile).GroupBy(v => v.Scope.ToString())) {
-      var tableArray = new TomlTableArray();
-      foreach (var v in group) {
-        var entry = new TomlTable { ["name"] = v.Name, ["data"] = v.Data, ["type"] = v.Type.ToString() };
-        tableArray.Add(entry);
-      }
-      root[group.Key] = tableArray;
+    var export = new EnvironmentExport();
+    foreach (var v in variables.Where(v => !v.IsRemoved && !v.IsVolatile)) {
+      var entry = new EnvironmentExportEntry { Name = v.Name, Data = v.Data, Type = v.Type.ToString() };
+      (v.Scope == VariableScope.System ? export.System : export.User).Add(entry);
     }
 
-    // Serialize the model through the source-gen context: AOT-safe overload + model writer (keeps [[..]] layout).
-    var tomlContent = TomlSerializer.Serialize(root, TomlExportContext.Default.TomlTable);
+    // The source-gen path honors TableArrayStyle.Headers, so this emits [[System]]/[[User]].
+    var tomlContent = TomlSerializer.Serialize(export, TomlExportContext.Default.EnvironmentExport);
     var formattedContent = FormatTomlOutput(tomlContent);
 
     // Write with LF line endings and UTF-8 encoding (no BOM)
@@ -92,37 +86,30 @@ public class FileService : IFileService {
   public async Task<IEnumerable<EnvironmentVariableModel>> ImportFromStream(Stream stream) {
     using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 4096, leaveOpen: true);
     var content = await reader.ReadToEndAsync();
-    var model = TomlSerializer.Deserialize(content, TomlExportContext.Default.TomlTable) ?? [];
+    var export = TomlSerializer.Deserialize(content, TomlExportContext.Default.EnvironmentExport) ?? new EnvironmentExport();
+
     var result = new List<EnvironmentVariableModel>();
-    var sections = new[] { ("System", VariableScope.System), ("User", VariableScope.User) };
-
-    foreach (var (sectionName, scope) in sections) {
-      if (model.TryGetValue(sectionName, out var sectionObj) && sectionObj is IEnumerable varList) {
-        foreach (var item in varList) {
-          if (item is IDictionary<string, object> varProps) {
-            var name = varProps.TryGetValue("name", out var nameObj) ? nameObj?.ToString() ?? string.Empty : string.Empty;
-            var data = varProps.TryGetValue("data", out var dataObj) ? dataObj?.ToString() ?? string.Empty : string.Empty;
-            var type = RegistryValueKind.String;
-            if (varProps.TryGetValue("type", out var typeObj) && typeObj is string typeStr && Enum.TryParse<RegistryValueKind>(typeStr, out var parsedType)) {
-              type = parsedType;
-            }
-
-            if (!string.IsNullOrEmpty(name)) {
-              result.Add(new EnvironmentVariableModel {
-                Name = name,
-                Data = data,
-                Type = type,
-                Scope = scope,
-                IsAdded = false,
-                IsRemoved = false,
-                IsVolatile = false
-              });
-            }
-          }
-        }
-      }
-    }
-
+    AddEntries(result, export.System, VariableScope.System);
+    AddEntries(result, export.User, VariableScope.User);
     return result;
+  }
+
+  private static void AddEntries(List<EnvironmentVariableModel> result, List<EnvironmentExportEntry> entries, VariableScope scope) {
+    foreach (var entry in entries) {
+      if (string.IsNullOrEmpty(entry.Name)) {
+        continue;
+      }
+
+      var type = Enum.TryParse<RegistryValueKind>(entry.Type, out var parsed) ? parsed : RegistryValueKind.String;
+      result.Add(new EnvironmentVariableModel {
+        Name = entry.Name,
+        Data = entry.Data,
+        Type = type,
+        Scope = scope,
+        IsAdded = false,
+        IsRemoved = false,
+        IsVolatile = false,
+      });
+    }
   }
 }
