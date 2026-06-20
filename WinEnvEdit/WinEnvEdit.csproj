@@ -54,17 +54,19 @@
     <PublishReadyToRun>false</PublishReadyToRun>
   </PropertyGroup>
 
-  <!-- Release publish hygiene: stop the build from emitting/copying companion files we would only strip again.
-       DebugType/DebugSymbols suppress the managed .pdb; AllowedReferenceRelatedFileExtensions stops the SDK from
-       copying the .pdb/.xml that sit next to referenced assemblies. The Native AOT .pdb is produced by the ILC
-       compiler independently of these switches, so it is still removed by TrimPublishOutput below. -->
+  <!-- Release publish hygiene: stop the build from emitting/copying symbol files at the source. This is the bulk
+       of the savings (~40 MB of .pdb); the TrimPublishOutput target below removes the smaller unused runtime
+       payload. DebugType/DebugSymbols suppress the managed .pdb; AllowedReferenceRelatedFileExtensions stops the
+       SDK from copying the .pdb/.xml that sit next to referenced assemblies; CopyOutputSymbolsToPublishDirectory
+       drops the ~40 MB Native AOT .pdb. -->
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <AllowedReferenceRelatedFileExtensions>none</AllowedReferenceRelatedFileExtensions>
     <!-- Stop the Native AOT symbol file (the ~40 MB WinEnvEdit.pdb) from being copied into the publish folder.
-         This gates the SDK's _CopyAotSymbols target, which runs AFTER our TrimPublishOutput below - so deleting
-         the pdb there is too early; it gets re-copied. Suppressing it at the source is the correct fix. -->
+         This gates the SDK's _CopyAotSymbols target. A post-publish Delete cannot remove it: _CopyAotSymbols runs
+         AFTER AfterTargets="Publish", so the file is silently re-copied. Suppressing it at the source is the only
+         thing that works. -->
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
   </PropertyGroup>
 
@@ -118,28 +120,25 @@
     </ItemGroup>
   </Target>
 
-  <!-- Keep release artifacts minimal by stripping files that are never used at runtime from the publish folder.
-       Both the MSI and the portable zip pack this same folder, so pruning it once is the single source of truth.
-       The build switches above are the primary mechanism (they stop the .pdb/.xml from being produced or copied,
-       including the ~40 MB Native AOT pdb); the deletes below are belt-and-suspenders for whatever still slips
-       through (e.g. a .xml copied as package content rather than a reference companion). Removed, why each is safe:
-         *.pdb  - debug symbols. Normally already gone via the switches above; deleted here only as a fallback.
-         *.xml  - package XML doc files; consumed only by IDE tooling.
-         *.mui  - Win32 satellites that localize built-in WinUI control chrome (TextBox context menu, Narrator)
-                  into the display language. The app's UI is hardcoded English and the default control strings
-                  ship in the .pri files (kept), so even en-us is droppable. The empty culture folders go too.
-         Microsoft.UI.Designer.dll - the XAML designer; design-time only, never loaded by the shipped app.
-         MSIX tile assets - Square*/Wide*/SplashScreen/StoreLogo/LockScreen PNGs are read only from an MSIX
-                  manifest. This app is unpackaged (WindowsPackageType=None), so nothing loads them; App.ico
-                  (the exe icon + WiX shortcut icon) is kept.
-       See docs/aot.md. NOTE: the 25 *.winmd files (~2 MB) are a further candidate but need a manual runtime
-       pass (activation can fall back to them), so they are deliberately left in. -->
+  <!-- Trim the self-contained publish folder (packed verbatim by both the MSI and the portable zip) of runtime
+       payload this app does not use - a further ~5.6 MB (~9%) on top of the ~40 MB of .pdb the switches above
+       already drop. Each delete and its risk is documented in docs/aot.md:
+         *.winmd - WinRT projection metadata. Under full AOT the projections are generated statically, so these are
+                   normally not loaded; activation CAN fall back to them, so this prune is runtime-verified
+                   (smoke-test every dialog/picker/template path after touching it).
+         *.mui   - Win32 satellites localizing built-in WinUI control chrome (textbox menus, Narrator) per display
+                   language. Keep only en-us to match the app's English UI; on non-English Windows that chrome falls
+                   back to the base resources - no functional change. Re-add a culture's folder if the app is ever
+                   localized to it.
+         tile PNGs / Microsoft.UI.Designer.dll - MSIX tile art (unread by an unpackaged app) and the design-time
+                   XAML designer (never loaded by the shipped app).
+         *.pdb   - belt-and-suspenders; the switches above already stop these from being copied. -->
   <Target Name="TrimPublishOutput" AfterTargets="Publish">
     <ItemGroup>
-      <_PublishPdb Include="$(PublishDir)**\*.pdb" />
-      <_PublishXml Include="$(PublishDir)**\*.xml" />
-      <_PublishMui Include="$(PublishDir)**\*.mui" />
+      <_PublishWinmd Include="$(PublishDir)*.winmd" />
+      <_PublishMui Include="$(PublishDir)**\*.mui" Exclude="$(PublishDir)en-us\**\*.mui" />
       <_PublishDesignTime Include="$(PublishDir)Microsoft.UI.Designer.dll" />
+      <_PublishPdb Include="$(PublishDir)**\*.pdb" />
       <_PublishTileAssets Include="$(PublishDir)Assets\LockScreenLogo*.png;
                                    $(PublishDir)Assets\SplashScreen*.png;
                                    $(PublishDir)Assets\Square150x150Logo*.png;
@@ -147,8 +146,8 @@
                                    $(PublishDir)Assets\StoreLogo*.png;
                                    $(PublishDir)Assets\Wide310x150Logo*.png" />
     </ItemGroup>
-    <Delete Files="@(_PublishPdb);@(_PublishXml);@(_PublishMui);@(_PublishDesignTime);@(_PublishTileAssets)" />
-    <!-- Remove the now-empty culture folders the .mui files lived in (never the publish root: no .mui there). -->
+    <Delete Files="@(_PublishWinmd);@(_PublishMui);@(_PublishDesignTime);@(_PublishPdb);@(_PublishTileAssets)" />
+    <!-- Remove the now-empty non-en-us culture folders the .mui files lived in. -->
     <RemoveDir Directories="@(_PublishMui->'%(RootDir)%(Directory)'->Distinct())" />
   </Target>
 </Project>
