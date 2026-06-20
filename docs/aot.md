@@ -155,6 +155,38 @@ AOT build. The framework is always fully trimmed; the only decision is **what to
 unsafe pattern is caught at build time. (It does **not** catch the layer-2 dynamic cases — those have no
 static signal, which is exactly why the root is required.)
 
+### Stripping the publish output (release size)
+
+Trimming shrinks the managed code, but the publish folder still ships files that are never used at runtime.
+The cleanest fix is to stop them being produced/copied where a build switch exists, and delete the rest in one
+place. The MSI **and** the portable zip pack the same publish folder, so pruning it once covers both artifacts.
+
+**Suppressed at the source** (Release-only `PropertyGroup`, no delete needed):
+
+| Switch | Effect |
+| --- | --- |
+| `CopyOutputSymbolsToPublishDirectory=false` | Stops the Native AOT `WinEnvEdit.pdb` (~40 MB) from being copied. **This is the real fix for the pdb** — the SDK's `_CopyAotSymbols` target runs *after* `AfterTargets="Publish"`, so a post-publish `Delete` of the pdb runs too early and the file is silently re-copied. Gating that target is the only thing that actually removes it. |
+| `DebugType=none` + `DebugSymbols=false` | No managed `.pdb` is emitted. |
+| `AllowedReferenceRelatedFileExtensions=none` | The SDK stops copying the `.pdb`/`.xml` that sit next to referenced assemblies. |
+
+**Deleted by `TrimPublishOutput`** (`AfterTargets="Publish"`) — what has no build switch, plus belt-and-suspenders:
+
+| Removed | Why it's safe |
+| --- | --- |
+| `*.pdb`, `*.xml` | Belt-and-suspenders for anything the switches above miss (e.g. a `.xml` copied as package content, not as a reference companion). |
+| `*.mui` + their culture folders | Win32 satellite resources that localize **built-in WinUI control chrome** (TextBox Cut/Copy/Paste menu, Narrator text) into the user's display language. The app's own UI is hardcoded English, and the default control strings ship in the `.pri` files (which we keep) — so even `en-us` is droppable. |
+| `Microsoft.UI.Designer.dll` | The XAML designer; design-time only, never loaded by the shipped app. |
+| MSIX tile PNGs (`Square*`, `Wide*`, `SplashScreen*`, `StoreLogo*`, `LockScreen*`) | Read only from an MSIX manifest. This app is unpackaged (`WindowsPackageType=None`), so nothing loads them. `App.ico` (exe icon + WiX shortcut) is kept. They're stripped from the publish output rather than excluded from `Content`, so the build-time resource/PRI pipeline is left untouched (matters under `TreatWarningsAsErrors`). |
+
+**Not stripped (candidate):** the 25 `*.winmd` WinRT metadata files (~2 MB). Under full AOT the projections are
+generated statically so these are usually not loaded, but type activation can fall back to them — removing them
+needs a manual runtime pass over every dialog/picker/template path first, so they're deliberately left in.
+
+Net effect: the publish folder is **~56 MB** (verified, with the pdb genuinely gone). The MSI is **17.3 MB**
+with `CompressionLevel="high"` (LZX) vs 18.2 MB with the default MSZIP — only ~5% because the payload is mostly
+already-incompressible native PE plus the AOT exe. The `.pri` files are kept; they carry the WinUI control
+resources. The ~44 MB of native WinUI/WinAppSDK runtime is the irreducible floor for a self-contained build.
+
 ---
 
 ## What does NOT work under AOT

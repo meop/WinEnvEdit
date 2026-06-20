@@ -38,9 +38,22 @@ After the call: `WaitForSingleObject(info.Process, INFINITE)` → `GetExitCodePr
 
 ---
 
+## Two deployment modes
+
+WinEnvEdit ships **self-contained Native AOT** (the default in `WinEnvEdit.csproj`:
+`SelfContained=true` + `PublishAot=true`). That build is fully trimmed, needs no installed
+runtime, and produces a **~17.3 MB MSI** (~56 MB on disk, dominated by the irreducible native
+WinUI runtime). See [aot.md](aot.md) for how AOT + full trim is made to work and how the publish
+output is stripped.
+
+The section below documents the **alternative framework-dependent mode** (flip both toggles to
+`false`): a smaller **~10 MB MSI**, but it requires the .NET Desktop Runtime and the Windows App
+SDK runtime to be installed on the target machine. It is kept as a documented fallback, not the
+shipped default.
+
 ## Unpackaged Framework-Dependent Deployment
 
-Configure WinUI 3 apps for a small MSI that relies on external runtimes (~10 MB instead of ~100 MB self-contained).
+Configure WinUI 3 apps for a small MSI that relies on external runtimes (~10 MB) instead of bundling them.
 
 ### Project Properties
 
@@ -106,15 +119,22 @@ Use `-r` only for self-contained deployments or cross-platform targets.
 
 Unsigned MSIX requires end-users to enable Developer Mode — not viable for general distribution. Code signing costs $100–400/year. MSI + WinGet is the practical choice for unsigned open-source distribution; WinGet installs provide inherent trust that reduces SmartScreen warnings.
 
-### Why No Trimming?
+### Why No Trimming (in *this* mode)?
 
-Trimming requires `SelfContained=true` and fails with WinUI 3:
+Trimming requires `SelfContained=true`. In a naive framework-dependent or self-contained build
+*without* the CsWinRT AOT optimizer, `PublishTrimmed=true` fails with WinUI 3:
 ```
 error IL2104: Assembly 'Microsoft.Web.WebView2.Core' produced trim warnings
 error IL2104: Assembly 'WinRT.Runtime' produced trim warnings
 error NETSDK1144: Optimizing assemblies for size failed
 ```
-WinUI dependencies use reflection and dynamic code generation and aren't marked trim-safe. Accept the ~10 MB framework-dependent output as the minimum viable size.
+because WinUI dependencies use reflection and dynamic code generation and aren't marked trim-safe.
+So the framework-dependent mode documented here does **not** trim — accept its ~10 MB output as-is.
+
+This is **not** the whole story: the shipped **self-contained Native AOT** build *does* fully trim
+successfully, by pairing `PublishAot` with the CsWinRT AOT optimizer (`CsWinRTAotOptimizerEnabled`)
+and rooting the app assemblies (`TrimmerRootAssembly`) so XAML-reached types survive. That path is
+documented in detail in [aot.md](aot.md) — refer there before concluding "trimming doesn't work."
 
 References: [WindowsAppSDK #2478](https://github.com/microsoft/WindowsAppSDK/issues/2478), [.NET Trimming docs](https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trim-self-contained)
 
