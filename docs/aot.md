@@ -180,12 +180,15 @@ These ~40 MB are the difference between a ~101 MB folder and ~61 MB, and they ar
 | `*.winmd` (all 25) | ~2.25 MB | WinRT projection metadata. Under full AOT the projections are generated statically, so these are normally not loaded — **but type activation can fall back to them.** This is the one prune that can *break* the app, so it is **runtime-verified**: smoke-test every dialog, file picker, About box, and the path-list template after any change here. A dialog/picker that silently fails to open means a winmd is being activated and must go back. |
 | MSIX tile PNGs (`Square*`, `Wide*`, `SplashScreen*`, `StoreLogo*`, `LockScreen*`) | ~0.26 MB | Read only from an MSIX manifest. This app is unpackaged (`WindowsPackageType=None`), so nothing loads them. `App.ico` (exe icon + WiX shortcut) is kept. Deleted from the publish output rather than excluded from `Content`, so the build-time resource/PRI pipeline is untouched (matters under `TreatWarningsAsErrors`). |
 | `Microsoft.UI.Designer.dll` | ~0.12 MB | The XAML designer; design-time only, never loaded by the shipped app. |
+| `runtimes\<rid>\native\` copies | ~0.16 MB | The SDK flattens RID-native DLLs (here `WebView2Loader.dll`) to the publish root, where Win32 `LoadLibrary` resolves them. The `runtimes\` copy is a redundant build-layout artifact never loaded at runtime in a self-contained AOT app (no `deps.json` probes it). The root copy is kept. |
 | `*.pdb` | 0 | Belt-and-suspenders; the switches above already stop these being copied. |
 
 **Kept on purpose:** `RestartAgent.exe` (~70 KB WinAppSDK restart helper — unused here, since we never call the App
 SDK restart/lifecycle APIs and our elevated relaunch is a custom `ShellExecuteExW` child, but a supported runtime
-component below the bar) and the `.pri` files (they carry the WinUI control resources; removing them crashes startup
-with `0xc000027b`).
+component below the bar); the **root** `WebView2Loader.dll` (~0.16 MB — WinUI 3 pulls in the WebView2 SDK
+transitively even though this app has no `WebView2` control, so the loader is never actually `LoadLibrary`'d; left
+as a supported native dep, and dropping it would be the winmd-class risk for sub-1% gain); and the `.pri` files
+(they carry the WinUI control resources; removing them crashes startup with `0xc000027b`).
 
 Net effect: the publish folder drops to **~55 MB** and the MSI to **16.7 MB** (`CompressionLevel="high"` LZX; the
 LZX gain over the default MSZIP is only ~5% because the payload is mostly already-incompressible native PE plus the

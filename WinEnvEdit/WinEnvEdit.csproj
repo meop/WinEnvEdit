@@ -132,6 +132,10 @@
                    localized to it.
          tile PNGs / Microsoft.UI.Designer.dll - MSIX tile art (unread by an unpackaged app) and the design-time
                    XAML designer (never loaded by the shipped app).
+         runtimes\ - the SDK flattens RID-native DLLs to the publish root (where Win32 LoadLibrary resolves them),
+                   so runtimes\<rid>\native\ is a redundant build-layout copy never loaded at runtime in a
+                   self-contained AOT app (no deps.json probes it). Today that is just a duplicate
+                   WebView2Loader.dll; the loaded copy in the root is kept.
          *.pdb   - belt-and-suspenders; the switches above already stop these from being copied. -->
   <Target Name="TrimPublishOutput" AfterTargets="Publish">
     <ItemGroup>
@@ -149,5 +153,7 @@
     <Delete Files="@(_PublishWinmd);@(_PublishMui);@(_PublishDesignTime);@(_PublishPdb);@(_PublishTileAssets)" />
     <!-- Remove the now-empty non-en-us culture folders the .mui files lived in. -->
     <RemoveDir Directories="@(_PublishMui->'%(RootDir)%(Directory)'->Distinct())" />
+    <!-- Remove the redundant RID-native copies; the needed natives are flattened to the publish root. -->
+    <RemoveDir Directories="$(PublishDir)runtimes" />
   </Target>
 </Project>
