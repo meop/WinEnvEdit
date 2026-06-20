@@ -45,7 +45,7 @@ Useful when the platform closes a gap and a workaround can be retired:
   - Manual `IRelayCommand` instead of `[RelayCommand]` — more boilerplate, forced by `MVVMTK0046`.
   - `[GeneratedBindableCustomProperty]` + `TrimmerRootAssembly` — required scaffolding.
 
-Repro projects and proposed upstream reports live in [docs/upstream/](upstream/).
+Repro projects and proposed upstream reports are indexed in [docs/upstream.md](upstream.md) (drafts in [docs/upstream/](upstream/)).
 
 ---
 
