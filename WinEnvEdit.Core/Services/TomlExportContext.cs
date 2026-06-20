@@ -2,9 +2,9 @@ using Tomlyn.Serialization;
 
 namespace WinEnvEdit.Core.Services;
 
-// Source-generated, AOT-safe (de)serialization for the export DTO. The source-gen path honors TableArrayStyle
-// (default Headers), so a List<EnvironmentExportEntry> at the document root emits the [[System]]/[[User]]
-// array-of-tables layout natively - no hand-built TomlTable model needed.
+// Source-generated, AOT-safe (de)serialization for the export DTO. A List<EnvironmentExportEntry> at the
+// document root serializes as the [[System]]/[[User]] array-of-tables layout (TableArrayStyle defaults to
+// Headers).
 [TomlSerializable(typeof(EnvironmentExport))]
 internal partial class TomlExportContext : TomlSerializerContext {
 }

@@ -10,7 +10,6 @@ self-contained draft an agent (or you) can turn into a GitHub issue or PR on the
 | [winui-datatemplate-events-aot.md](upstream/winui-datatemplate-events-aot.md) | microsoft/microsoft-ui-xaml | issue + repro | High |
 | [cswinrt-collection-expression-ccw.md](upstream/cswinrt-collection-expression-ccw.md) | microsoft/CsWinRT | issue + repro | Medium-High |
 | [resourcedictionary-indexer-null-aot.md](upstream/resourcedictionary-indexer-null-aot.md) | microsoft-ui-xaml / CsWinRT | needs-confirmation | Low-Medium |
-| [tomlyn-aot-serialization.md](upstream/tomlyn-aot-serialization.md) | xoofx/Tomlyn | PR | High (local branches exist) |
 
 Before filing any of these, **search the target repo** — WinUI 3 + AOT is actively evolving and some may
 already be tracked or marked "by design / tracked by the AOT effort." Each draft has a "Could this be
