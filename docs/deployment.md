@@ -140,12 +140,24 @@ References: [WindowsAppSDK #2478](https://github.com/microsoft/WindowsAppSDK/iss
 
 ### WinGet Dependencies
 
+These `PackageDependencies` apply **only to the framework-dependent mode** above, which relies on the
+.NET Desktop Runtime and the Windows App SDK runtime being installed:
+
 ```yaml
 Dependencies:
   PackageDependencies:
     - PackageIdentifier: Microsoft.DotNet.DesktopRuntime.10
     - PackageIdentifier: Microsoft.WindowsAppRuntime.2.0
 ```
+
+The **shipped self-contained Native AOT** build bundles its own runtime, so its WinGet manifest must
+have **no `Dependencies` block at all**. WinEnvEdit 1.0.0/1.0.1 were framework-dependent and declared
+the two packages above; 1.1.0 onward is self-contained and drops them.
+
+**Pipeline gotcha:** the `package` job runs `wingetcreate update`, which carries every field from the
+previous manifest forward and only swaps the version + URLs — so the first self-contained release still
+inherits the old `Dependencies` block. Delete it by hand from the winget-pkgs PR the job opens. This is
+a one-time edit: once a dep-free manifest is published, later `1.1.x` bumps carry that forward.
 
 ---
 
