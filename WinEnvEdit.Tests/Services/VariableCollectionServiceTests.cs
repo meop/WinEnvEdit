@@ -13,9 +13,7 @@ namespace WinEnvEdit.Tests.Services;
 public class VariableCollectionServiceTests {
   private readonly VariableCollectionService service;
 
-  public VariableCollectionServiceTests() {
-    service = new VariableCollectionService();
-  }
+  public VariableCollectionServiceTests() => service = new VariableCollectionService();
 
   #region HasChanged Tests
 

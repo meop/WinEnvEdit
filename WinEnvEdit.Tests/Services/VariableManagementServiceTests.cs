@@ -53,8 +53,9 @@ public class VariableManagementServiceTests {
       EnvironmentVariableBuilder.Default().WithName("CCC").Build(),
     }.ToList();
 
+
     // Act
-    var (result, variable) = service.AddOrUpdateVariable(
+    var (result, _) = service.AddOrUpdateVariable(
       variables,
       "BBB",
       "value",

@@ -28,8 +28,9 @@ public class DialogService(Window window) : IDialogService {
   }
 
   public async Task<string?> PickOpenFile(string extension) {
-    var openPicker = new FileOpenPicker(window.AppWindow.Id);
-    openPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+    var openPicker = new FileOpenPicker(window.AppWindow.Id) {
+      SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+    };
     openPicker.FileTypeFilter.Add(extension);
 
     var file = await openPicker.PickSingleFileAsync();
@@ -37,8 +38,9 @@ public class DialogService(Window window) : IDialogService {
   }
 
   public async Task<string?> PickSaveFile(string description, string extension, string suggestedFileName) {
-    var savePicker = new FileSavePicker(window.AppWindow.Id);
-    savePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+    var savePicker = new FileSavePicker(window.AppWindow.Id) {
+      SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+    };
     // Explicit List<string> (not a collection expression) — required for the WinRT picker under AOT.
     savePicker.FileTypeChoices.Add(description, new List<string> { extension });
     savePicker.SuggestedFileName = suggestedFileName;

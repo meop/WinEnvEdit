@@ -22,7 +22,6 @@ public partial class MainWindowViewModel : ObservableObject {
   private readonly IFileService fileService;
   private readonly IStateSnapshotService stateService;
   private readonly IUndoRedoService undoRedoService;
-  private readonly IClipboardService clipboardService;
   private readonly IDialogService dialogService;
   private bool isRestoringState = false;
   private bool isBatching = false;
@@ -116,7 +115,6 @@ public partial class MainWindowViewModel : ObservableObject {
     this.fileService = fileService;
     this.stateService = stateService;
     this.undoRedoService = undoRedoService;
-    this.clipboardService = clipboardService;
     this.dialogService = dialogService;
 
     SystemVariables = new VariableScopeViewModel(VariableScope.System, environmentService, clipboardService, this);
@@ -374,7 +372,7 @@ public partial class MainWindowViewModel : ObservableObject {
     }
   }
 
-  private bool HasScopeChanged(VariableScopeViewModel scopeViewModel, List<EnvironmentVariableModel> restoredVariables) {
+  private static bool HasScopeChanged(VariableScopeViewModel scopeViewModel, List<EnvironmentVariableModel> restoredVariables) {
     var currentVariables = scopeViewModel.Variables.Select(v => v.Model).ToList();
 
     if (currentVariables.Count != restoredVariables.Count) {
@@ -399,10 +397,9 @@ public partial class MainWindowViewModel : ObservableObject {
     a.IsRemoved == b.IsRemoved &&
     a.IsVolatile == b.IsVolatile;
 
-  private void RestoreScopeVariables(VariableScopeViewModel scopeViewModel, List<EnvironmentVariableModel> restoredVariables) {
+  private static void RestoreScopeVariables(VariableScopeViewModel scopeViewModel, List<EnvironmentVariableModel> restoredVariables) =>
     // Use unified restoration for minimal UI updates
     scopeViewModel.RestoreFromVariables(restoredVariables);
-  }
 
   [RelayCommand]
   private async Task About() {

@@ -16,9 +16,7 @@ namespace WinEnvEdit.Tests.Services;
 public class FileServiceTests {
   private readonly FileService fileService;
 
-  public FileServiceTests() {
-    fileService = new FileService();
-  }
+  public FileServiceTests() => fileService = new FileService();
 
   #region ExportToStream Tests
 

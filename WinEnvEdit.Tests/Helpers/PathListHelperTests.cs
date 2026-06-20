@@ -103,12 +103,12 @@ public class PathListHelperTests {
     var newPaths = new List<string> { "C:\\path1", "C:\\path2", "C:\\path3" };
 
     // Act
-    var result = PathListHelper.ReconcilePathLists(current, newPaths);
+    var (ItemsToUpdate, ItemsToAdd, CountToRemove) = PathListHelper.ReconcilePathLists(current, newPaths);
 
     // Assert
-    result.ItemsToUpdate.Should().BeEmpty();
-    result.ItemsToAdd.Should().BeEmpty();
-    result.CountToRemove.Should().Be(0);
+    ItemsToUpdate.Should().BeEmpty();
+    ItemsToAdd.Should().BeEmpty();
+    CountToRemove.Should().Be(0);
   }
 
   [Fact]
@@ -118,14 +118,14 @@ public class PathListHelperTests {
     var newPaths = new List<string> { "C:\\newpath1", "C:\\path2", "C:\\newpath3" };
 
     // Act
-    var result = PathListHelper.ReconcilePathLists(current, newPaths);
+    var (ItemsToUpdate, ItemsToAdd, CountToRemove) = PathListHelper.ReconcilePathLists(current, newPaths);
 
     // Assert
-    result.ItemsToUpdate.Should().HaveCount(2);
-    result.ItemsToUpdate.Should().Contain((0, "C:\\newpath1"));
-    result.ItemsToUpdate.Should().Contain((2, "C:\\newpath3"));
-    result.ItemsToAdd.Should().BeEmpty();
-    result.CountToRemove.Should().Be(0);
+    ItemsToUpdate.Should().HaveCount(2);
+    ItemsToUpdate.Should().Contain((0, "C:\\newpath1"));
+    ItemsToUpdate.Should().Contain((2, "C:\\newpath3"));
+    ItemsToAdd.Should().BeEmpty();
+    CountToRemove.Should().Be(0);
   }
 
   [Fact]
@@ -135,14 +135,14 @@ public class PathListHelperTests {
     var newPaths = new List<string> { "C:\\path1", "C:\\path2", "C:\\path3", "C:\\path4" };
 
     // Act
-    var result = PathListHelper.ReconcilePathLists(current, newPaths);
+    var (ItemsToUpdate, ItemsToAdd, CountToRemove) = PathListHelper.ReconcilePathLists(current, newPaths);
 
     // Assert
-    result.ItemsToUpdate.Should().BeEmpty();
-    result.ItemsToAdd.Should().HaveCount(2);
-    result.ItemsToAdd.Should().Contain("C:\\path3");
-    result.ItemsToAdd.Should().Contain("C:\\path4");
-    result.CountToRemove.Should().Be(0);
+    ItemsToUpdate.Should().BeEmpty();
+    ItemsToAdd.Should().HaveCount(2);
+    ItemsToAdd.Should().Contain("C:\\path3");
+    ItemsToAdd.Should().Contain("C:\\path4");
+    CountToRemove.Should().Be(0);
   }
 
   [Fact]
@@ -152,12 +152,12 @@ public class PathListHelperTests {
     var newPaths = new List<string> { "C:\\path1", "C:\\path2" };
 
     // Act
-    var result = PathListHelper.ReconcilePathLists(current, newPaths);
+    var (ItemsToUpdate, ItemsToAdd, CountToRemove) = PathListHelper.ReconcilePathLists(current, newPaths);
 
     // Assert
-    result.ItemsToUpdate.Should().BeEmpty();
-    result.ItemsToAdd.Should().BeEmpty();
-    result.CountToRemove.Should().Be(2);
+    ItemsToUpdate.Should().BeEmpty();
+    ItemsToAdd.Should().BeEmpty();
+    CountToRemove.Should().Be(2);
   }
 
   [Fact]
@@ -167,15 +167,15 @@ public class PathListHelperTests {
     var newPaths = new List<string> { "C:\\newpath1", "C:\\path2", "C:\\path4", "C:\\path5" };
 
     // Act
-    var result = PathListHelper.ReconcilePathLists(current, newPaths);
+    var (ItemsToUpdate, ItemsToAdd, CountToRemove) = PathListHelper.ReconcilePathLists(current, newPaths);
 
     // Assert - Updates at index 0 and 2, Add at index 3
-    result.ItemsToUpdate.Should().HaveCount(2);
-    result.ItemsToUpdate.Should().Contain((0, "C:\\newpath1"));
-    result.ItemsToUpdate.Should().Contain((2, "C:\\path4"));
-    result.ItemsToAdd.Should().HaveCount(1);
-    result.ItemsToAdd.Should().Contain("C:\\path5");
-    result.CountToRemove.Should().Be(0);
+    ItemsToUpdate.Should().HaveCount(2);
+    ItemsToUpdate.Should().Contain((0, "C:\\newpath1"));
+    ItemsToUpdate.Should().Contain((2, "C:\\path4"));
+    ItemsToAdd.Should().HaveCount(1);
+    ItemsToAdd.Should().Contain("C:\\path5");
+    CountToRemove.Should().Be(0);
   }
 
   [Fact]
@@ -185,12 +185,12 @@ public class PathListHelperTests {
     var newPaths = new List<string> { "C:\\path1", "C:\\path2" };
 
     // Act
-    var result = PathListHelper.ReconcilePathLists(current, newPaths);
+    var (ItemsToUpdate, ItemsToAdd, CountToRemove) = PathListHelper.ReconcilePathLists(current, newPaths);
 
     // Assert
-    result.ItemsToUpdate.Should().BeEmpty();
-    result.ItemsToAdd.Should().HaveCount(2);
-    result.CountToRemove.Should().Be(0);
+    ItemsToUpdate.Should().BeEmpty();
+    ItemsToAdd.Should().HaveCount(2);
+    CountToRemove.Should().Be(0);
   }
 
   [Fact]
@@ -200,12 +200,12 @@ public class PathListHelperTests {
     var newPaths = new List<string>();
 
     // Act
-    var result = PathListHelper.ReconcilePathLists(current, newPaths);
+    var (ItemsToUpdate, ItemsToAdd, CountToRemove) = PathListHelper.ReconcilePathLists(current, newPaths);
 
     // Assert
-    result.ItemsToUpdate.Should().BeEmpty();
-    result.ItemsToAdd.Should().BeEmpty();
-    result.CountToRemove.Should().Be(2);
+    ItemsToUpdate.Should().BeEmpty();
+    ItemsToAdd.Should().BeEmpty();
+    CountToRemove.Should().Be(2);
   }
 
   #endregion

@@ -19,7 +19,7 @@ public class StateUndoFlowTests {
   private readonly UndoRedoService undo = new();
 
   private static List<EnvironmentVariableModel> Vars(params string[] names) =>
-    names.Select(n => EnvironmentVariableBuilder.Default().WithName(n).WithData($"{n}-val").Build()).ToList();
+    [.. names.Select(n => EnvironmentVariableBuilder.Default().WithName(n).WithData($"{n}-val").Build())];
 
   // Mirrors MainWindowViewModel.LoadVariables()
   private void Load(List<EnvironmentVariableModel> vars) {

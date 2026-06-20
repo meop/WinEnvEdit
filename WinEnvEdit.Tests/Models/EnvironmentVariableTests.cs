@@ -100,9 +100,8 @@ public class EnvironmentVariableTests {
 
 public class VariableScopeTests {
   [Fact]
-  public void VariableScope_UserAndSystemAreDifferent() {
+  public void VariableScope_UserAndSystemAreDifferent() =>
     // Assert
     VariableScope.User.Should().NotBe(VariableScope.System);
-  }
 
 }

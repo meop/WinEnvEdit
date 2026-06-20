@@ -12,12 +12,10 @@ using Xunit;
 namespace WinEnvEdit.Tests.Services;
 
 public class StateSnapshotServiceTests {
-  private StateSnapshotService service;
+  private readonly StateSnapshotService service;
 
 
-  public StateSnapshotServiceTests() {
-    service = new StateSnapshotService();
-  }
+  public StateSnapshotServiceTests() => service = new StateSnapshotService();
 
   #region CaptureSnapshot Tests
 
@@ -30,10 +28,10 @@ public class StateSnapshotServiceTests {
       .Build();
 
     // Act
-    service.CaptureSnapshot(new[] { variable });
+    service.CaptureSnapshot([variable]);
 
     // Assert - verify snapshot captured by checking IsDirty returns false for unchanged
-    service.IsDirty(new[] { variable }).Should().BeFalse();
+    service.IsDirty([variable]).Should().BeFalse();
   }
 
   [Fact]
@@ -45,13 +43,13 @@ public class StateSnapshotServiceTests {
       .Build();
 
     // Act
-    service.CaptureSnapshot(new[] { variable });
+    service.CaptureSnapshot([variable]);
 
     // Assert - removed variable should not be in snapshot
     // When we un-remove it and mark as added, it should be dirty
     variable.IsRemoved = false;
     variable.IsAdded = true;
-    service.IsDirty(new[] { variable }).Should().BeTrue("variable wasn't in snapshot and is now added");
+    service.IsDirty([variable]).Should().BeTrue("variable wasn't in snapshot and is now added");
   }
 
   [Fact]
@@ -68,11 +66,11 @@ public class StateSnapshotServiceTests {
       .Build();
 
     // Act
-    service.CaptureSnapshot(new[] { persistentVar, volatileVar });
+    service.CaptureSnapshot([persistentVar, volatileVar]);
 
     // Assert - volatile var is not in snapshot, so changing it is invisible
     volatileVar.Data = "changed";
-    service.IsDirty(new[] { persistentVar, volatileVar }).Should().BeFalse("volatile vars are excluded from snapshot and dirty check");
+    service.IsDirty([persistentVar, volatileVar]).Should().BeFalse("volatile vars are excluded from snapshot and dirty check");
   }
 
   #endregion
@@ -85,12 +83,12 @@ public class StateSnapshotServiceTests {
     var variable = EnvironmentVariableBuilder.Default()
       .WithName("TEST")
       .Build();
-    service.CaptureSnapshot(new[] { variable });
+    service.CaptureSnapshot([variable]);
 
     variable.IsRemoved = true;
 
     // Act
-    var result = service.IsDirty(new[] { variable });
+    var result = service.IsDirty([variable]);
 
     // Assert
     result.Should().BeTrue("removed variable exists in snapshot");
@@ -105,7 +103,7 @@ public class StateSnapshotServiceTests {
       .Build();
 
     // Act
-    var result = service.IsDirty(new[] { variable });
+    var result = service.IsDirty([variable]);
 
     // Assert
     result.Should().BeTrue("variable is marked as added");
@@ -118,12 +116,12 @@ public class StateSnapshotServiceTests {
       .WithName("TEST")
       .WithData("original")
       .Build();
-    service.CaptureSnapshot(new[] { variable });
+    service.CaptureSnapshot([variable]);
 
     variable.Data = "modified";
 
     // Act
-    var result = service.IsDirty(new[] { variable });
+    var result = service.IsDirty([variable]);
 
     // Assert
     result.Should().BeTrue("data value changed");
@@ -137,12 +135,12 @@ public class StateSnapshotServiceTests {
       .WithName("TEST")
       .WithType(RegistryValueKind.String)
       .Build();
-    service.CaptureSnapshot(new[] { variable });
+    service.CaptureSnapshot([variable]);
 
     variable.Type = RegistryValueKind.ExpandString;
 
     // Act
-    var result = service.IsDirty(new[] { variable });
+    var result = service.IsDirty([variable]);
 
     // Assert
     result.Should().BeTrue("type changed from String to ExpandString");
@@ -161,7 +159,7 @@ public class StateSnapshotServiceTests {
       .Build();
 
     // Act
-    var result = service.IsDirty(new[] { imported });
+    var result = service.IsDirty([imported]);
 
     // Assert
     result.Should().BeTrue("a variable present now but absent from the snapshot is a pending change");
@@ -175,10 +173,10 @@ public class StateSnapshotServiceTests {
       .WithData("value")
       .WithType(RegistryValueKind.String)
       .Build();
-    service.CaptureSnapshot(new[] { variable });
+    service.CaptureSnapshot([variable]);
 
     // Act
-    var result = service.IsDirty(new[] { variable });
+    var result = service.IsDirty([variable]);
 
     // Assert
     result.Should().BeFalse("nothing changed");
@@ -203,11 +201,11 @@ public class StateSnapshotServiceTests {
       .WithName("test")
       .WithData("value")
       .Build();
-    service.CaptureSnapshot(new[] { variable });
+    service.CaptureSnapshot([variable]);
 
     // Act - check with uppercase name (same variable, just case difference)
     variable.Name = "TEST";
-    var result = service.IsDirty(new[] { variable });
+    var result = service.IsDirty([variable]);
 
     // Assert - should detect as changed (Ordinal comparison in HasChanged)
     result.Should().BeTrue("name case changed from 'test' to 'TEST'");
@@ -225,7 +223,7 @@ public class StateSnapshotServiceTests {
       .Build();
 
     // Act
-    var result = service.IsDirty(new[] { volatileVar });
+    var result = service.IsDirty([volatileVar]);
 
     // Assert
     result.Should().BeFalse("volatile vars are excluded from dirty check");
@@ -241,12 +239,12 @@ public class StateSnapshotServiceTests {
     var variable = EnvironmentVariableBuilder.Default()
       .WithName("TEST")
       .Build();
-    service.CaptureSnapshot(new[] { variable });
+    service.CaptureSnapshot([variable]);
 
     variable.IsRemoved = true;
 
     // Act
-    var changed = service.GetChangedVariables(new[] { variable }).ToList();
+    var changed = service.GetChangedVariables([variable]).ToList();
 
     // Assert
     changed.Should().HaveCount(1);
@@ -265,7 +263,7 @@ public class StateSnapshotServiceTests {
       .Build();
 
     // Act
-    var changed = service.GetChangedVariables(new[] { variable }).ToList();
+    var changed = service.GetChangedVariables([variable]).ToList();
 
     // Assert
     changed.Should().BeEmpty("variable wasn't in original snapshot");
@@ -280,7 +278,7 @@ public class StateSnapshotServiceTests {
       .Build();
 
     // Act
-    var changed = service.GetChangedVariables(new[] { variable }).ToList();
+    var changed = service.GetChangedVariables([variable]).ToList();
 
     // Assert
     changed.Should().HaveCount(1);
@@ -294,12 +292,12 @@ public class StateSnapshotServiceTests {
       .WithName("TEST")
       .WithData("original")
       .Build();
-    service.CaptureSnapshot(new[] { variable });
+    service.CaptureSnapshot([variable]);
 
     variable.Data = "modified";
 
     // Act
-    var changed = service.GetChangedVariables(new[] { variable }).ToList();
+    var changed = service.GetChangedVariables([variable]).ToList();
 
     // Assert
     changed.Should().HaveCount(1);
@@ -318,7 +316,7 @@ public class StateSnapshotServiceTests {
       .Build();
 
     // Act
-    var changed = service.GetChangedVariables(new[] { imported }).ToList();
+    var changed = service.GetChangedVariables([imported]).ToList();
 
     // Assert
     changed.Should().HaveCount(1, "an imported variable absent from the snapshot must be saved");
@@ -337,7 +335,7 @@ public class StateSnapshotServiceTests {
       .Build();
 
     // Act
-    var changed = service.GetChangedVariables(new[] { volatileVar }).ToList();
+    var changed = service.GetChangedVariables([volatileVar]).ToList();
 
     // Assert
     changed.Should().BeEmpty("volatile vars are excluded from changed variables");
@@ -349,10 +347,10 @@ public class StateSnapshotServiceTests {
     var variable = EnvironmentVariableBuilder.Default()
       .WithName("TEST")
       .Build();
-    service.CaptureSnapshot(new[] { variable });
+    service.CaptureSnapshot([variable]);
 
     // Act
-    var changed = service.GetChangedVariables(new[] { variable }).ToList();
+    var changed = service.GetChangedVariables([variable]).ToList();
 
     // Assert
     changed.Should().BeEmpty("no variables changed");

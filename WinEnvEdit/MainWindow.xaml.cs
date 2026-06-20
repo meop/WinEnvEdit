@@ -60,7 +60,7 @@ public sealed partial class MainWindow : Window {
 
   private void ApplyFlatTitleBar() {
     var titleBar = AppWindow.TitleBar;
-    var isDark = (Content as FrameworkElement)?.ActualTheme == ElementTheme.Dark;
+    var isDark = Content is FrameworkElement { ActualTheme: ElementTheme.Dark };
     var background = isDark ? Color.FromArgb(255, 32, 32, 32) : Color.FromArgb(255, 243, 243, 243);
     var foreground = isDark ? Colors.White : Colors.Black;
     var hover = isDark ? Color.FromArgb(255, 45, 45, 45) : Color.FromArgb(255, 229, 229, 229);

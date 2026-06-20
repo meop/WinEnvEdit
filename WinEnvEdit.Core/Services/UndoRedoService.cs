@@ -196,7 +196,7 @@ public class UndoRedoService : IUndoRedoService {
       }
     }
 
-    return result.OrderBy(v => v.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    return [.. result.OrderBy(v => v.Name, StringComparer.OrdinalIgnoreCase)];
   }
 
   /// <summary>
@@ -242,7 +242,7 @@ public class UndoRedoService : IUndoRedoService {
   }
 
   internal static List<EnvironmentVariableModel> DeepCopy(IEnumerable<EnvironmentVariableModel> variables) {
-    return variables.Select(v => new EnvironmentVariableModel {
+    return [.. variables.Select(v => new EnvironmentVariableModel {
       Name = v.Name,
       Data = v.Data,
       Scope = v.Scope,
@@ -250,7 +250,7 @@ public class UndoRedoService : IUndoRedoService {
       IsVolatile = v.IsVolatile,
       IsAdded = v.IsAdded,
       IsRemoved = v.IsRemoved,
-    }).ToList();
+    })];
   }
 
   // Custom comparer for case-insensitive tuple keys

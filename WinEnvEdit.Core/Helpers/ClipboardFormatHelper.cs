@@ -20,8 +20,8 @@ public static class ClipboardFormatHelper {
     var separatorIndex = text.IndexOf('=');
     if (separatorIndex > 0) {
       // Found "name=value" format - extract both parts
-      var name = text.Substring(0, separatorIndex).Trim();
-      var value = text.Substring(separatorIndex + 1).Trim();
+      var name = text[..separatorIndex].Trim();
+      var value = text[(separatorIndex + 1)..].Trim();
       return (name, value);
     }
 
@@ -51,8 +51,8 @@ public static class ClipboardFormatHelper {
         continue;
       }
 
-      var name = line.Substring(0, equalsIndex).Trim();
-      var value = line.Substring(equalsIndex + 1).Trim();
+      var name = line[..equalsIndex].Trim();
+      var value = line[(equalsIndex + 1)..].Trim();
 
       if (!string.IsNullOrEmpty(name)) {
         result.Add((name, value));

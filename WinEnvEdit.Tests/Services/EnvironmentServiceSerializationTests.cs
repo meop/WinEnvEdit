@@ -49,7 +49,5 @@ public class EnvironmentServiceSerializationTests {
   }
 
   [Fact]
-  public void DeserializeChanges_EmptyInput_ReturnsEmpty() {
-    EnvironmentService.DeserializeChanges(string.Empty).Should().BeEmpty();
-  }
+  public void DeserializeChanges_EmptyInput_ReturnsEmpty() => EnvironmentService.DeserializeChanges(string.Empty).Should().BeEmpty();
 }

@@ -8,12 +8,8 @@ namespace WinEnvEdit.Core.Services;
 /// <summary>
 /// Service for managing environment variable operations (add, update, remove, restore).
 /// </summary>
-public class VariableManagementService : IVariableManagementService {
-  private readonly IVariableCollectionService collectionService;
-
-  public VariableManagementService(IVariableCollectionService collectionService) {
-    this.collectionService = collectionService;
-  }
+public class VariableManagementService(IVariableCollectionService collectionService) : IVariableManagementService {
+  private readonly IVariableCollectionService collectionService = collectionService;
 
   /// <summary>
   /// Adds a new variable, updates existing, or restores deleted variable.

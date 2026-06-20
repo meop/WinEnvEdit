@@ -66,7 +66,7 @@ public partial class VariableTemplates : ResourceDictionary {
         };
         host.Children.Add(list);
 
-        if ((host.DataContext as VariableViewModel)?.PathItems is INotifyCollectionChanged items) {
+        if (host.DataContext is VariableViewModel { PathItems: INotifyCollectionChanged items }) {
           items.CollectionChanged += (_, e) => OnPathItemsChanged(list, e);
         }
       }

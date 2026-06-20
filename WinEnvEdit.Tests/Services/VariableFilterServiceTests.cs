@@ -10,9 +10,7 @@ namespace WinEnvEdit.Tests.Services;
 public class VariableFilterServiceTests {
   private readonly VariableFilterService service;
 
-  public VariableFilterServiceTests() {
-    service = new VariableFilterService();
-  }
+  public VariableFilterServiceTests() => service = new VariableFilterService();
 
   #region Basic Filtering Tests
 

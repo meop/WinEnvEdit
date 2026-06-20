@@ -22,9 +22,7 @@ public class VariableValidatorTests {
   [InlineData("%A%B%")] // closes at first matching percent
   [InlineData("  C:\\path  ")] // surrounding whitespace is trimmed
   [InlineData("  %VAR%  ")]
-  public void LooksLikePath_PathLikeValues_ReturnsTrue(string value) {
-    VariableValidator.LooksLikePath(value).Should().BeTrue();
-  }
+  public void LooksLikePath_PathLikeValues_ReturnsTrue(string value) => VariableValidator.LooksLikePath(value).Should().BeTrue();
 
   [Theory]
   [InlineData("")]
@@ -42,9 +40,7 @@ public class VariableValidatorTests {
   [InlineData("C:/forward")] // forward-slash form is not treated as a path
   [InlineData("foo%BAR%")] // macro not at start
   [InlineData("not a path")]
-  public void LooksLikePath_NonPathValues_ReturnsFalse(string value) {
-    VariableValidator.LooksLikePath(value).Should().BeFalse();
-  }
+  public void LooksLikePath_NonPathValues_ReturnsFalse(string value) => VariableValidator.LooksLikePath(value).Should().BeFalse();
 
   #endregion
 

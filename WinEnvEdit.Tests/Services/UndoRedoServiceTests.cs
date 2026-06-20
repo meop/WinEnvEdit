@@ -12,24 +12,20 @@ using Xunit;
 namespace WinEnvEdit.Tests.Services;
 
 public class UndoRedoServiceTests {
-  private UndoRedoService service;
+  private readonly UndoRedoService service;
 
 
-  public UndoRedoServiceTests() {
-    service = new UndoRedoService();
-  }
+  public UndoRedoServiceTests() => service = new UndoRedoService();
 
   [Fact]
-  public void CanUndo_InitiallyEmpty_ReturnsFalse() {
+  public void CanUndo_InitiallyEmpty_ReturnsFalse() =>
     // Act & Assert
     service.CanUndo.Should().BeFalse("undo stack is initially empty");
-  }
 
   [Fact]
-  public void CanRedo_InitiallyEmpty_ReturnsFalse() {
+  public void CanRedo_InitiallyEmpty_ReturnsFalse() =>
     // Act & Assert
     service.CanRedo.Should().BeFalse("redo stack is initially empty");
-  }
 
   [Fact]
   public void PushState_AddsToUndoStack() {

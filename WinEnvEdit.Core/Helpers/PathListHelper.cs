@@ -14,10 +14,9 @@ public static class PathListHelper {
       return [];
     }
 
-    return pathList
+    return [.. pathList
       .Split(';', StringSplitOptions.RemoveEmptyEntries)
-      .Select(p => p.Trim())
-      .ToList();
+      .Select(p => p.Trim())];
   }
 
   /// <summary>
