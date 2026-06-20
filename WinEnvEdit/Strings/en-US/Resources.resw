@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Command bar tooltips (proof slice) -->
+  <data name="ImportTooltip" xml:space="preserve"><value>Import (Ctrl+I)</value></data>
+  <data name="ExportTooltip" xml:space="preserve"><value>Export (Ctrl+E)</value></data>
+  <data name="RefreshTooltip" xml:space="preserve"><value>Refresh (F5)</value></data>
+  <data name="UndoTooltip" xml:space="preserve"><value>Undo (Ctrl+Z)</value></data>
+  <data name="RedoTooltip" xml:space="preserve"><value>Redo (Ctrl+Y)</value></data>
+  <data name="SaveTooltip" xml:space="preserve"><value>Save (Ctrl+S)</value></data>
+  <data name="SearchTooltip" xml:space="preserve"><value>Search (Ctrl+F)</value></data>
+  <data name="AboutTooltip" xml:space="preserve"><value>About (F1)</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>Search...</value></data>
+
+  <!-- Volatile / path tooltips (code-built) -->
+  <data name="HideVolatileTooltip" xml:space="preserve"><value>Hide Volatile (Ctrl+Shift+V)</value></data>
+  <data name="ShowVolatileTooltip" xml:space="preserve"><value>Show Volatile (Ctrl+Shift+V)</value></data>
+  <data name="CollapsePathsTooltip" xml:space="preserve"><value>Collapse Paths (Ctrl+Shift+P)</value></data>
+  <data name="ExpandPathsTooltip" xml:space="preserve"><value>Expand Paths (Ctrl+Shift+P)</value></data>
+
+  <!-- Panel headers, context-menu items and per-scope add buttons -->
+  <data name="SystemHeader" xml:space="preserve"><value>System</value></data>
+  <data name="UserHeader" xml:space="preserve"><value>User</value></data>
+  <data name="CopySystem" xml:space="preserve"><value>Copy (System)</value></data>
+  <data name="PasteSystem" xml:space="preserve"><value>Paste (System)</value></data>
+  <data name="CopyUser" xml:space="preserve"><value>Copy (User)</value></data>
+  <data name="PasteUser" xml:space="preserve"><value>Paste (User)</value></data>
+  <data name="AddSystemTooltip" xml:space="preserve"><value>Add (System)</value></data>
+  <data name="AddUserTooltip" xml:space="preserve"><value>Add (User)</value></data>
+
+  <!-- Variable card / path-row tooltips -->
+  <data name="RemoveTooltip" xml:space="preserve"><value>Remove</value></data>
+  <data name="CollapseTooltip" xml:space="preserve"><value>Collapse</value></data>
+  <data name="ExpandTooltip" xml:space="preserve"><value>Expand</value></data>
+  <data name="AddRowTooltip" xml:space="preserve"><value>Add (Row)</value></data>
+  <data name="DragRowTooltip" xml:space="preserve"><value>Drag (Row)</value></data>
+  <data name="RemoveRowTooltip" xml:space="preserve"><value>Remove (Row)</value></data>
+
+  <!-- Dialog titles, messages and shared buttons -->
+  <data name="ImportTitle" xml:space="preserve"><value>Import</value></data>
+  <data name="RefreshTitle" xml:space="preserve"><value>Refresh</value></data>
+  <data name="OverwriteUnsavedMessage" xml:space="preserve"><value>This will overwrite any unsaved changes</value></data>
+  <data name="SaveTitle" xml:space="preserve"><value>Save</value></data>
+  <data name="SaveConfirmMessage" xml:space="preserve"><value>This will persist all {0} changes to the Windows Registry</value></data>
+  <data name="ScopeSystemAndUser" xml:space="preserve"><value>System and User</value></data>
+  <data name="ScopeSystem" xml:space="preserve"><value>System</value></data>
+  <data name="ScopeUser" xml:space="preserve"><value>User</value></data>
+  <data name="SaveErrorTitle" xml:space="preserve"><value>Save Error</value></data>
+  <data name="SaveErrorMessage" xml:space="preserve"><value>An error occurred while saving environment variables:</value></data>
+  <data name="OkayButton" xml:space="preserve"><value>Okay</value></data>
+  <data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
+  <data name="CloseButton" xml:space="preserve"><value>Close</value></data>
+
+  <!-- Add/edit variable dialog -->
+  <data name="AddDialogTitle" xml:space="preserve"><value>Add</value></data>
+  <data name="NameLabel" xml:space="preserve"><value>Name</value></data>
+  <data name="DataLabel" xml:space="preserve"><value>Data</value></data>
+  <data name="TypeLabel" xml:space="preserve"><value>Type</value></data>
+
+  <!-- About dialog -->
+  <data name="AboutTitle" xml:space="preserve"><value>About</value></data>
+  <data name="AboutProductLabel" xml:space="preserve"><value>Product</value></data>
+  <data name="AboutDescriptionLabel" xml:space="preserve"><value>Description</value></data>
+  <data name="AboutVersionLabel" xml:space="preserve"><value>Version</value></data>
+  <data name="AboutCreditLabel" xml:space="preserve"><value>Credit</value></data>
+  <data name="AboutCreditText" xml:space="preserve"><value>Developed with help from Claude, Gemini, GLM, and Qwen</value></data>
+</root>

@@ -11,6 +11,7 @@ using WinEnvEdit.Core.Constants;
 using WinEnvEdit.Core.Helpers;
 using WinEnvEdit.Core.Models;
 using WinEnvEdit.Core.Validators;
+using WinEnvEdit.Helpers;
 using WinEnvEdit.Services;
 
 using WinRT;
@@ -54,7 +55,7 @@ public partial class VariableViewModel : ObservableObject {
   [NotifyPropertyChangedFor(nameof(ExpandTooltip))]
   public partial bool IsExpanded { get; set; } = false;
 
-  public string ExpandTooltip => IsExpanded ? "Collapse" : "Expand";
+  public string ExpandTooltip => Localize.Get(IsExpanded ? "CollapseTooltip" : "ExpandTooltip");
 
   public static string IconGlyph => Glyph.Remove;
 

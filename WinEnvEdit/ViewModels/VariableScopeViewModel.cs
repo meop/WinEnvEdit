@@ -379,9 +379,9 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
       },
     };
 
-    var nameGrid = DialogHelper.CreateLabelValueGrid("Name", nameTextBox, labelWidth: DialogLabelWidth);
-    var dataGrid = DialogHelper.CreateLabelValueGrid("Data", valueTextBox, labelWidth: DialogLabelWidth);
-    var typeGrid = DialogHelper.CreateLabelValueGrid("Type", typePanel, labelWidth: DialogLabelWidth);
+    var nameGrid = DialogHelper.CreateLabelValueGrid(Localize.Get("NameLabel"), nameTextBox, labelWidth: DialogLabelWidth);
+    var dataGrid = DialogHelper.CreateLabelValueGrid(Localize.Get("DataLabel"), valueTextBox, labelWidth: DialogLabelWidth);
+    var typeGrid = DialogHelper.CreateLabelValueGrid(Localize.Get("TypeLabel"), typePanel, labelWidth: DialogLabelWidth);
 
     var errorPanel = new StackPanel {
       Margin = new Thickness(0, 4, 0, 0),
@@ -395,7 +395,7 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
       errorPanel,
     ]);
 
-    var dialog = DialogHelper.CreateStandardDialog(parentViewModel.XamlRoot, "Add", contentPanel, "Okay", "Cancel");
+    var dialog = DialogHelper.CreateStandardDialog(parentViewModel.XamlRoot, Localize.Get("AddDialogTitle"), contentPanel, Localize.Get("OkayButton"), Localize.Get("CancelButton"));
     dialog.IsPrimaryButtonEnabled = false;
 
     var errorBrush = Application.Current.Resources["SystemFillColorCriticalBrush"] as SolidColorBrush;
@@ -427,14 +427,14 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
       foreach (var error in nameErrors) {
         errorPanel.Children.Add(new TextBlock {
           Style = errorStyle,
-          Text = $"Name {error}",
+          Text = $"{Localize.Get("NameLabel")} {error}",
         });
       }
 
       foreach (var error in dataErrors) {
         errorPanel.Children.Add(new TextBlock {
           Style = errorStyle,
-          Text = $"Data {error}",
+          Text = $"{Localize.Get("DataLabel")} {error}",
         });
       }
 

@@ -8,10 +8,12 @@ namespace WinEnvEdit.Services;
 
 public class DialogService(Window window) : IDialogService {
 
-  public async Task<bool> ShowConfirmation(string title, string message, string primaryButtonText = "Okay") {
+  public async Task<bool> ShowConfirmation(string title, string message, string? primaryButtonText = null) {
     if (window?.Content?.XamlRoot == null) {
       return false;
     }
+
+    primaryButtonText ??= Localize.Get("OkayButton");
 
     var messageText = new TextBlock {
       Text = message,
@@ -22,7 +24,7 @@ public class DialogService(Window window) : IDialogService {
     };
 
     var contentPanel = DialogHelper.CreateDialogPanel([messageText]);
-    var dialog = DialogHelper.CreateStandardDialog(window.Content.XamlRoot, title, contentPanel, primaryButtonText, "Cancel");
+    var dialog = DialogHelper.CreateStandardDialog(window.Content.XamlRoot, title, contentPanel, primaryButtonText, Localize.Get("CancelButton"));
     var result = await dialog.ShowAsync();
     return result == ContentDialogResult.Primary;
   }
@@ -65,7 +67,7 @@ public class DialogService(Window window) : IDialogService {
       },
     ]);
 
-    var dialog = DialogHelper.CreateStandardDialog(window.Content.XamlRoot, title, contentPanel, closeButtonText: "Close");
+    var dialog = DialogHelper.CreateStandardDialog(window.Content.XamlRoot, title, contentPanel, closeButtonText: Localize.Get("CloseButton"));
     await dialog.ShowAsync();
   }
 }

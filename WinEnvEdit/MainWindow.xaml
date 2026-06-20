@@ -23,7 +23,7 @@
       <CommandBar Grid.Column="0" Style="{StaticResource StandardCommandBarStyle}">
         <AppBarButton Style="{StaticResource CommandBarIconButton}"
                       Command="{x:Bind ViewModel.ImportCommand}"
-                      ToolTipService.ToolTip="Import (Ctrl+I)">
+                      ToolTipService.ToolTip="{markup:Localize Key=ImportTooltip}">
           <AppBarButton.Icon>
             <FontIcon Style="{StaticResource CommandBarIconStyle}" Glyph="{markup:Glyph Name=Import}" />
           </AppBarButton.Icon>
@@ -33,7 +33,7 @@
         </AppBarButton>
         <AppBarButton Style="{StaticResource CommandBarIconButton}"
                       Command="{x:Bind ViewModel.ExportCommand}"
-                      ToolTipService.ToolTip="Export (Ctrl+E)">
+                      ToolTipService.ToolTip="{markup:Localize Key=ExportTooltip}">
           <AppBarButton.Icon>
             <FontIcon Style="{StaticResource CommandBarIconStyle}" Glyph="{markup:Glyph Name=Export}" />
           </AppBarButton.Icon>
@@ -43,7 +43,7 @@
         </AppBarButton>
         <AppBarButton Style="{StaticResource CommandBarIconButton}"
                       Command="{x:Bind ViewModel.RefreshCommand}"
-                      ToolTipService.ToolTip="Refresh (F5)">
+                      ToolTipService.ToolTip="{markup:Localize Key=RefreshTooltip}">
           <AppBarButton.Icon>
             <FontIcon Style="{StaticResource CommandBarIconStyle}" Glyph="{markup:Glyph Name=Refresh}" />
           </AppBarButton.Icon>
@@ -53,7 +53,7 @@
         </AppBarButton>
         <AppBarButton Style="{StaticResource CommandBarIconButton}"
                       Command="{x:Bind ViewModel.UndoCommand}"
-                      ToolTipService.ToolTip="Undo (Ctrl+Z)">
+                      ToolTipService.ToolTip="{markup:Localize Key=UndoTooltip}">
           <AppBarButton.Icon>
             <FontIcon Style="{StaticResource CommandBarIconStyle}" Glyph="{markup:Glyph Name=Undo}" />
           </AppBarButton.Icon>
@@ -63,7 +63,7 @@
         </AppBarButton>
         <AppBarButton Style="{StaticResource CommandBarIconButton}"
                       Command="{x:Bind ViewModel.RedoCommand}"
-                      ToolTipService.ToolTip="Redo (Ctrl+Y)">
+                      ToolTipService.ToolTip="{markup:Localize Key=RedoTooltip}">
           <AppBarButton.Icon>
             <FontIcon Style="{StaticResource CommandBarIconStyle}" Glyph="{markup:Glyph Name=Redo}" />
           </AppBarButton.Icon>
@@ -73,7 +73,7 @@
         </AppBarButton>
         <AppBarButton Style="{StaticResource CommandBarIconButton}"
                       Command="{x:Bind ViewModel.SaveCommand}"
-                      ToolTipService.ToolTip="Save (Ctrl+S)">
+                      ToolTipService.ToolTip="{markup:Localize Key=SaveTooltip}">
           <AppBarButton.Icon>
             <FontIcon Style="{StaticResource CommandBarIconStyle}" Glyph="{markup:Glyph Name=Save}" />
           </AppBarButton.Icon>
@@ -87,7 +87,7 @@
         <AppBarButton x:Name="SearchButton"
                       Style="{StaticResource CommandBarIconButton}"
                       Click="SearchButton_Click"
-                      ToolTipService.ToolTip="Search (Ctrl+F)">
+                      ToolTipService.ToolTip="{markup:Localize Key=SearchTooltip}">
           <AppBarButton.Icon>
             <FontIcon Style="{StaticResource CommandBarIconStyle}" Glyph="{markup:Glyph Name=Search}" />
           </AppBarButton.Icon>
@@ -100,7 +100,7 @@
           <AutoSuggestBox x:Name="SearchBox"
                           Style="{StaticResource StandardSearchBoxStyle}"
                           LostFocus="SearchBox_LostFocus"
-                          PlaceholderText="Search..."
+                          PlaceholderText="{markup:Localize Key=SearchPlaceholder}"
                           Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
         </AppBarElementContainer>
 
@@ -126,7 +126,7 @@
         </AppBarButton>
         <AppBarButton Style="{StaticResource CommandBarIconButton}"
                       Command="{x:Bind ViewModel.AboutCommand}"
-                      ToolTipService.ToolTip="About (F1)">
+                      ToolTipService.ToolTip="{markup:Localize Key=AboutTooltip}">
           <AppBarButton.Icon>
             <FontIcon Style="{StaticResource CommandBarIconStyle}" Glyph="{markup:Glyph Name=Help}" />
           </AppBarButton.Icon>
@@ -147,14 +147,14 @@
         <Grid Style="{StaticResource PanelContainerGrid}">
           <Grid.ContextFlyout>
             <MenuFlyout>
-              <MenuFlyoutItem Command="{x:Bind ViewModel.SystemVariables.CopyAllCommand}" Text="Copy (System)">
+              <MenuFlyoutItem Command="{x:Bind ViewModel.SystemVariables.CopyAllCommand}" Text="{markup:Localize Key=CopySystem}">
                 <MenuFlyoutItem.KeyboardAccelerators>
                   <KeyboardAccelerator Key="S" Modifiers="Control,Shift" />
                 </MenuFlyoutItem.KeyboardAccelerators>
               </MenuFlyoutItem>
               <MenuFlyoutItem Command="{x:Bind ViewModel.SystemVariables.PasteAllCommand}"
                               IsEnabled="{x:Bind ViewModel.CanPasteVariables, Mode=OneWay}"
-                              Text="Paste (System)">
+                              Text="{markup:Localize Key=PasteSystem}">
                 <MenuFlyoutItem.KeyboardAccelerators>
                   <KeyboardAccelerator Key="X" Modifiers="Control,Shift" />
                 </MenuFlyoutItem.KeyboardAccelerators>
@@ -173,12 +173,12 @@
               </Grid.ColumnDefinitions>
               <TextBlock Grid.Column="0"
                          Style="{StaticResource PanelHeaderStyle}"
-                         Text="System" />
+                         Text="{markup:Localize Key=SystemHeader}" />
               <Button Grid.Column="1"
                       Style="{StaticResource TransparentIconButton}"
                       FontWeight="Normal"
                       Command="{x:Bind ViewModel.SystemVariables.AddCommand}"
-                      ToolTipService.ToolTip="Add (System)">
+                      ToolTipService.ToolTip="{markup:Localize Key=AddSystemTooltip}">
                 <FontIcon Style="{StaticResource HeaderIconStyle}" Glyph="{markup:Glyph Name=Add}" />
               </Button>
             </Grid>
@@ -202,14 +202,14 @@
         <Grid Style="{StaticResource PanelContainerGrid}">
           <Grid.ContextFlyout>
             <MenuFlyout>
-              <MenuFlyoutItem Command="{x:Bind ViewModel.UserVariables.CopyAllCommand}" Text="Copy (User)">
+              <MenuFlyoutItem Command="{x:Bind ViewModel.UserVariables.CopyAllCommand}" Text="{markup:Localize Key=CopyUser}">
                 <MenuFlyoutItem.KeyboardAccelerators>
                   <KeyboardAccelerator Key="U" Modifiers="Control,Shift" />
                 </MenuFlyoutItem.KeyboardAccelerators>
               </MenuFlyoutItem>
               <MenuFlyoutItem Command="{x:Bind ViewModel.UserVariables.PasteAllCommand}"
                               IsEnabled="{x:Bind ViewModel.CanPasteVariables, Mode=OneWay}"
-                              Text="Paste (User)">
+                              Text="{markup:Localize Key=PasteUser}">
                 <MenuFlyoutItem.KeyboardAccelerators>
                   <KeyboardAccelerator Key="J" Modifiers="Control,Shift" />
                 </MenuFlyoutItem.KeyboardAccelerators>
@@ -228,12 +228,12 @@
               </Grid.ColumnDefinitions>
               <TextBlock Grid.Column="0"
                          Style="{StaticResource PanelHeaderStyle}"
-                         Text="User" />
+                         Text="{markup:Localize Key=UserHeader}" />
               <Button Grid.Column="1"
                       Style="{StaticResource TransparentIconButton}"
                       FontWeight="Normal"
                       Command="{x:Bind ViewModel.UserVariables.AddCommand}"
-                      ToolTipService.ToolTip="Add (User)">
+                      ToolTipService.ToolTip="{markup:Localize Key=AddUserTooltip}">
                 <FontIcon Style="{StaticResource HeaderIconStyle}" Glyph="{markup:Glyph Name=Add}" />
               </Button>
             </Grid>

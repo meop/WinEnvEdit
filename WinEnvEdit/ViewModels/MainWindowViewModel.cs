@@ -87,11 +87,11 @@ public partial class MainWindowViewModel : ObservableObject {
 
   public string VolatileToggleGlyph => ShowVolatileVariables ? Glyph.Hide : Glyph.View;
 
-  public string VolatileToggleTooltip => ShowVolatileVariables ? "Hide Volatile (Ctrl+Shift+V)" : "Show Volatile (Ctrl+Shift+V)";
+  public string VolatileToggleTooltip => Localize.Get(ShowVolatileVariables ? "HideVolatileTooltip" : "ShowVolatileTooltip");
 
   public string ExpandPathsIcon => ExpandAllPaths ? Glyph.ChevronUp : Glyph.ChevronDown;
 
-  public string ExpandPathsTooltip => ExpandAllPaths ? "Collapse Paths (Ctrl+Shift+P)" : "Expand Paths (Ctrl+Shift+P)";
+  public string ExpandPathsTooltip => Localize.Get(ExpandAllPaths ? "CollapsePathsTooltip" : "ExpandPathsTooltip");
 
   [ObservableProperty]
   [NotifyPropertyChangedFor(nameof(ExpandPathsIcon))]
@@ -192,7 +192,7 @@ public partial class MainWindowViewModel : ObservableObject {
   [RelayCommand(CanExecute = nameof(CanInteract))]
   private async Task Import() {
     if (HasPendingChanges) {
-      if (!await dialogService.ShowConfirmation("Import", "This will overwrite any unsaved changes")) {
+      if (!await dialogService.ShowConfirmation(Localize.Get("ImportTitle"), Localize.Get("OverwriteUnsavedMessage"))) {
         return;
       }
     }
@@ -261,7 +261,7 @@ public partial class MainWindowViewModel : ObservableObject {
   [RelayCommand(CanExecute = nameof(CanInteract))]
   private async Task Refresh() {
     if (HasPendingChanges) {
-      if (!await dialogService.ShowConfirmation("Refresh", "This will overwrite any unsaved changes")) {
+      if (!await dialogService.ShowConfirmation(Localize.Get("RefreshTitle"), Localize.Get("OverwriteUnsavedMessage"))) {
         return;
       }
     }
@@ -282,12 +282,12 @@ public partial class MainWindowViewModel : ObservableObject {
     var hasUserChanges = changedVars.Any(v => v.Scope == VariableScope.User);
 
     var scope = hasSystemChanges && hasUserChanges
-      ? "System and User"
+      ? Localize.Get("ScopeSystemAndUser")
       : hasSystemChanges
-        ? "System"
-        : "User";
+        ? Localize.Get("ScopeSystem")
+        : Localize.Get("ScopeUser");
 
-    if (!await dialogService.ShowConfirmation("Save", $"This will persist all {scope} changes to the Windows Registry")) {
+    if (!await dialogService.ShowConfirmation(Localize.Get("SaveTitle"), string.Format(Localize.Get("SaveConfirmMessage"), scope))) {
       return;
     }
 
@@ -314,7 +314,7 @@ public partial class MainWindowViewModel : ObservableObject {
     }
 
     if (error != null) {
-      await dialogService.ShowError("Save Error", "An error occurred while saving environment variables:", error.Message);
+      await dialogService.ShowError(Localize.Get("SaveErrorTitle"), Localize.Get("SaveErrorMessage"), error.Message);
     }
   }
 
@@ -412,12 +412,12 @@ public partial class MainWindowViewModel : ObservableObject {
     var productValue = DialogHelper.CreateDialogValue(product);
     productValue.Name = "ProductText";
 
-    var productGrid = DialogHelper.CreateLabelValueGrid("Product", productValue);
-    var descriptionGrid = DialogHelper.CreateLabelValueGrid("Description", DialogHelper.CreateDialogValue(description, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
-    var versionGrid = DialogHelper.CreateLabelValueGrid("Version", DialogHelper.CreateDialogValue(version));
+    var productGrid = DialogHelper.CreateLabelValueGrid(Localize.Get("AboutProductLabel"), productValue);
+    var descriptionGrid = DialogHelper.CreateLabelValueGrid(Localize.Get("AboutDescriptionLabel"), DialogHelper.CreateDialogValue(description, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
+    var versionGrid = DialogHelper.CreateLabelValueGrid(Localize.Get("AboutVersionLabel"), DialogHelper.CreateDialogValue(version));
 
-    var llmCredit = "Developed with help from Claude, Gemini, GLM, and Qwen";
-    var creditsGrid = DialogHelper.CreateLabelValueGrid("Credit", DialogHelper.CreateDialogValue(llmCredit, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
+    var llmCredit = Localize.Get("AboutCreditText");
+    var creditsGrid = DialogHelper.CreateLabelValueGrid(Localize.Get("AboutCreditLabel"), DialogHelper.CreateDialogValue(llmCredit, VerticalAlignment.Top), labelAlignment: VerticalAlignment.Top);
 
     var contentPanel = DialogHelper.CreateDialogPanel([
       productGrid,
@@ -426,7 +426,7 @@ public partial class MainWindowViewModel : ObservableObject {
       creditsGrid,
     ]);
 
-    var contentDialog = DialogHelper.CreateStandardDialog(window.Content.XamlRoot, "About", contentPanel, closeButtonText: "Close");
+    var contentDialog = DialogHelper.CreateStandardDialog(window.Content.XamlRoot, Localize.Get("AboutTitle"), contentPanel, closeButtonText: Localize.Get("CloseButton"));
 
     contentDialog.Opened += (s, e) => {
       if (contentPanel.FindName("ProductText") is TextBlock prodText) {
