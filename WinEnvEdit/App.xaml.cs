@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -40,7 +42,9 @@ public partial class App : Application {
     var windowId = Win32Interop.GetWindowIdFromWindow(hWnd);
     var displayArea = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
 
-    // Define 16:9 resolutions in order of preference
+    // Candidate sizes below are logical (DIPs), but AppWindow.Resize and DisplayArea.WorkArea are both in
+    // physical pixels. Scale the candidates by the monitor DPI before comparing/resizing - otherwise the window
+    // opens at 1/scale of its intended size (e.g. two-thirds at 150%), making the content look oversized.
     var resolutions = new (int Width, int Height)[] {
       (Width: 1920, Height: 1080),
       (Width: 1600, Height: 900),
@@ -58,20 +62,25 @@ public partial class App : Application {
     }
 
     if (displayArea is not null) {
+      var dpi = GetDpiForWindow(hWnd);
+      var scale = dpi == 0 ? 1.0 : dpi / 96.0;
       var workArea = displayArea.WorkArea;
-      var screenWidth = workArea.Width;
-      var screenHeight = workArea.Height;
 
-      // Choose the largest resolution that fits comfortably on the screen (80% of working area)
-      var targetWidth = screenWidth * 0.8;
-      var targetHeight = screenHeight * 0.8;
+      // Choose the largest resolution that fits comfortably on the screen (80% of working area).
+      var targetWidth = workArea.Width * 0.8;
+      var targetHeight = workArea.Height * 0.8;
 
       foreach (var (Width, Height) in resolutions) {
-        if (Width <= targetWidth && Height <= targetHeight) {
-          appWindow.Resize(new SizeInt32(Width, Height));
+        var physicalWidth = (int)(Width * scale);
+        var physicalHeight = (int)(Height * scale);
+        if (physicalWidth <= targetWidth && physicalHeight <= targetHeight) {
+          appWindow.Resize(new SizeInt32(physicalWidth, physicalHeight));
           break;
         }
       }
     }
   }
+
+  [LibraryImport("user32.dll")]
+  private static partial uint GetDpiForWindow(IntPtr hWnd);
 }
