@@ -18,3 +18,11 @@ working-as-designed?" note.
 Environment for all reports: Windows 11 (25H2), .NET 10, Windows App SDK 2.1.x, `PublishAot=true`,
 self-contained, full trim, x64. A `WinEnvEdit/Resources/VariableTemplates.xaml(.cs)` is the in-product
 example of each workaround; `docs/aot.md` is the narrative.
+
+## Filed & resolved
+
+Already submitted upstream and closed — kept here as a record, not a draft to file.
+
+| Record | Target repo | Outcome |
+|--------|-------------|---------|
+| [tomlyn-sourcegen.md](upstream/tomlyn-sourcegen.md) | xoofx/Tomlyn | `#128` array-of-tables headers — **accepted** (fixed in 2.7); `#129`/PR `#130` public ctors — **declined** (won't fix) |
