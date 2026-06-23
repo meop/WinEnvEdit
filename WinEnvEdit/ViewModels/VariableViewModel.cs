@@ -339,6 +339,28 @@ public partial class VariableViewModel : ObservableObject {
       Name = source.Name;
     }
 
+    var newIsPathList = source.Type == RegistryValueKind.ExpandString;
+    if (newIsPathList != IsPathList) {
+      // A String <-> ExpandString flip (undo/redo of a type toggle): transition this same VM in place, the way
+      // ToggleType does, so its expand/collapse state and code-hosted row list are preserved instead of being
+      // recreated (which would drop the expanded view).
+      if (Data != source.Data) {
+        Data = source.Data;
+      }
+
+      if (newIsPathList) {
+        PathItems.CollectionChanged += OnPathItemsCollectionChanged;
+        ParsePathsFromData();
+      }
+      else {
+        PathItems.CollectionChanged -= OnPathItemsCollectionChanged;
+        PathItems.Clear();
+      }
+
+      IsPathList = newIsPathList;
+      return;
+    }
+
     if (Data != source.Data) {
       Data = source.Data; // OnDataChanged refreshes path rows / path existence in place
     }
