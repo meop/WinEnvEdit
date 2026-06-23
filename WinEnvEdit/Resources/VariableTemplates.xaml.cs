@@ -63,6 +63,9 @@ public partial class VariableTemplates : ResourceDictionary {
           IsTabStop = false,
           Padding = new Thickness(0),
           TabFocusNavigation = KeyboardNavigationMode.Local,
+          // Off by default it's true: when the rows repopulate (e.g. a type-toggle undo re-parses the list),
+          // placeholder gray boxes paint over the card for a frame before the real rows render — the flash.
+          ShowsScrollingPlaceholders = false,
         };
         host.Children.Add(list);
 

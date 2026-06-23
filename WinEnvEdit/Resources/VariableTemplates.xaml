@@ -8,30 +8,58 @@
                     xmlns:res="using:WinEnvEdit.Resources"
                     xmlns:vm="using:WinEnvEdit.ViewModels">
 
-  <!--  Single item template; the three layouts are selected by Visibility gates.  -->
+  <!--
+    Single item template. A persistent header (name + buttons) sits above a value area whose three layouts
+    are selected by Visibility gates. Keeping the header outside those gates means a type toggle only
+    re-realizes the value area below — the name label stays put instead of flashing with the path-row list.
+  -->
   <DataTemplate x:Key="VariableTemplate" x:DataType="vm:VariableViewModel">
-    <Grid>
+    <Border Style="{StaticResource VariableCardBorder}" Tag="VariableCard">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-      <!--  Read-only layout (locked / volatile variables)  -->
-      <Border Style="{StaticResource VariableCardBorder}"
-              Visibility="{Binding ShowReadOnly, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
-              Tag="VariableCard">
-        <Grid>
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-          </Grid.RowDefinitions>
+        <!--  Persistent header: name, expand (path-list only), remove (unless locked).  -->
+        <Grid Grid.Row="0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
 
-          <TextBlock Grid.Row="0"
+          <TextBlock Grid.Column="0"
                      Style="{StaticResource VariableNameStyle}"
                      Text="{Binding Name}" />
 
+          <Button Grid.Column="1"
+                  Style="{StaticResource PathListExpandButtonStyle}"
+                  Visibility="{Binding ShowPathList, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
+                  Command="{Binding ToggleExpandCommand}"
+                  ToolTipService.ToolTip="{Binding ExpandTooltip, Mode=OneWay}">
+            <FontIcon Style="{StaticResource LabelIconStyle}" Glyph="{Binding IsExpanded, Converter={StaticResource ExpandChevronConverter}}" />
+          </Button>
+
+          <Button Grid.Column="2"
+                  Style="{StaticResource VariableIconButton}"
+                  Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityInverseConverter}}"
+                  Command="{Binding RemoveCommand}"
+                  ToolTipService.ToolTip="{markup:Localize Key=RemoveTooltip}">
+            <FontIcon Style="{StaticResource LabelIconStyle}" Glyph="{Binding IconGlyph, Mode=OneWay}" />
+          </Button>
+        </Grid>
+
+        <!--  Value area: the three layouts overlap in this cell and swap by Visibility.  -->
+        <Grid Grid.Row="1">
+
           <!--
-            TextCommandBarFlyout used on all TextBoxes: provides native cut/copy/paste/select-all
-            that preserves focus and selection. Custom MenuFlyout breaks both. See docs/xaml.md → TextBox Context Menu.
+            Read-only value (locked / volatile variables).
+            TextCommandBarFlyout on all TextBoxes: native cut/copy/paste/select-all that preserves focus and
+            selection. A custom MenuFlyout breaks both. See docs/xaml.md → TextBox Context Menu.
           -->
-          <TextBox Grid.Row="1"
-                   Style="{StaticResource VariableTextBoxStyle}"
+          <TextBox Style="{StaticResource VariableTextBoxStyle}"
+                   Visibility="{Binding ShowReadOnly, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
                    BorderBrush="{Binding HasInvalidPath, Converter={StaticResource BoolToBorderBrushConverter}, Mode=OneWay}"
                    IsReadOnly="True"
                    Text="{Binding Data, Mode=OneWay}">
@@ -39,140 +67,78 @@
               <TextCommandBarFlyout />
             </TextBox.ContextFlyout>
           </TextBox>
-        </Grid>
-      </Border>
 
-      <!--  Editable layout (normal String variables)  -->
-      <Border Style="{StaticResource VariableCardBorder}"
-              Visibility="{Binding ShowEditable, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
-              Tag="VariableCard">
-        <Grid>
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-          </Grid.RowDefinitions>
-
-          <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <TextBlock Grid.Column="0"
-                       Style="{StaticResource VariableNameStyle}"
-                       Text="{Binding Name}" />
-
-            <Button Grid.Column="1"
-                    Style="{StaticResource VariableIconButton}"
-                    Command="{Binding RemoveCommand}"
-                    ToolTipService.ToolTip="{markup:Localize Key=RemoveTooltip}">
-              <FontIcon Style="{StaticResource LabelIconStyle}" Glyph="{Binding IconGlyph, Mode=OneWay}" />
-            </Button>
-          </Grid>
-
-          <TextBox Grid.Row="1"
-                   Style="{StaticResource VariableTextBoxStyle}"
-                   BorderBrush="{Binding HasInvalidPath, Converter={StaticResource BoolToBorderBrushConverter}, Mode=OneWay}"
-                   Text="{Binding Data, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-            <TextBox.ContextFlyout>
-              <TextCommandBarFlyout />
-            </TextBox.ContextFlyout>
-          </TextBox>
-
-          <TextBlock Grid.Row="2"
-                     Style="{StaticResource ErrorMessageStyle}"
-                     Visibility="{Binding HasDataError, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
-                     Text="{Binding DataErrorMessage, Mode=OneWay}" />
-        </Grid>
-      </Border>
-
-      <!--  Path-list layout (ExpandString variables, expandable to per-path rows)  -->
-      <Border Style="{StaticResource VariableCardBorder}"
-              Visibility="{Binding ShowPathList, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
-              Tag="VariableCard">
-        <Grid>
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-          </Grid.RowDefinitions>
-
-          <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
-              <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <TextBlock Grid.Column="0"
-                       Style="{StaticResource VariableNameStyle}"
-                       Text="{Binding Name}" />
-
-            <Button Grid.Column="1"
-                    Style="{StaticResource PathListExpandButtonStyle}"
-                    Command="{Binding ToggleExpandCommand}"
-                    ToolTipService.ToolTip="{Binding ExpandTooltip, Mode=OneWay}">
-              <FontIcon Style="{StaticResource LabelIconStyle}" Glyph="{Binding IsExpanded, Converter={StaticResource ExpandChevronConverter}}" />
-            </Button>
-
-            <Button Grid.Column="2"
-                    Style="{StaticResource VariableIconButton}"
-                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityInverseConverter}}"
-                    Command="{Binding RemoveCommand}"
-                    ToolTipService.ToolTip="{markup:Localize Key=RemoveTooltip}">
-              <FontIcon Style="{StaticResource LabelIconStyle}" Glyph="{Binding IconGlyph, Mode=OneWay}" />
-            </Button>
-          </Grid>
-
-          <TextBox Grid.Row="1"
-                   Style="{StaticResource VariableTextBoxStyle}"
-                   Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityInverseConverter}}"
-                   BorderBrush="{Binding HasInvalidPath, Converter={StaticResource BoolToBorderBrushConverter}, Mode=OneWay}"
-                   IsReadOnly="{Binding VisualIsLocked}"
-                   Text="{Binding Data, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-            <TextBox.ContextFlyout>
-              <TextCommandBarFlyout />
-            </TextBox.ContextFlyout>
-          </TextBox>
-
-          <TextBlock Grid.Row="1"
-                     Style="{StaticResource ErrorMessageStyle}"
-                     Visibility="{Binding HasDataError, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
-                     Text="{Binding DataErrorMessage, Mode=OneWay}" />
-
-          <Grid Grid.Row="1"
-                Margin="0"
-                Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+          <!--  Editable value (normal String variables)  -->
+          <Grid Visibility="{Binding ShowEditable, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
             <Grid.RowDefinitions>
               <RowDefinition Height="Auto" />
               <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!--  Path rows are hosted in code via the PathExpanded attached property.  -->
-            <StackPanel Grid.Row="0" res:VariableTemplates.PathExpanded="{Binding IsExpanded, Mode=OneWay}" />
+            <TextBox Grid.Row="0"
+                     Style="{StaticResource VariableTextBoxStyle}"
+                     BorderBrush="{Binding HasInvalidPath, Converter={StaticResource BoolToBorderBrushConverter}, Mode=OneWay}"
+                     Text="{Binding Data, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+              <TextBox.ContextFlyout>
+                <TextCommandBarFlyout />
+              </TextBox.ContextFlyout>
+            </TextBox>
 
-            <Grid Grid.Row="1"
-                  Margin="0,4,0,0"
-                  Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityInverseConverter}}">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-              </Grid.ColumnDefinitions>
+            <TextBlock Grid.Row="1"
+                       Style="{StaticResource ErrorMessageStyle}"
+                       Visibility="{Binding HasDataError, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
+                       Text="{Binding DataErrorMessage, Mode=OneWay}" />
+          </Grid>
 
-              <Border Grid.Column="0" />
+          <!--  Path-list value (ExpandString variables, expandable to per-path rows)  -->
+          <Grid Visibility="{Binding ShowPathList, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
 
-              <Button Grid.Column="1"
-                      Style="{StaticResource PathListRemoveButtonStyle}"
-                      Command="{Binding AddPathCommand}"
-                      ToolTipService.ToolTip="{markup:Localize Key=AddRowTooltip}">
-                <FontIcon Style="{StaticResource ValueIconStyle}" Glyph="{markup:Glyph Name=AddTo}" />
-              </Button>
+            <TextBox Style="{StaticResource VariableTextBoxStyle}"
+                     Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityInverseConverter}}"
+                     BorderBrush="{Binding HasInvalidPath, Converter={StaticResource BoolToBorderBrushConverter}, Mode=OneWay}"
+                     IsReadOnly="{Binding VisualIsLocked}"
+                     Text="{Binding Data, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+              <TextBox.ContextFlyout>
+                <TextCommandBarFlyout />
+              </TextBox.ContextFlyout>
+            </TextBox>
+
+            <TextBlock Style="{StaticResource ErrorMessageStyle}"
+                       Visibility="{Binding HasDataError, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
+                       Text="{Binding DataErrorMessage, Mode=OneWay}" />
+
+            <Grid Margin="0" Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+
+              <!--  Path rows are hosted in code via the PathExpanded attached property.  -->
+              <StackPanel Grid.Row="0" res:VariableTemplates.PathExpanded="{Binding IsExpanded, Mode=OneWay}" />
+
+              <Grid Grid.Row="1"
+                    Margin="0,4,0,0"
+                    Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityInverseConverter}}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" />
+
+                <Button Grid.Column="1"
+                        Style="{StaticResource PathListRemoveButtonStyle}"
+                        Command="{Binding AddPathCommand}"
+                        ToolTipService.ToolTip="{markup:Localize Key=AddRowTooltip}">
+                  <FontIcon Style="{StaticResource ValueIconStyle}" Glyph="{markup:Glyph Name=AddTo}" />
+                </Button>
+              </Grid>
             </Grid>
           </Grid>
-        </Grid>
-      </Border>
 
-    </Grid>
+        </Grid>
+      </Grid>
+    </Border>
   </DataTemplate>
 
   <!--  Container style for the code-hosted path-rows ListView (applied in OnPathRowsHostLoaded).  -->
