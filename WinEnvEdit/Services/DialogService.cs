@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.Storage.Pickers;
@@ -39,11 +41,12 @@ public class DialogService(Window window) : IDialogService {
     return file?.Path;
   }
 
+  [SuppressMessage("Style", "IDE0028:Collection initialization can be simplified", Justification = "Explicit List<string>, not a collection expression: the WinRT picker's IVector<string> projection throws (InvalidCastException) under AOT when handed a collection-expression target, so 'simplifying' to [extension] reintroduces that crash.")]
   public async Task<string?> PickSaveFile(string description, string extension, string suggestedFileName) {
     var savePicker = new FileSavePicker(window.AppWindow.Id) {
       SuggestedStartLocation = PickerLocationId.DocumentsLibrary
     };
-    // Explicit List<string> (not a collection expression) — required for the WinRT picker under AOT.
+    // Explicit List<string>, not [extension] — see the method-level IDE0028 suppression (WinRT picker + AOT).
     savePicker.FileTypeChoices.Add(description, new List<string> { extension });
     savePicker.SuggestedFileName = suggestedFileName;
 

@@ -14,6 +14,11 @@ public class UndoRedoService : IUndoRedoService {
   private readonly Stack<StateDelta> redoStack = new();
   private List<EnvironmentVariableModel> currentState = [];
 
+  // True when the top undo entry is an in-progress edit that a following same-variable change may merge into.
+  // Reset/Undo/Redo and explicit BreakCoalescing() (e.g. after a save) close the run so the next edit starts a
+  // fresh undo step.
+  private bool canCoalesce;
+
   public bool CanUndo => undoStack.Count > 0;
   public bool CanRedo => redoStack.Count > 0;
 
@@ -21,6 +26,7 @@ public class UndoRedoService : IUndoRedoService {
     undoStack.Clear();
     redoStack.Clear();
     currentState = DeepCopy(variables);
+    canCoalesce = false;
   }
 
   public void PushState(IEnumerable<EnvironmentVariableModel> variables) {
@@ -31,8 +37,35 @@ public class UndoRedoService : IUndoRedoService {
       return;
     }
 
-    undoStack.Push(delta);
     currentState = newState;
+    redoStack.Clear();
+
+    // Coalesce a contiguous run of edits to a single variable (e.g. per-keystroke text edits) into one undo
+    // step. When the previous undo entry and this delta each modify only the same variable, replace the entry
+    // — keeping its original "old" value and this delta's "new" value — so undo reverts the whole edit at once
+    // rather than one character at a time. A run is only mergeable while canCoalesce holds (it is closed by
+    // Undo/Redo/Reset and by BreakCoalescing after a save).
+    if (canCoalesce
+        && undoStack.Count > 0
+        && undoStack.Peek().Changes is [VariableModified previous]
+        && delta.Changes is [VariableModified current]
+        && previous.Scope == current.Scope
+        && string.Equals(previous.Name, current.Name, StringComparison.OrdinalIgnoreCase)) {
+      undoStack.Pop();
+      // Drop the entry entirely if the run returned the variable to its pre-edit value.
+      if (previous.OldData != current.NewData || previous.OldType != current.NewType) {
+        undoStack.Push(new StateDelta([
+          new VariableModified(previous.Scope, previous.Name, previous.OldData, current.NewData, previous.OldType, current.NewType),
+        ]));
+      }
+      else {
+        canCoalesce = false;
+      }
+      return;
+    }
+
+    undoStack.Push(delta);
+    canCoalesce = true;
 
     if (undoStack.Count > MaxHistoryDepth) {
       // Remove oldest state efficiently
@@ -43,9 +76,9 @@ public class UndoRedoService : IUndoRedoService {
         undoStack.Push(item);
       }
     }
-
-    redoStack.Clear();
   }
+
+  public void BreakCoalescing() => canCoalesce = false;
 
   public IEnumerable<EnvironmentVariableModel>? Undo() {
     if (!CanUndo) {
@@ -57,6 +90,7 @@ public class UndoRedoService : IUndoRedoService {
 
     redoStack.Push(delta);
     currentState = ApplyDelta(currentState, reversedDelta);
+    canCoalesce = false;
 
     return DeepCopy(currentState);
   }
@@ -69,6 +103,7 @@ public class UndoRedoService : IUndoRedoService {
     var delta = redoStack.Pop();
     undoStack.Push(delta);
     currentState = ApplyDelta(currentState, delta);
+    canCoalesce = false;
 
     return DeepCopy(currentState);
   }
@@ -77,6 +112,7 @@ public class UndoRedoService : IUndoRedoService {
     undoStack.Clear();
     redoStack.Clear();
     currentState.Clear();
+    canCoalesce = false;
   }
 
   /// <summary>

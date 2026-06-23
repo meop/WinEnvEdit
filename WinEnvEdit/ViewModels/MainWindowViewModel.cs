@@ -156,6 +156,12 @@ public partial class MainWindowViewModel : ObservableObject {
     HasPendingChanges = false;
   }
 
+  /// <summary>
+  /// Closes the current undo coalescing run. Called when a text field loses focus so the next edit — even to
+  /// another path row of the same variable — starts its own undo step instead of merging into this one.
+  /// </summary>
+  public void BreakUndoCoalescing() => undoRedoService.BreakCoalescing();
+
   /// <summary>Runs a multi-item mutation as a single undo/dirty step.</summary>
   public void RunBatch(Action action) {
     isBatching = true;
@@ -302,6 +308,8 @@ public partial class MainWindowViewModel : ObservableObject {
       stateService.CaptureSnapshot(AllVariables());
 
       undoRedoService.PushState(AllVariables());
+      // A save is a checkpoint: the next edit should start its own undo step, not merge into the saved state.
+      undoRedoService.BreakCoalescing();
       CanUndoState = undoRedoService.CanUndo;
       CanRedoState = undoRedoService.CanRedo;
       HasPendingChanges = false;

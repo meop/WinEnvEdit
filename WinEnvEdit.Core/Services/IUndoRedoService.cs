@@ -36,6 +36,12 @@ public interface IUndoRedoService {
   public void ClearHistory();
 
   /// <summary>
+  /// Closes the current coalescing run so the next <see cref="PushState"/> starts a fresh undo step rather
+  /// than merging into the previous one. Call after a checkpoint such as a save.
+  /// </summary>
+  public void BreakCoalescing();
+
+  /// <summary>
   /// Gets whether an undo operation is available.
   /// </summary>
   public bool CanUndo { get; }

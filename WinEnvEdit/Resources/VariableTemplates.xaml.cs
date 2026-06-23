@@ -66,13 +66,50 @@ public partial class VariableTemplates : ResourceDictionary {
         };
         host.Children.Add(list);
 
-        if (host.DataContext is VariableViewModel { PathItems: INotifyCollectionChanged items }) {
-          items.CollectionChanged += (_, e) => OnPathItemsChanged(list, e);
-        }
+        // A reorder is a Remove+Insert pair; bracket it so it lands as a single undo step instead of
+        // recording the path-missing intermediate. DataContext is read at event time so a recycled host
+        // brackets whichever variable it now hosts.
+        list.DragItemsStarting += (_, _) => (host.DataContext as VariableViewModel)?.BeginPathReorder();
+        list.DragItemsCompleted += (_, _) => (host.DataContext as VariableViewModel)?.EndPathReorder();
+
+        // The outer ListView recycles this host onto other variables, and Undo/Refresh recreate the VM in
+        // place — but this expand handler won't fire again. Re-point ItemsSource + the add-focus subscription
+        // on every DataContext change so the rows track the current variable. (A code {Binding} on ItemsSource
+        // silently no-ops under AOT, so the assignment must stay imperative.)
+        host.DataContextChanged += (_, args) => SyncHostedList(list, args.NewValue as VariableViewModel);
       }
 
-      ((ListView)host.Children[0]).ItemsSource = (host.DataContext as VariableViewModel)?.PathItems;
+      SyncHostedList((ListView)host.Children[0], host.DataContext as VariableViewModel);
     });
+  }
+
+  private static void SyncHostedList(ListView list, VariableViewModel? vm) {
+    list.ItemsSource = vm?.PathItems;
+    WireAddFocus(list, vm);
+  }
+
+  // Tracks which PathItems collection the add-focus handler is subscribed to, so it can be detached when the
+  // host is recycled onto a different variable.
+  private sealed record AddFocusSubscription(INotifyCollectionChanged Collection, NotifyCollectionChangedEventHandler Handler);
+
+  private static void WireAddFocus(ListView list, VariableViewModel? vm) {
+    var collection = vm?.PathItems as INotifyCollectionChanged;
+
+    if (list.Tag is AddFocusSubscription existing) {
+      if (ReferenceEquals(existing.Collection, collection)) {
+        return;
+      }
+      existing.Collection.CollectionChanged -= existing.Handler;
+      list.Tag = null;
+    }
+
+    if (collection is null) {
+      return;
+    }
+
+    void Handler(object? sender, NotifyCollectionChangedEventArgs e) => OnPathItemsChanged(list, e);
+    collection.CollectionChanged += Handler;
+    list.Tag = new AddFocusSubscription(collection, Handler);
   }
 
   // Focus the textbox of a freshly added (empty) path row so a "+" add is immediately editable. A parse adds

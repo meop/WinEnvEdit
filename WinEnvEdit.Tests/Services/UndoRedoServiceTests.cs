@@ -267,6 +267,109 @@ public class UndoRedoServiceTests {
     restoredVar.IsRemoved.Should().BeFalse();
   }
 
+  #region Coalescing
+
+  private static EnvironmentVariableModel[] TestVar(string data) => [
+    EnvironmentVariableBuilder.Default().WithName("TEST").WithData(data).Build(),
+  ];
+
+  [Fact]
+  public void PushState_ConsecutiveSameVariableEdits_CoalesceIntoOneUndoStep() {
+    // Arrange - simulate per-keystroke edits to one variable ("a" -> "ab" -> "abc")
+    service.Reset(TestVar("a"));
+
+    // Act
+    service.PushState(TestVar("ab"));
+    service.PushState(TestVar("abc"));
+
+    // Assert - a single undo reverts the whole edit back to the pre-edit value
+    var restored = service.Undo();
+    restored!.Single().Data.Should().Be("a", "the keystroke run collapses to one undo step");
+    service.CanUndo.Should().BeFalse("only one coalesced step existed");
+  }
+
+  [Fact]
+  public void PushState_CoalescedRun_RedoReappliesLatestValue() {
+    // Arrange
+    service.Reset(TestVar("a"));
+    service.PushState(TestVar("ab"));
+    service.PushState(TestVar("abc"));
+    service.Undo();
+
+    // Act
+    var redone = service.Redo();
+
+    // Assert - redo restores the final value of the run, not an intermediate keystroke
+    redone!.Single().Data.Should().Be("abc");
+    service.CanRedo.Should().BeFalse();
+  }
+
+  [Fact]
+  public void PushState_EditRunReturnsToOriginal_LeavesNothingToUndo() {
+    // Arrange
+    service.Reset(TestVar("a"));
+
+    // Act - type then delete back to the original within one run
+    service.PushState(TestVar("ab"));
+    service.PushState(TestVar("a"));
+
+    // Assert
+    service.CanUndo.Should().BeFalse("the variable is back to its pre-edit value");
+  }
+
+  [Fact]
+  public void PushState_DifferentVariables_DoNotCoalesce() {
+    // Arrange
+    var var1 = new[] { EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("x").Build() };
+    service.Reset(var1);
+
+    // Act - edit VAR1, then add VAR2 (a different variable)
+    service.PushState([
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("xy").Build(),
+    ]);
+    service.PushState([
+      EnvironmentVariableBuilder.Default().WithName("VAR1").WithData("xy").Build(),
+      EnvironmentVariableBuilder.Default().WithName("VAR2").WithData("z").Build(),
+    ]);
+
+    // Assert - two distinct undo steps
+    service.Undo();
+    service.CanUndo.Should().BeTrue("edits to different variables are separate undo steps");
+  }
+
+  [Fact]
+  public void BreakCoalescing_StartsANewUndoStep() {
+    // Arrange
+    service.Reset(TestVar("a"));
+    service.PushState(TestVar("ab"));
+
+    // Act - a checkpoint (e.g. save) closes the run before the next edit
+    service.BreakCoalescing();
+    service.PushState(TestVar("abc"));
+
+    // Assert - two undo steps survive
+    var first = service.Undo();
+    first!.Single().Data.Should().Be("ab", "post-checkpoint edit is its own step");
+    service.CanUndo.Should().BeTrue();
+  }
+
+  [Fact]
+  public void Undo_ClosesTheCoalescingRun() {
+    // Arrange
+    service.Reset(TestVar("a"));
+    service.PushState(TestVar("ab"));
+    service.Undo(); // back to "a"
+
+    // Act - editing again should not merge into the undone step
+    service.PushState(TestVar("ax"));
+
+    // Assert
+    var restored = service.Undo();
+    restored!.Single().Data.Should().Be("a", "the new edit is a fresh step after undo");
+  }
+
+  #endregion
+
   #region Internal Helper Tests
 
   [Fact]
@@ -504,6 +607,7 @@ public class UndoRedoServiceTests {
 
     service.Reset(stateA);
     service.PushState(stateB); // A -> B
+    service.BreakCoalescing(); // distinct committed edits (e.g. focus moved away) — keep two undo steps
     service.PushState(stateA); // B -> A
 
     // Assert initial state

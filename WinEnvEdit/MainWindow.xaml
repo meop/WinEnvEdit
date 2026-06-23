@@ -194,7 +194,8 @@
                     DragLeave="ListView_DragLeave"
                     DragOver="ListView_DragOver"
                     Drop="SystemListView_Drop"
-                    ItemsSource="{x:Bind ViewModel.SystemVariables.FilteredVariables, Mode=OneWay}" />
+                    ItemsSource="{x:Bind ViewModel.SystemVariables.FilteredVariables, Mode=OneWay}"
+                    LosingFocus="ListView_LosingFocus" />
         </Grid>
       </Border>
 
@@ -249,7 +250,8 @@
                     DragLeave="ListView_DragLeave"
                     DragOver="ListView_DragOver"
                     Drop="UserListView_Drop"
-                    ItemsSource="{x:Bind ViewModel.UserVariables.FilteredVariables, Mode=OneWay}" />
+                    ItemsSource="{x:Bind ViewModel.UserVariables.FilteredVariables, Mode=OneWay}"
+                    LosingFocus="ListView_LosingFocus" />
         </Grid>
       </Border>
     </Grid>

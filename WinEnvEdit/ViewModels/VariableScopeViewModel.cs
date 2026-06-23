@@ -158,26 +158,45 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
       return;
     }
 
-    // Preserve UI state (expand/collapse) for existing variables
-    var expandedStateMap = Variables
-      .Where(v => v.IsPathList)
-      .ToDictionary(
-        v => v.Model.Name,
-        v => v.IsExpanded,
-        StringComparer.OrdinalIgnoreCase
-      );
+    // Reconcile in place against the (name-sorted) target instead of clearing and rebuilding. Reusing the
+    // existing VM instances keeps unchanged rows — and their nested code-hosted path lists — from being torn
+    // down and re-rendered (the flicker on undo/redo/refresh), and lets UpdateFilteredVariables' SequenceEqual
+    // fast-path skip the outer list rebuild too. Only a variable whose registry type actually flipped
+    // (String <-> ExpandString) is recreated, keeping any unavoidable rebuild local to that one variable.
+    var existingByName = Variables.ToDictionary(v => v.Model.Name, v => v, StringComparer.OrdinalIgnoreCase);
+    var keepNames = new HashSet<string>(newVars.Select(v => v.Name), StringComparer.OrdinalIgnoreCase);
 
-    Variables.Clear();
-
-    foreach (var envVar in newVars) {
-      var viewModel = new VariableViewModel(envVar, clipboardService, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
-
-      // Restore expand/collapse state if it existed before
-      if (viewModel.IsPathList && expandedStateMap.TryGetValue(envVar.Name, out var wasExpanded)) {
-        viewModel.IsExpanded = wasExpanded;
+    for (var i = Variables.Count - 1; i >= 0; i--) {
+      if (!keepNames.Contains(Variables[i].Model.Name)) {
+        Variables.RemoveAt(i);
       }
+    }
 
-      Variables.Add(viewModel);
+    for (var i = 0; i < newVars.Count; i++) {
+      var newVar = newVars[i];
+
+      if (existingByName.TryGetValue(newVar.Name, out var existing)
+          && existing.Model.Type == newVar.Type
+          && existing.Model.IsVolatile == newVar.IsVolatile) {
+        var currentIndex = Variables.IndexOf(existing);
+        if (currentIndex != i) {
+          Variables.Move(currentIndex, i);
+        }
+        existing.UpdateFrom(newVar);
+      }
+      else {
+        // New variable, or a type flip that changes path-list mode: build a fresh VM (preserving expand state).
+        if (existing is not null) {
+          Variables.Remove(existing);
+        }
+
+        var viewModel = new VariableViewModel(newVar, clipboardService, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
+        if (viewModel.IsPathList && existing is not null) {
+          viewModel.IsExpanded = existing.IsExpanded;
+        }
+
+        Variables.Insert(i, viewModel);
+      }
     }
 
     UpdateFilteredVariables();

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
 
@@ -107,6 +108,7 @@ public sealed partial class MainWindow : Window {
     }
   }
 
+  [SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "WinUI event handler wired from XAML; the (object sender, ... e) signature is fixed even when a parameter is unused.")]
   private void SearchButton_Click(object sender, RoutedEventArgs e) {
     // Toggle visibility if search box is already visible and empty
     if (ViewModel.IsSearchVisible && string.IsNullOrEmpty(ViewModel.SearchText)) {
@@ -120,9 +122,19 @@ public sealed partial class MainWindow : Window {
 
   // Only hide on blur when search text is empty — keeps the filter visible
   // while an active search is in place.
+  [SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "WinUI event handler wired from XAML; the (object sender, ... e) signature is fixed even when a parameter is unused.")]
   private void SearchBox_LostFocus(object sender, RoutedEventArgs e) {
     if (string.IsNullOrEmpty(ViewModel.SearchText)) {
       ViewModel.IsSearchVisible = false;
+    }
+  }
+
+  [SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "WinUI event handler wired from XAML; the (UIElement sender, ... args) signature is fixed even when 'sender' is unused.")]
+  private void ListView_LosingFocus(UIElement sender, LosingFocusEventArgs args) {
+    // Leaving a text field commits that edit: the next edit — even to another path row of the same variable —
+    // starts its own undo step instead of coalescing into this one.
+    if (args.OldFocusedElement is TextBox) {
+      ViewModel.BreakUndoCoalescing();
     }
   }
 
@@ -188,6 +200,7 @@ public sealed partial class MainWindow : Window {
     }
   }
 
+  [SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "WinUI event handler wired from XAML; the (object sender, ... e) signature is fixed even when 'sender' is unused.")]
   private void SystemListView_Drop(object sender, DragEventArgs e) {
     SetNestedListViewsAllowDrop(SystemListView, true);
 
@@ -202,6 +215,7 @@ public sealed partial class MainWindow : Window {
     }
   }
 
+  [SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "WinUI event handler wired from XAML; the (object sender, ... e) signature is fixed even when 'sender' is unused.")]
   private void UserListView_Drop(object sender, DragEventArgs e) {
     SetNestedListViewsAllowDrop(UserListView, true);
 

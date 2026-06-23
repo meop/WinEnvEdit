@@ -26,6 +26,7 @@ public partial class VariableViewModel : ObservableObject {
   private readonly Action<VariableViewModel>? refreshCallback;
   private bool isParsing;
   private bool isSyncingFromPaths;
+  private bool isReordering;
 
   [ObservableProperty]
   public partial string Name { get; set; } = string.Empty;
@@ -134,13 +135,29 @@ public partial class VariableViewModel : ObservableObject {
       }
     }
 
-    // Sync data on any collection change (Add, Remove, Move, Replace) except during parsing
-    // This handles drag-drop reorder which uses Remove+Insert internally
-    if (!isParsing) {
+    // Sync data on any collection change (Add, Remove, Replace) except during parsing or an active drag
+    // reorder. A reorder is internally a Remove+Insert pair; syncing on the Remove alone would record a
+    // corrupt intermediate (the dragged path missing) as its own undo step. EndPathReorder does the single
+    // sync once the drop settles.
+    if (!isParsing && !isReordering) {
       SyncDataFromPaths();
       changeCallback?.Invoke();
     }
 
+    OnPropertyChanged(nameof(HasInvalidPath));
+  }
+
+  // Bracket a drag reorder of the path rows so the Remove+Insert pair collapses into one undo step.
+  public void BeginPathReorder() => isReordering = true;
+
+  public void EndPathReorder() {
+    if (!isReordering) {
+      return;
+    }
+
+    isReordering = false;
+    SyncDataFromPaths();
+    changeCallback?.Invoke();
     OnPropertyChanged(nameof(HasInvalidPath));
   }
 
@@ -303,6 +320,34 @@ public partial class VariableViewModel : ObservableObject {
     }
 
     UpdateAllPathExists();
+  }
+
+  /// <summary>
+  /// Updates this view model in place from a restored model (undo/redo/refresh/import) so unchanged UI — and
+  /// the nested path-row list — is not torn down and rebuilt, which flickers. The caller guarantees the
+  /// registry type is unchanged; a type flip (String &lt;-&gt; ExpandString) is handled by recreating the VM.
+  /// </summary>
+  public void UpdateFrom(EnvironmentVariableModel source) {
+    // IsVolatile is init-only and intrinsic to a variable (never changes for a given name), so it isn't set
+    // here; the caller only reuses this VM when source.IsVolatile already matches.
+    Model.IsAdded = source.IsAdded;
+    Model.IsRemoved = source.IsRemoved;
+    Model.Type = source.Type;
+    UpdateIsLocked();
+
+    if (Name != source.Name) {
+      Name = source.Name;
+    }
+
+    if (Data != source.Data) {
+      Data = source.Data; // OnDataChanged refreshes path rows / path existence in place
+    }
+    else if (IsPathList) {
+      RefreshPathsFromData(); // same Data, but re-check per-row existence (e.g. on Refresh)
+    }
+    else {
+      UpdateDataPathExists();
+    }
   }
 
   /// <summary>
