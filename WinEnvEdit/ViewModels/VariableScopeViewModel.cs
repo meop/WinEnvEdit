@@ -105,11 +105,10 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
       var targetVar = targetList[i];
       if (i < FilteredVariables.Count) {
         if (FilteredVariables[i] == targetVar) {
-          // Already at the right position. 
-          // If this is the specific variable that changed, force a Replace notification to refresh template.
-          if (targetVar == changedVariable) {
-            FilteredVariables[i] = targetVar;
-          }
+          // Already at the right position — leave the container alone. The single visibility-gated template
+          // updates itself from the VM's property changes (e.g. a type toggle flips ShowEditable/ShowPathList),
+          // so there is no template to "refresh"; replacing the item with itself would only regenerate the
+          // card container, flashing a placeholder over the whole card (label included).
           continue;
         }
 
@@ -131,10 +130,6 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
       }
       else {
         FilteredVariables.Add(targetVar);
-      }
-
-      if (targetVar == changedVariable) {
-        FilteredVariables[i] = targetVar;
       }
     }
   }
