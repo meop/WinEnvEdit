@@ -414,8 +414,11 @@ public partial class MainWindowViewModel : ObservableObject {
     var assembly = Assembly.GetExecutingAssembly();
     var product = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? string.Empty;
     var description = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? string.Empty;
-    var v = assembly.GetName().Version;
-    var version = v != null ? (v.Revision > 0 ? v.ToString() : $"{v.Major}.{v.Minor}.{v.Build}") : string.Empty;
+    // InformationalVersion carries the full semver from VERSION (e.g. "1.1.1-rc.1"); the numeric AssemblyVersion
+    // drops the prerelease suffix. Strip the +<commit> build metadata the SDK appends so a human can tell from
+    // the About dialog whether this build is a prerelease.
+    var informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? string.Empty;
+    var version = informational.Split('+')[0];
 
     var productValue = DialogHelper.CreateDialogValue(product);
     productValue.Name = "ProductText";
