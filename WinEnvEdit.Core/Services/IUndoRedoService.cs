@@ -31,11 +31,6 @@ public interface IUndoRedoService {
   public IEnumerable<EnvironmentVariableModel>? Redo();
 
   /// <summary>
-  /// Clears all undo and redo history.
-  /// </summary>
-  public void ClearHistory();
-
-  /// <summary>
   /// Closes the current coalescing run so the next <see cref="PushState"/> starts a fresh undo step rather
   /// than merging into the previous one. Call after a checkpoint such as a save.
   /// </summary>

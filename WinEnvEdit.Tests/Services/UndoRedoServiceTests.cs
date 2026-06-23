@@ -156,28 +156,6 @@ public class UndoRedoServiceTests {
   }
 
   [Fact]
-  public void ClearHistory_ClearsBothStacks() {
-    // Arrange
-    var initial = new[] {
-      EnvironmentVariableBuilder.Default().WithName("INIT").Build(),
-    };
-    var modified = new[] {
-      EnvironmentVariableBuilder.Default().WithName("MOD").Build(),
-    };
-
-    service.Reset(initial);
-    service.PushState(modified);
-    service.Undo(); // Populate Redo
-
-    // Act
-    service.ClearHistory();
-
-    // Assert
-    service.CanUndo.Should().BeFalse("undo stack cleared");
-    service.CanRedo.Should().BeFalse("redo stack cleared");
-  }
-
-  [Fact]
   public void PushState_EnforcesMaxDepth() {
     // Arrange
     var initial = new List<EnvironmentVariableModel>();

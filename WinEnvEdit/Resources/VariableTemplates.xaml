@@ -2,8 +2,6 @@
 <ResourceDictionary x:Class="WinEnvEdit.Resources.VariableTemplates"
                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:converters="using:WinEnvEdit.Converters"
-                    xmlns:local="using:WinEnvEdit"
                     xmlns:markup="using:WinEnvEdit.Extensions"
                     xmlns:res="using:WinEnvEdit.Resources"
                     xmlns:vm="using:WinEnvEdit.ViewModels">

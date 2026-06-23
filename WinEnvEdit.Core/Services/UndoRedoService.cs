@@ -108,13 +108,6 @@ public class UndoRedoService : IUndoRedoService {
     return DeepCopy(currentState);
   }
 
-  public void ClearHistory() {
-    undoStack.Clear();
-    redoStack.Clear();
-    currentState.Clear();
-    canCoalesce = false;
-  }
-
   /// <summary>
   /// Computes the delta (changes) needed to transform fromState into toState.
   /// Ignores transient UI flags (IsAdded, IsRemoved, IsVolatile) in comparison.
