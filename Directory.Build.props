@@ -1,4 +1,11 @@
 <Project>
+  <!-- Surface IDE code-style (IDExxxx) hints during build, per .editorconfig severities, so latest-C# style
+       issues are caught at compile time as well as by the Confirm-CodeStyle gate in Prebuild.ps1. -->
+  <PropertyGroup>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
   <PropertyGroup>
     <VersionFile>$(MSBuildThisFileDirectory)VERSION</VersionFile>
     <RawVersion>$([System.IO.File]::ReadAllText($(VersionFile)).Trim())</RawVersion>

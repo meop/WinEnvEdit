@@ -23,6 +23,31 @@ $rootDir = (Get-Item $scriptDir).Parent.FullName
 
 Write-Host 'Prebuild started.' -ForegroundColor Cyan
 
+function Confirm-CodeStyle {
+  Write-Host 'Verifying IDE code style started.' -ForegroundColor Yellow
+
+  Push-Location $rootDir
+
+  # IDE-hinting gate: fail on any unresolved IDExxxx code-style or analyzer suggestion (latest C# rules) at
+  # info severity, before the auto-formatter runs — so hints are addressed deliberately rather than silently
+  # reshaped. Justified exceptions live as #pragma / .editorconfig suppressions (e.g. IDE0028 on the WinRT
+  # picker in DialogService, IDE0060 for WinUI event-handler signatures).
+  dotnet format style WinEnvEdit.slnx --verify-no-changes --severity info
+  $styleExit = $LASTEXITCODE
+
+  dotnet format analyzers WinEnvEdit.slnx --verify-no-changes --severity info
+  $analyzersExit = $LASTEXITCODE
+
+  Pop-Location
+
+  if ($styleExit -ne 0 -or $analyzersExit -ne 0) {
+    Write-Host 'Error: unresolved IDE style/analyzer hints (see above). Fix them or add a justified suppression.' -ForegroundColor Red
+    exit 1
+  }
+
+  Write-Host 'Verifying IDE code style completed.' -ForegroundColor Yellow
+}
+
 function Format-Code {
   Write-Host 'Formatting code started.' -ForegroundColor Yellow
 
@@ -288,6 +313,7 @@ function Sync-Versions {
   Write-Host 'Synchronizing versions completed.' -ForegroundColor Yellow
 }
 
+Confirm-CodeStyle
 Format-Code
 New-Assets -Force:$Force
 Sync-Versions
