@@ -49,7 +49,7 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
 
   partial void OnVariablesChanged(ObservableCollection<VariableViewModel> value) => UpdateFilteredVariables();
 
-  public void UpdateFilteredVariables(VariableViewModel? changedVariable = null) {
+  public void UpdateFilteredVariables() {
     if (FilteredVariables is null || Variables is null) {
       return;
     }
@@ -78,63 +78,16 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
       }
     }
 
-    // Fast path: If it's a bulk update (no specific variable changed) and the lists are very different,
-    // just use Clear and Add. This is significantly faster for initial load and search.
-    if (changedVariable == null) {
-      if (FilteredVariables.Count == 0 || !FilteredVariables.SequenceEqual(targetList)) {
-        FilteredVariables.Clear();
-        foreach (var v in targetList) {
-          FilteredVariables.Add(v);
-        }
-      }
-      return;
-    }
-
-    // Incremental update for targeted refreshes (e.g. Toggle Type)
-    var targetSet = new HashSet<VariableViewModel>(targetList);
-
-    // 1. Remove items no longer present
-    for (var i = FilteredVariables.Count - 1; i >= 0; i--) {
-      if (!targetSet.Contains(FilteredVariables[i])) {
-        FilteredVariables.RemoveAt(i);
-      }
-    }
-
-    // 2. Add or Move items to match targetList
-    for (var i = 0; i < targetList.Count; i++) {
-      var targetVar = targetList[i];
-      if (i < FilteredVariables.Count) {
-        if (FilteredVariables[i] == targetVar) {
-          // Already at the right position — leave the container alone. The single visibility-gated template
-          // updates itself from the VM's property changes (e.g. a type toggle flips ShowEditable/ShowPathList),
-          // so there is no template to "refresh"; replacing the item with itself would only regenerate the
-          // card container, flashing a placeholder over the whole card (label included).
-          continue;
-        }
-
-        var existingIndex = -1;
-        // Search forward from current position for small moves
-        for (var j = i + 1; j < FilteredVariables.Count; j++) {
-          if (FilteredVariables[j] == targetVar) {
-            existingIndex = j;
-            break;
-          }
-        }
-
-        if (existingIndex >= 0) {
-          FilteredVariables.Move(existingIndex, i);
-        }
-        else {
-          FilteredVariables.Insert(i, targetVar);
-        }
-      }
-      else {
-        FilteredVariables.Add(targetVar);
+    // Rebuild only when the visible set actually differs. Because callers reuse the VM instances, an in-place
+    // change (edit, type toggle, undo) that leaves membership and order untouched yields an equal sequence and
+    // skips the rebuild — so the cards aren't regenerated.
+    if (FilteredVariables.Count == 0 || !FilteredVariables.SequenceEqual(targetList)) {
+      FilteredVariables.Clear();
+      foreach (var v in targetList) {
+        FilteredVariables.Add(v);
       }
     }
   }
-
-  public void RefreshVariable(VariableViewModel variable) => UpdateFilteredVariables(variable);
 
   public void LoadFromRegistry() {
     var allVars = environmentService.GetVariables();
@@ -185,7 +138,7 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
           Variables.Remove(existing);
         }
 
-        var viewModel = new VariableViewModel(newVar, clipboardService, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
+        var viewModel = new VariableViewModel(newVar, clipboardService, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState());
         Variables.Insert(i, viewModel);
       }
     }
@@ -288,7 +241,7 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
       IsRemoved = false,
     };
 
-    var newViewModel = new VariableViewModel(variable, clipboardService, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState(), UpdateFilteredVariables);
+    var newViewModel = new VariableViewModel(variable, clipboardService, RemoveVariable, () => parentViewModel?.UpdatePendingChangesState());
 
     // Find sorted insertion position
     var insertIndex = 0;
@@ -317,19 +270,6 @@ public partial class VariableScopeViewModel(IEnvironmentService environmentServi
 
     UpdateFilteredVariables();
     parentViewModel?.UpdatePendingChangesState();
-  }
-
-  /// <summary>
-  /// Removes variables whose names are not in the provided set.
-  /// Used during import to remove variables not present in the imported file.
-  /// Skips volatile (read-only) variables.
-  /// </summary>
-  public void RemoveVariablesNotIn(HashSet<string> namesToKeep) {
-    foreach (var variable in Variables.Where(v => !v.Model.IsRemoved && !v.Model.IsVolatile).ToList()) {
-      if (!namesToKeep.Contains(variable.Name)) {
-        RemoveVariable(variable);
-      }
-    }
   }
 
   /// <summary>Rebuilds the bound list in sorted order, resyncing the ListView visual after a drop.</summary>

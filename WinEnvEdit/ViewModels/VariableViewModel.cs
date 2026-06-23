@@ -23,7 +23,6 @@ public partial class VariableViewModel : ObservableObject {
   private readonly IClipboardService clipboardService;
   private readonly Action<VariableViewModel>? deleteCallback;
   private readonly Action? changeCallback;
-  private readonly Action<VariableViewModel>? refreshCallback;
   private bool isParsing;
   private bool isSyncingFromPaths;
   private bool isReordering;
@@ -93,12 +92,11 @@ public partial class VariableViewModel : ObservableObject {
   public IRelayCommand CopyDataCommand { get; }
   public IAsyncRelayCommand PasteDataCommand { get; }
 
-  public VariableViewModel(EnvironmentVariableModel model, IClipboardService clipboardService, Action<VariableViewModel>? deleteCallback = null, Action? changeCallback = null, Action<VariableViewModel>? refreshCallback = null) {
+  public VariableViewModel(EnvironmentVariableModel model, IClipboardService clipboardService, Action<VariableViewModel>? deleteCallback = null, Action? changeCallback = null) {
     Model = model;
     this.clipboardService = clipboardService;
     this.deleteCallback = deleteCallback;
     this.changeCallback = changeCallback;
-    this.refreshCallback = refreshCallback;
     ToggleExpandCommand = new RelayCommand(ToggleExpand);
     AddPathCommand = new RelayCommand(AddPath);
     RemoveCommand = new RelayCommand(Remove);
@@ -236,7 +234,6 @@ public partial class VariableViewModel : ObservableObject {
     }
 
     changeCallback?.Invoke();
-    refreshCallback?.Invoke(this);
   }
 
   private void CopyData() {
