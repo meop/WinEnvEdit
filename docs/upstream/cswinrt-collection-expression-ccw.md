@@ -3,6 +3,7 @@
 - **Target repo:** microsoft/CsWinRT
 - **Kind:** bug report (or optimizer enhancement) + minimal repro
 - **Confidence:** Medium-High
+- **Status:** filed as [microsoft/CsWinRT#2475](https://github.com/microsoft/CsWinRT/issues/2475)
 
 ## Summary
 
