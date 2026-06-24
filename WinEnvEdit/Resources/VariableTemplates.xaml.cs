@@ -15,23 +15,6 @@ public partial class VariableTemplates : ResourceDictionary {
 
   public VariableTemplates() => InitializeComponent();
 
-  private static T? FindResource<T>(string key) where T : class =>
-    FindIn(Application.Current.Resources, key) as T;
-
-  private static object? FindIn(ResourceDictionary dict, string key) {
-    if (dict.TryGetValue(key, out var value)) {
-      return value;
-    }
-
-    foreach (var merged in dict.MergedDictionaries) {
-      if (FindIn(merged, key) is { } found) {
-        return found;
-      }
-    }
-
-    return null;
-  }
-
   // Path rows are hosted in code: a binding to IsExpanded triggers building the list on the dispatcher.
   public static readonly DependencyProperty PathExpandedProperty =
     DependencyProperty.RegisterAttached(
@@ -49,8 +32,8 @@ public partial class VariableTemplates : ResourceDictionary {
     }
 
     host.DispatcherQueue?.TryEnqueue(() => {
-      pathItemTemplate ??= FindResource<DataTemplate>("PathItemTemplate");
-      pathRowContainerStyle ??= FindResource<Style>("PathRowContainerStyle");
+      pathItemTemplate ??= Application.Current.Resources["PathItemTemplate"] as DataTemplate;
+      pathRowContainerStyle ??= Application.Current.Resources["PathRowContainerStyle"] as Style;
 
       if (host.Children.Count == 0) {
         var list = new ListView {
