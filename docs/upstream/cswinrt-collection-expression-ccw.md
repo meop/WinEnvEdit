@@ -18,7 +18,8 @@ CCW vtable for the recognizable object-creation expression but not for the colle
 
 ## Environment
 
-Windows 11 25H2 · .NET 10 · Windows App SDK 2.1.x · `PublishAot=true` · `CsWinRTAotOptimizerEnabled=true` · x64.
+Windows 11 25H2 · .NET 10 · Windows App SDK 2.2.x · `PublishAot=true` · `CsWinRTAotOptimizerEnabled=true` · x64.
+Re-confirmed still reproducing on Windows App SDK 2.2 (the collection-expression form throws; `new List<string>` works).
 
 ## Minimal repro
 
