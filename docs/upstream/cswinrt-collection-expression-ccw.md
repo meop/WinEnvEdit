@@ -3,7 +3,10 @@
 - **Target repo:** microsoft/CsWinRT
 - **Kind:** bug report (or optimizer enhancement) + minimal repro
 - **Confidence:** Medium-High
-- **Status:** filed as [microsoft/CsWinRT#2475](https://github.com/microsoft/CsWinRT/issues/2475)
+- **Status:** filed as [microsoft/CsWinRT#2475](https://github.com/microsoft/CsWinRT/issues/2475) — **closed as expected.** Upstream
+  added an analyzer that warns on these call sites in CsWinRT 2.3, and says the pattern will actually work in
+  CsWinRT 3.0. Windows App SDK 2.3.2 still resolves to CsWinRT 2.2 (`WinRT.Runtime.dll` 2.2.0), so we get
+  neither the warning nor the fix yet — **keep the workaround.**
 
 ## Summary
 
@@ -19,8 +22,9 @@ CCW vtable for the recognizable object-creation expression but not for the colle
 
 ## Environment
 
-Windows 11 25H2 · .NET 10 · Windows App SDK 2.2.x · `PublishAot=true` · `CsWinRTAotOptimizerEnabled=true` · x64.
-Re-confirmed still reproducing on Windows App SDK 2.2 (the collection-expression form throws; `new List<string>` works).
+Windows 11 25H2 · .NET 10 · Windows App SDK 2.3.x · `PublishAot=true` · `CsWinRTAotOptimizerEnabled=true` · x64.
+Originally reported and re-confirmed on Windows App SDK 2.2 (the collection-expression form throws; `new List<string>` works).
+Windows App SDK 2.3.2 still brings CsWinRT 2.2, so nothing has changed for us on the 2.3 line either.
 
 ## Minimal repro
 

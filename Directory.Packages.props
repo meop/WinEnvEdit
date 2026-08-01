@@ -5,10 +5,10 @@
   <ItemGroup>
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageVersion Include="FluentAssertions" Version="8.10.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
-    <PackageVersion Include="Microsoft.WindowsAppSDK.WinUI" Version="2.2.1" />
-    <PackageVersion Include="Microsoft.WindowsAppSDK.Runtime" Version="2.2.0" />
-    <PackageVersion Include="Tomlyn" Version="2.7.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK.WinUI" Version="2.3.2" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK.Runtime" Version="2.3.1" />
+    <PackageVersion Include="Tomlyn" Version="2.10.1" />
     <PackageVersion Include="WixToolset.UI.wixext" Version="7.0.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />

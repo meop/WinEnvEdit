@@ -13,7 +13,7 @@ Before filing any of these, **search the target repo** — WinUI 3 + AOT is acti
 already be tracked or marked "by design / tracked by the AOT effort." Each draft has a "Could this be
 working-as-designed?" note.
 
-Environment for all reports: Windows 11 (25H2), .NET 10, Windows App SDK 2.2.x, `PublishAot=true`,
+Environment for all reports: Windows 11 (25H2), .NET 10, Windows App SDK 2.3.x, `PublishAot=true`,
 self-contained, full trim, x64. A `WinEnvEdit/Resources/VariableTemplates.xaml(.cs)` is the in-product
 example of each workaround; `docs/aot.md` is the narrative.
 
@@ -23,6 +23,6 @@ Submitted upstream (open or closed), or fixed before filing — kept here as a r
 
 | Record | Target repo | Outcome |
 |--------|-------------|---------|
-| [cswinrt-collection-expression-ccw.md](upstream/cswinrt-collection-expression-ccw.md) | microsoft/CsWinRT | **filed [#2475](https://github.com/microsoft/CsWinRT/issues/2475)** (open) — collection-expression argument to a WinRT `IList<T>` lacks a CCW under AOT; `new List<string>` workaround kept in `DialogService` |
+| [cswinrt-collection-expression-ccw.md](upstream/cswinrt-collection-expression-ccw.md) | microsoft/CsWinRT | **filed [#2475](https://github.com/microsoft/CsWinRT/issues/2475)** — closed "expected": an analyzer warns about it from CsWinRT 2.3, and it is only made to *work* in CsWinRT 3.0. Windows App SDK 2.3.2 still carries CsWinRT 2.2, so the `new List<string>` workaround stays in `DialogService` |
 | [tomlyn-sourcegen.md](upstream/tomlyn-sourcegen.md) | xoofx/Tomlyn | `#128` array-of-tables headers — **accepted** (fixed in 2.7); `#129`/PR `#130` public ctors — **declined** (won't fix) |
 | resourcedictionary-indexer-null-aot | microsoft-ui-xaml | **no longer reproduces on Windows App SDK 2.2** — `Application.Current.Resources[key]` resolves merged-dictionary keys under AOT again; the `FindResource`/`FindIn` workaround was removed and it was never filed |
