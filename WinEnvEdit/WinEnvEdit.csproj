@@ -80,8 +80,8 @@
     <Content Include="Assets\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="..\LICENSE.txt">
-      <Link>LICENSE.txt</Link>
+    <None Include="..\LICENSE">
+      <Link>LICENSE</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

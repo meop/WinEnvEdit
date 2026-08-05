@@ -45,7 +45,7 @@ function New-LicenseRtf {
   $relPath = $licenseRtfPath.Replace("$rootDir\", "")
   Write-Host "Generating: $relPath" -ForegroundColor Gray
 
-  $licenseText = Get-Content (Join-Path $rootDir 'LICENSE.txt') -Raw
+  $licenseText = Get-Content (Join-Path $rootDir 'LICENSE') -Raw
   $licenseText = $licenseText -replace "`r`n", "`n"
   $paragraphs = $licenseText -split "`n`n+"
   $licenseRtf = ($paragraphs | ForEach-Object {
@@ -179,7 +179,7 @@ function New-Assets {
     New-Item -ItemType Directory -Path $assetsDir -Force | Out-Null
   }
 
-  $licenseSource = Join-Path $rootDir 'LICENSE.txt'
+  $licenseSource = Join-Path $rootDir 'LICENSE'
   $licenseRtfPath = Join-Path $installerDir 'Assets\LICENSE.rtf'
   $bannerPath = Join-Path $installerDir 'Assets\Banner.bmp'
   $dialogPath = Join-Path $installerDir 'Assets\Dialog.bmp'

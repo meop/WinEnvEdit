@@ -134,7 +134,9 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           path: ./artifacts
+          merge-multiple: true
       - name: Import GPG key
+        id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v7
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -156,15 +158,21 @@ jobs:
             }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate and sign checksums
+        working-directory: artifacts
+        run: |
+          LC_ALL=C sha256sum -- * > SHASUMS256.txt
+          gpg --batch --yes \
+            --local-user '${{ steps.import_gpg.outputs.fingerprint }}' \
+            --output SHASUMS256.txt.sig \
+            --detach-sign SHASUMS256.txt
+          gpg --batch --verify SHASUMS256.txt.sig SHASUMS256.txt
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.version.outputs.new_version }}
           body: ${{ steps.changelog.outputs.changelog }}
-          files: |
-            artifacts/**/*.msi
-            artifacts/**/*.zip
-            LICENSE.txt
+          files: artifacts/*
           draft: false
           prerelease: ${{ needs.version.outputs.prerelease }}
 

@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-Guidance for Claude Code when working with WinEnvEdit.
+Guidance for coding agents working with WinEnvEdit.
 
 **See also:** [docs/xaml.md](docs/xaml.md), [docs/mvvm.md](docs/mvvm.md), [docs/deployment.md](docs/deployment.md), [docs/aot.md](docs/aot.md) for WinUI, MVVM, deployment, and Native AOT patterns.
 
@@ -62,7 +62,7 @@ Solution: `WinEnvEdit.slnx`
 | **version**  | all pushes/PRs | Detects if `VERSION` has a new tag                    |
 | **validate** | all pushes/PRs | Checks formatting, version sync, builds, tests        |
 | **publish**  | main only      | Builds MSI for all platforms (if version changed)     |
-| **release**  | main only      | Creates GitHub release with MSIs (if version changed) |
+| **release**  | main only      | Creates GitHub release with MSIs, ZIPs, and signed checksums |
 | **package**  | main only      | Submits WinGet update PR via wingetcreate             |
 
 Always run `Prebuild.ps1` locally and commit before pushing — the validate job fails if it produces uncommitted changes.
@@ -74,7 +74,6 @@ Always run `Prebuild.ps1` locally and commit before pushing — the validate job
 - **NO AUTOMATIC COMMITS:** Only commit when explicitly asked
 - Safe: `git status`, `git diff`, `git log`, `git fetch`
 - Never without explicit request: `git push`, `git reset`, `git checkout -- <file>`, `git clean`
-- See [AGENTS.md](AGENTS.md) for full rules
 
 ---
 
