@@ -107,8 +107,8 @@ checksum manifest with the public release key before checking downloaded
 artifacts:
 
 ```sh
-gpg --verify SHASUMS256.txt.sig SHASUMS256.txt
-sha256sum --ignore-missing --check SHASUMS256.txt
+gpg --verify sha256sums.txt.sig sha256sums.txt
+sha256sum --ignore-missing --check sha256sums.txt
 ```
 
 ## Acknowledgments
