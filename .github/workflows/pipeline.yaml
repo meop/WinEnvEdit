@@ -161,12 +161,12 @@ jobs:
       - name: Generate and sign checksums
         working-directory: artifacts
         run: |
-          LC_ALL=C sha256sum -- * > sha256sums.txt
+          LC_ALL=C sha256sum -- * > SHA256SUMS
           gpg --batch --yes \
             --local-user '${{ steps.import_gpg.outputs.fingerprint }}' \
-            --output sha256sums.txt.sig \
-            --detach-sign sha256sums.txt
-          gpg --batch --verify sha256sums.txt.sig sha256sums.txt
+            --output SHA256SUMS.sig \
+            --detach-sign SHA256SUMS
+          gpg --batch --verify SHA256SUMS.sig SHA256SUMS
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
