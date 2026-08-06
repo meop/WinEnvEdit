@@ -100,7 +100,16 @@ Several frameworks were considered to achieve the best balance of performance an
 
 ## License
 
-This project is licensed under the MIT License - see [LICENSE.txt](LICENSE.txt).
+This project is licensed under the MIT License - see [LICENSE](LICENSE).
+
+Release installers and portable ZIPs contain `LICENSE`. Verify the signed
+checksum manifest with the public release key before checking downloaded
+artifacts:
+
+```sh
+gpg --verify SHA256SUMS.sig SHA256SUMS
+sha256sum --ignore-missing --check SHA256SUMS
+```
 
 ## Acknowledgments
 
