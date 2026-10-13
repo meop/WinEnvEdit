@@ -183,3 +183,4 @@ _Pvt_Extensions
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+out/

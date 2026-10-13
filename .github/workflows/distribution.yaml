@@ -1,0 +1,81 @@
+name: Distribution
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+    secrets:
+      SCOOP_BUCKET_SSH_KEY:
+        required: true
+      CHOCOLATEY_API_KEY:
+        required: false
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published stable version to package (without v)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Prepare Scoop and Chocolatey
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Generate packages from published assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISTRIBUTION_VERSION: ${{ inputs.version }}
+        run: ./scripts/New-DistributionPackages.ps1 -Version $env:DISTRIBUTION_VERSION
+      - name: Pack Chocolatey package
+        shell: pwsh
+        run: |
+          $spec = @(Get-ChildItem out/distribution/chocolatey -Recurse -Filter *.nuspec)
+          if ($spec.Count -ne 1) { throw 'Expected one Chocolatey nuspec.' }
+          choco pack $spec[0].FullName --outputdirectory out/distribution/chocolatey
+          if ($LASTEXITCODE -ne 0) { throw 'Chocolatey pack failed.' }
+      - name: Upload reviewable distribution files
+        uses: actions/upload-artifact@v7
+        with:
+          name: distribution-${{ inputs.version }}
+          path: |
+            out/distribution/scoop/
+            out/distribution/chocolatey/
+            out/distribution/VALIDATION.txt
+
+  scoop:
+    name: Update Scoop bucket
+    needs: prepare
+    uses: meop/scoop-bucket/.github/workflows/publish.yaml@main
+    with:
+      repository: ${{ github.repository }}
+      version: ${{ inputs.version }}
+    secrets:
+      SCOOP_BUCKET_SSH_KEY: ${{ secrets.SCOOP_BUCKET_SSH_KEY }}
+
+  chocolatey:
+    name: Submit Chocolatey package
+    needs: prepare
+    if: vars.CHOCOLATEY_PUBLISH_ENABLED == 'true'
+    runs-on: windows-latest
+    environment: chocolatey
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: distribution-${{ inputs.version }}
+          path: distribution
+      - name: Push package
+        shell: pwsh
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        run: |
+          if (-not $env:CHOCOLATEY_API_KEY) { throw 'Configure CHOCOLATEY_API_KEY before enabling publishing.' }
+          $package = @(Get-ChildItem distribution -Recurse -Filter *.nupkg)
+          if ($package.Count -ne 1) { throw 'Expected one Chocolatey package.' }
+          choco push $package[0].FullName --source https://push.chocolatey.org/ --api-key $env:CHOCOLATEY_API_KEY
+          if ($LASTEXITCODE -ne 0) { throw 'Chocolatey submission failed.' }

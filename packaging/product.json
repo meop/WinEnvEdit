@@ -1,0 +1,12 @@
+{
+  "product": "WinEnvEdit",
+  "id": "winenvedit",
+  "repository": "meop/WinEnvEdit",
+  "description": "Edit Windows user and system environment variables with path management, import/export and undo history.",
+  "portableAsset": "WinEnvEdit-{arch}.zip",
+  "installerAsset": "WinEnvEdit-{arch}.msi",
+  "executable": "WinEnvEdit.exe",
+  "chocolateyMode": "msi",
+  "minimumWindowsVersion": "11",
+  "webview2": false
+}

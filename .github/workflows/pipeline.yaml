@@ -193,3 +193,14 @@ jobs:
             --urls "$baseUrl/WinEnvEdit-x64.msi" "$baseUrl/WinEnvEdit-arm64.msi" `
             --token ${{ secrets.PAT_REPO }} `
             --submit
+
+  distribution:
+    name: Distribution packages
+    needs: [version, release]
+    if: github.ref == 'refs/heads/main' && needs.version.outputs.changed == 'true' && needs.version.outputs.prerelease == 'false'
+    uses: ./.github/workflows/distribution.yaml
+    with:
+      version: ${{ needs.version.outputs.new_version }}
+    secrets:
+      CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+      SCOOP_BUCKET_SSH_KEY: ${{ secrets.SCOOP_BUCKET_SSH_KEY }}

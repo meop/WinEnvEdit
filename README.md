@@ -12,6 +12,15 @@ winget install meop.WinEnvEdit
 winget upgrade meop.WinEnvEdit
 ```
 
+Alternatively, install the portable release with [Scoop](https://scoop.sh):
+
+```powershell
+scoop bucket add meop https://github.com/meop/scoop-bucket
+scoop install meop/winenvedit
+```
+
+The publisher's bucket supports Windows 11 x64 and ARM64.
+
 ## Features
 
 - **Dual-Pane Interface**: Side-by-side management of System and User variables.
