@@ -1,5 +1,9 @@
 # Microsoft Store candidate
 
+Use the normal Partner Center MSIX submission and certification process.
+Capability explanations belong in that submission; the current candidate does
+not require a separate advance-permission email before upload.
+
 Select MSIX/PWA for this Store product; WinEnvEdit uses MSIX. Current identity:
 meop.WinEnvEdit; publisher CN=4BA5B680-8485-42FF-9312-B49D5A71292B; Store ID
 9PF2J3W4WRGH. See [completed checks and remaining gates](COMPATIBILITY.md).
@@ -61,8 +65,10 @@ Before first publication, test on isolated Windows 11 x64 and ARM64 systems:
 - Verify import/export, launch from Start, and simultaneous MSI installation.
 - Uninstall; verify intentional environment edits persist and restore test values.
 
-Only after these checks and capability approval should Store publishing be wired
-to releases. First publication requires Partner Center; subsequent submission can
+Upload the validated candidate and complete its listing and capability
+justifications in Partner Center, then submit for certification. Capability
+approval is part of that review, not a prerequisite permission to submit. Wire
+automatic publishing to releases after first publication; subsequent submission can
 use Microsoft's msstore CLI with Entra credentials and the reserved product ID.
 Keep Store credentials in GitHub secrets and identity fields in variables.
 

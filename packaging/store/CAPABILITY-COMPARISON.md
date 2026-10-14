@@ -60,8 +60,9 @@ Removing an unnecessary manifest declaration is not a guarantee of approval.
 Microsoft's desktop packaging guidance also states that Store apps requiring
 elevation for any functionality are not accepted, while its capability page
 describes limited exceptions. The publisher's reported response reinforces that
-approval is discretionary. We must describe the actual UAC behavior honestly and
-ask how their policy applies to this model; do not conceal system editing.
+approval is discretionary. Describe the actual UAC behavior honestly in the
+Partner Center certification notes so reviewers can assess this model; do not
+conceal system editing. This does not require a new advance-permission email.
 
 WinEnvEdit also still needs user-environment writes to reach the actual
 HKCU\Environment key and persist beyond app removal. The scoped
