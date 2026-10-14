@@ -5,7 +5,11 @@ param(
   [Parameter(Mandatory)][ValidatePattern('^WINENVEDIT_MSIX_SMOKE_[a-f0-9]{32}$')][string]$VariableName
 )
 $ErrorActionPreference = 'Stop'
-if ($env:GITHUB_ACTIONS -ne 'true') { throw 'This diagnostic is limited to an isolated GitHub Actions runner.' }
+# Start-Process -Credential creates the new user's environment, so the parent's
+# GITHUB_ACTIONS variable is not inherited. The parent enforces that CI guard.
+if ($env:USERNAME -notmatch '^WEEProbe_[a-f0-9]{8}$' -or (Split-Path -Parent $PackagePath) -notlike "$env:PUBLIC\WinEnvEditRuntime_*") {
+  throw 'This controller requires the isolated parent-created test user and directory.'
+}
 $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Runtime controller must be a standard user.' }
 $identity = 'Test.WinEnvEdit.RuntimeProbe'
