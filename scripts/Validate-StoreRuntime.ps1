@@ -50,11 +50,9 @@ try {
   $installed = Get-AppxPackage -Name $identity
   if (-not $installed -or $installed.InstallLocation -notlike '*\WindowsApps\*') { throw 'Probe was not deployed to WindowsApps.' }
   Add-Type -Path (Join-Path $repoRoot 'packaging/store/UnelevatedProcess.cs')
-  $powershell = "$env:WINDIR/System32/WindowsPowerShell/v1.0/powershell.exe"
-  $activationScript = Join-Path $PSScriptRoot 'Invoke-StoreProbe.ps1'
-  $applicationId = $installed.PackageFamilyName + '!Probe'
-  $commandLine = "`"$powershell`" -NoProfile -File `"$activationScript`" -ApplicationId `"$applicationId`" -VariableName `"$name`" -ReportPath `"$report`""
-  [UnelevatedProcess]::Run($powershell, $commandLine, $repoRoot)
+  $probeExe = Join-Path $installed.InstallLocation 'RuntimeProbe.exe'
+  $commandLine = "`"$probeExe`" `"$name`" `"$report`""
+  [UnelevatedProcess]::Run($probeExe, $commandLine, $work)
   $deadline = (Get-Date).AddSeconds(30)
   while (-not (Test-Path -LiteralPath $report)) {
     if ((Get-Date) -ge $deadline) { throw 'Probe activation timed out.' }

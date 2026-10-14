@@ -4,7 +4,10 @@ Publisher confirmed this request was sent on 2026-10-09 to reportapp@microsoft.c
 Microsoft's documented advance-contact address for allowElevation. On 2026-10-13,
 the publisher reported a reply saying elevation approval is unlikely outside
 special circumstances and requesting additional website/support/product details.
-Approval has not been received; the exact email and case ID have not been recorded.
+The exact reply was provided by the publisher on 2026-10-13; see
+[the response record](MICROSOFT-RESPONSE.md). No case ID was provided.
+This is the historical request: the current candidate no longer declares
+allowElevation. Do not reuse this request as current certification notes.
 The text below is the prepared draft; the actual
 outgoing email has not been inspected.
 

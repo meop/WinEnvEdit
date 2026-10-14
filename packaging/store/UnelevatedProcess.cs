@@ -37,6 +37,8 @@ public static class UnelevatedProcess {
   private static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);
   [DllImport("kernel32.dll", SetLastError = true)]
   private static extern bool GetExitCodeProcess(IntPtr handle, out uint code);
+  [DllImport("kernel32.dll", SetLastError = true)]
+  private static extern bool TerminateProcess(IntPtr handle, uint code);
   private static void Check(bool success) {
     if (!success) { throw new Win32Exception(Marshal.GetLastWin32Error()); }
   }
@@ -54,10 +56,13 @@ public static class UnelevatedProcess {
       Check(SetTokenInformation(reduced, 25, ref integrity, Marshal.SizeOf(typeof(SidAndAttributes)) + (int)GetLengthSid(mediumSid)));
       var startup = new StartupInfo { Size = Marshal.SizeOf(typeof(StartupInfo)) };
       Check(CreateProcessWithTokenW(reduced, 0, application, new StringBuilder(commandLine), 0x08000000, IntPtr.Zero, directory, ref startup, out process));
-      if (WaitForSingleObject(process.Process, 30000) != 0) { throw new TimeoutException("Unelevated activation controller timed out."); }
+      if (WaitForSingleObject(process.Process, 30000) != 0) {
+        TerminateProcess(process.Process, 1);
+        throw new TimeoutException("Unelevated diagnostic timed out.");
+      }
       uint exitCode;
       Check(GetExitCodeProcess(process.Process, out exitCode));
-      if (exitCode != 0) { throw new InvalidOperationException("Unelevated activation controller exited with code " + exitCode); }
+      if (exitCode != 0) { throw new InvalidOperationException("Unelevated diagnostic exited with code " + exitCode); }
     } finally {
       if (process.Thread != IntPtr.Zero) { CloseHandle(process.Thread); }
       if (process.Process != IntPtr.Zero) { CloseHandle(process.Process); }
