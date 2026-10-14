@@ -49,14 +49,12 @@ try {
   Add-AppxPackage -Path $package
   $installed = Get-AppxPackage -Name $identity
   if (-not $installed -or $installed.InstallLocation -notlike '*\WindowsApps\*') { throw 'Probe was not deployed to WindowsApps.' }
-  $code = @'
-using System; using System.Runtime.InteropServices;
-[ComImport,Guid("45BA127D-10A8-46EA-8AB7-56EA9078943C")] class ActivationManager {}
-[ComImport,Guid("2E941141-7F97-4756-BA1D-9DECDE894A3D"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface IActivationManager { [PreserveSig] int ActivateApplication([MarshalAs(UnmanagedType.LPWStr)]string app,[MarshalAs(UnmanagedType.LPWStr)]string args,uint options,out uint pid); }
-public static class RuntimeActivation { public static void Launch(string app,string args) { uint pid; var hr=((IActivationManager)new ActivationManager()).ActivateApplication(app,args,0,out pid); Marshal.ThrowExceptionForHR(hr); } }
-'@
-  Add-Type -TypeDefinition $code
-  [RuntimeActivation]::Launch($installed.PackageFamilyName + '!Probe', "$name `"$report`"")
+  Add-Type -Path (Join-Path $repoRoot 'packaging/store/UnelevatedProcess.cs')
+  $powershell = "$env:WINDIR/System32/WindowsPowerShell/v1.0/powershell.exe"
+  $activationScript = Join-Path $PSScriptRoot 'Invoke-StoreProbe.ps1'
+  $applicationId = $installed.PackageFamilyName + '!Probe'
+  $commandLine = "`"$powershell`" -NoProfile -File `"$activationScript`" -ApplicationId `"$applicationId`" -VariableName `"$name`" -ReportPath `"$report`""
+  [UnelevatedProcess]::Run($powershell, $commandLine, $repoRoot)
   $deadline = (Get-Date).AddSeconds(30)
   while (-not (Test-Path -LiteralPath $report)) {
     if ((Get-Date) -ge $deadline) { throw 'Probe activation timed out.' }
