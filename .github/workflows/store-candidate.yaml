@@ -47,3 +47,4 @@ jobs:
           path: |
             out/store/*.msix
             out/store-runtime/report.json
+            out/store-runtime/controller-*.txt

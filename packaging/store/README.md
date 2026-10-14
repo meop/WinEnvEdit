@@ -44,8 +44,10 @@ the current candidate no longer declares that capability. Its documentation also
 limits the intended scenarios for unvirtualizedResources and separately restricts
 elevated functionality in Store apps. Store eligibility has not been granted.
 The publisher sent the [original request](APPROVAL-REQUEST.md) on 2026-10-09 and
-reported an unfavorable response on 2026-10-13. Further clarification must reflect
-the current candidate's actual capabilities and behavior. Account
+provided [Microsoft's response](MICROSOFT-RESPONSE.md) on 2026-10-13. It addresses
+the originally requested allowElevation and directs capability review through
+certification. It is not a rejection of a WinEnvEdit package submission. Prepared
+[listing and certification notes](LISTING.md) describe current behavior. Account
 registration alone does not establish capability approval.
 
 Before first publication, test on isolated Windows 11 x64 and ARM64 systems:
