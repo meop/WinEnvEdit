@@ -20,7 +20,7 @@ try {
   _ = PackageIdentity.GetCurrentPackageFullName(ref size, null);
   var identity = new char[size];
   var result = PackageIdentity.GetCurrentPackageFullName(ref size, identity);
-  if (result != 0) {
+  if (result != 0 || !new string(identity).StartsWith("Test.WinEnvEdit.RuntimeProbe_", StringComparison.Ordinal)) {
     throw new InvalidOperationException("Probe must have package identity.");
   }
   await new EnvironmentService().SaveVariables([new EnvironmentVariableModel {
