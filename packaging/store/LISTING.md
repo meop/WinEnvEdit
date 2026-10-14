@@ -1,7 +1,8 @@
-# Prepared Store listing — not submitted
+# Store listing — submitted for certification
 
 Product: WinEnvEdit. Store ID: 9PF2J3W4WRGH. Free, no in-app purchases.
-This document is a draft for Partner Center; it does not establish approval.
+The listing is saved in Submission 1. See [submission status](SUBMISSION.md).
+Submission does not establish approval or publication.
 
 ## Description
 
@@ -22,9 +23,13 @@ WinEnvEdit is free and open source. Documentation and volunteer support are
 available through the project's GitHub repository. The application works locally
 and does not send environment-variable values to the publisher.
 
-Requires a Windows 11 desktop PC. x64 package validation is in progress;
-ARM64 runtime validation remains outstanding. Select only architectures verified
-for the first submission; do not advertise an untested package as tested.
+Requires a Windows 11 desktop PC.
+
+## Architecture selection (internal preparation)
+
+Partner Center validated the uploaded x64 and ARM64 packages. Actual x64
+development-package GUI user saves passed; ARM64 runtime validation remains
+outstanding. Certification notes explicitly disclose the remaining limits.
 
 ## Links and properties
 
@@ -32,8 +37,9 @@ for the first submission; do not advertise an untested package as tested.
 - Support: https://meop.github.io/WinEnvEdit/support.html
 - Privacy policy: https://meop.github.io/WinEnvEdit/privacy.html
 - Source and license: https://github.com/meop/WinEnvEdit
-- Suggested category: Developer tools (confirm the available Partner Center choice).
-- Suggested keywords: environment variables, PATH, Windows, developer tools.
+- Saved categories: Utilities + tools; secondary Developer tools.
+- Potential keywords: environment variables, PATH, Windows, developer tools.
+  Keywords were not entered for the first submission.
 - Device family: Desktop only; disable future-device-family automatic availability.
 
 ## Certification explanation
@@ -74,10 +80,11 @@ The capability will be reviewed as part of this submission; no separate
 advance approval is requested. Reconcile these notes with the final manifest
 if further testing establishes that the extra declaration can be removed.
 
-## Remaining listing materials
+## Submitted listing materials
 
-- Screenshots of the actual packaged app using synthetic variables only.
-- Partner Center age-rating questionnaire and current product properties.
-- Final supported architecture selection and signed package runtime results.
-- Upload actual-identity package(s), inspect capability prompts, and submit for
-  certification after technical validation. No upload or submission has occurred.
+- One actual packaged-app screenshot using synthetic variables only, in screenshots/.
+- Partner Center age ratings and product properties are complete.
+- Actual-identity x64 and ARM64 packages uploaded and validated.
+- Capability justifications and separate testing notes saved; certification
+  submission verified. Signed standard-user and ARM64 runtime checks remain
+  unverified and were disclosed to reviewers.

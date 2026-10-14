@@ -1,5 +1,8 @@
 # Microsoft Store candidate
 
+Submission 1 is now in certification. See the [actual submission record](SUBMISSION.md)
+for saved settings, evidence and remaining work. Approval/publication is pending.
+
 Use the normal Partner Center MSIX submission and certification process.
 Capability explanations belong in that submission; the current candidate does
 not require a separate advance-permission email before upload.
