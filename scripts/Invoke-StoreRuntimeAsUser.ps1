@@ -8,6 +8,7 @@ $ErrorActionPreference = 'Stop'
 # The parent enforces the CI guard; scheduled tasks do not inherit job variables.
 if ((Split-Path -Parent $PackagePath) -notlike "$env:PUBLIC\WinEnvEditRuntime_*") { throw 'This controller requires the isolated parent-created directory.' }
 $identity = 'Test.WinEnvEdit.RuntimeProbe'
+$probeReport = "$ReportPath.probe.json"
 try {
   $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
   if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Runtime controller must run without administrator privileges.' }
@@ -20,14 +21,14 @@ using System; using System.Runtime.InteropServices;
 [ComImport,Guid("2E941141-7F97-4756-BA1D-9DECDE894A3D"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface IActivationManager { [PreserveSig] int ActivateApplication([MarshalAs(UnmanagedType.LPWStr)]string app,[MarshalAs(UnmanagedType.LPWStr)]string args,uint options,out uint pid); }
 public static class RuntimeActivation { public static uint Launch(string app,string args) { uint pid; var hr=((IActivationManager)new ActivationManager()).ActivateApplication(app,args,0,out pid); Marshal.ThrowExceptionForHR(hr); return pid; } }
 '@
-  $probeId = [RuntimeActivation]::Launch($installed.PackageFamilyName + '!Probe', "$VariableName `"$ReportPath`"")
+  $probeId = [RuntimeActivation]::Launch($installed.PackageFamilyName + '!Probe', "$VariableName `"$probeReport`"")
   $probe = [Diagnostics.Process]::GetProcessById($probeId)
   if (-not $probe.WaitForExit(30000)) {
     $probe.Kill()
     throw 'Installed probe timed out.'
   }
-  if (-not (Test-Path -LiteralPath $ReportPath)) { throw "Probe produced no report; exit code $($probe.ExitCode)." }
-  $result = Get-Content -LiteralPath $ReportPath -Raw | ConvertFrom-Json
+  if (-not (Test-Path -LiteralPath $probeReport)) { throw "Probe produced no report; exit code $($probe.ExitCode)." }
+  $result = Get-Content -LiteralPath $probeReport -Raw | ConvertFrom-Json
   if (-not $result.success -or $result.isAdministrator) { throw "Normal-user probe failed: $($result.error)" }
   if ((Get-Item 'HKCU:\Environment').GetValue($VariableName) -ne 'signed-package-value') { throw 'User-environment write was virtualized.' }
   Remove-AppxPackage -Package $installed.PackageFullName
