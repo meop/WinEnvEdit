@@ -5,15 +5,12 @@ param(
   [Parameter(Mandatory)][ValidatePattern('^WINENVEDIT_MSIX_SMOKE_[a-f0-9]{32}$')][string]$VariableName
 )
 $ErrorActionPreference = 'Stop'
-# Start-Process -Credential creates the new user's environment, so the parent's
-# GITHUB_ACTIONS variable is not inherited. The parent enforces that CI guard.
-if ($env:USERNAME -notmatch '^WEEProbe_[a-f0-9]{8}$' -or (Split-Path -Parent $PackagePath) -notlike "$env:PUBLIC\WinEnvEditRuntime_*") {
-  throw 'This controller requires the isolated parent-created test user and directory.'
-}
-$principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Runtime controller must be a standard user.' }
+# The parent enforces the CI guard; scheduled tasks do not inherit job variables.
+if ((Split-Path -Parent $PackagePath) -notlike "$env:PUBLIC\WinEnvEditRuntime_*") { throw 'This controller requires the isolated parent-created directory.' }
 $identity = 'Test.WinEnvEdit.RuntimeProbe'
 try {
+  $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+  if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Runtime controller must run without administrator privileges.' }
   Add-AppxPackage -Path $PackagePath
   $installed = Get-AppxPackage -Name $identity
   if (-not $installed -or $installed.InstallLocation -notlike '*\WindowsApps\*') { throw 'Probe was not deployed to WindowsApps.' }

@@ -14,8 +14,7 @@ $name = 'WINENVEDIT_MSIX_SMOKE_' + [Guid]::NewGuid().ToString('N')
 $report = Join-Path $work 'report.json'
 $identity = 'Test.WinEnvEdit.RuntimeProbe'
 $cert = $null
-$testUser = $null
-$child = $null
+$taskName = $null
 $standardWork = $null
 New-Item -ItemType Directory -Force -Path $work | Out-Null
 $sdkBin = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10/bin'
@@ -49,15 +48,13 @@ try {
   Import-Certificate -FilePath $publicCert -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
   & (Join-Path $sdk.Directory.FullName 'signtool.exe') sign /fd SHA256 /sha1 $cert.Thumbprint /s My $package | Out-Null
   if ($LASTEXITCODE -ne 0) { throw 'Probe signature failed.' }
-  $username = 'WEEProbe_' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
-  $password = ConvertTo-SecureString ('aA!9' + [Guid]::NewGuid().ToString('N')) -AsPlainText -Force
-  $testUser = New-LocalUser -Name $username -Password $password -AccountNeverExpires -PasswordNeverExpires
-  Add-LocalGroupMember -SID 'S-1-5-32-545' -Member $testUser.Name
-  $credential = New-Object Management.Automation.PSCredential("$env:COMPUTERNAME\$username", $password)
+  # Use the existing interactive login: AppModel activation cannot use a fresh
+  # batch logon. Task Scheduler supplies its ordinary limited token.
+  $userIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
   $standardWork = Join-Path $env:PUBLIC ('WinEnvEditRuntime_' + [Guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $standardWork | Out-Null
   $acl = Get-Acl -LiteralPath $standardWork
-  $rule = New-Object Security.AccessControl.FileSystemAccessRule($testUser.SID, 'Modify', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
+  $rule = New-Object Security.AccessControl.FileSystemAccessRule($userIdentity.User, 'Modify', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
   $acl.AddAccessRule($rule)
   Set-Acl -LiteralPath $standardWork -AclObject $acl
   Copy-Item -LiteralPath $package -Destination (Join-Path $standardWork 'probe.msix')
@@ -65,23 +62,32 @@ try {
   Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Invoke-StoreRuntimeAsUser.ps1') -Destination $controller
   $standardReport = Join-Path $standardWork 'report.json'
   $arguments = "-NoProfile -File `"$controller`" -PackagePath `"$standardWork\probe.msix`" -ReportPath `"$standardReport`" -VariableName $name"
-  $child = Start-Process -FilePath "$env:WINDIR/System32/WindowsPowerShell/v1.0/powershell.exe" -ArgumentList $arguments -Credential $credential -LoadUserProfile -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $work 'controller-output.txt') -RedirectStandardError (Join-Path $work 'controller-error.txt')
-  if (-not $child.WaitForExit(90000)) { throw 'Standard-user controller timed out.' }
-  if (Test-Path -LiteralPath $standardReport) { Copy-Item -LiteralPath $standardReport -Destination $report -Force }
-  if ($child.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $report)) {
-    Get-Content -LiteralPath (Join-Path $work 'controller-error.txt')
-    throw 'Standard-user runtime controller failed.'
+  $taskName = 'WinEnvEditRuntime_' + [Guid]::NewGuid().ToString('N')
+  $action = New-ScheduledTaskAction -Execute "$env:WINDIR/System32/WindowsPowerShell/v1.0/powershell.exe" -Argument $arguments
+  $principal = New-ScheduledTaskPrincipal -UserId $userIdentity.Name -LogonType Interactive -RunLevel Limited
+  $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 3)
+  Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Settings $settings | Out-Null
+  Start-ScheduledTask -TaskName $taskName
+  $deadline = (Get-Date).AddSeconds(90)
+  while (-not (Test-Path -LiteralPath $standardReport)) {
+    if ((Get-Date) -ge $deadline) {
+      Get-ScheduledTaskInfo -TaskName $taskName | Select-Object LastTaskResult,LastRunTime
+      throw 'Limited interactive-user controller timed out.'
+    }
+    Start-Sleep -Milliseconds 500
   }
+  if (Test-Path -LiteralPath $standardReport) { Copy-Item -LiteralPath $standardReport -Destination $report -Force }
   $result = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
   if (-not $result.success -or -not $result.standardUserController -or -not $result.externalWriteAndPersistenceVerified -or $result.isAdministrator) { throw "Standard-user probe failed: $($result.error)" }
   'Signed runFullTrust-only standard-user environment test passed.'
 } finally {
-  if ($child -and -not $child.HasExited) { $child.Kill(); $child.WaitForExit() }
-  if ($standardWork -and (Test-Path -LiteralPath (Join-Path $standardWork 'report.json'))) { Copy-Item -LiteralPath (Join-Path $standardWork 'report.json') -Destination $report -Force }
-  if ($testUser) {
-    Get-AppxPackage -User $testUser.SID.Value -Name $identity | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
-    Remove-LocalUser -SID $testUser.SID
+  if ($taskName) {
+    Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
   }
+  if ($standardWork -and (Test-Path -LiteralPath (Join-Path $standardWork 'report.json'))) { Copy-Item -LiteralPath (Join-Path $standardWork 'report.json') -Destination $report -Force }
+  Get-AppxPackage -Name $identity | Remove-AppxPackage
+  Remove-ItemProperty 'HKCU:\Environment' -Name $name -ErrorAction SilentlyContinue
   if ($cert) {
     $trusted = "Cert:\LocalMachine\TrustedPeople\$($cert.Thumbprint)"
     if (Test-Path -LiteralPath $trusted) { Remove-Item -LiteralPath $trusted }
