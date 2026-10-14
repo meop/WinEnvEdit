@@ -21,6 +21,8 @@ meop.WinEnvEdit_wjhcw1q5ncdmj, publisher display name meop.
 | Elevated temporary-file handoff | Passed | System Save completes with default filesystem virtualization; no broad filesystem exemption required |
 | Normal launch privilege | Passed for packaged diagnostic | Actual package-activated diagnostic reports isAdministrator=false before user-directed elevation |
 | File export / import | Passed for Core service | Actual packaged FileService exports/imports a TOML variable and deletes the disposable file. GUI file-picker interaction remains untested |
+| x64 GUI user edits / Save / Undo / Redo | Passed in development package | Actual WinEnvEdit UI created and edited a unique disposable user variable; both saves confirmed outside the app in real HKCU. Undo/Redo observed; variable removed and cleanup verified |
+| x64 GUI file pickers / export / import | Passed in development package | Real Save As/Open dialogs exported a local TOML backup and imported a matching fixture with one synthetic addition. Addition appeared as pending UI state and was not written to HKCU; Refresh discarded it |
 | Fresh application prebuild / build / unit tests | Passed with build warning | Isolated .NET SDK 10.0.401: Prebuild completed, Debug build succeeded, 180/180 tests passed. MSB3785 SDK-discovery warning remains because SDK is not installed systemwide |
 
 Registry/file tests are integration diagnostics outside the application unit-test
@@ -44,14 +46,18 @@ certificate was installed for it and Developer Mode was already enabled.
 
 - ARM64 runtime on an actual Windows 11 ARM64 system. Package/PE checks alone
   cannot establish runtime compatibility.
-- GUI user/system editing, error display, file pickers and import/export from the
-  actual app; development launch and Core diagnostics do not cover these flows.
+- GUI system editing/UAC and error display. User editing/Save/Undo/Redo and
+  import/export file pickers now passed in the actual development-packaged app.
 - Signed-install, upgrade and uninstall checks in a clean Windows environment.
   Development registration does not prove signed package deployment behavior.
 - Microsoft restricted-capability review and full Store certification. The
   [response to the historical allowElevation request](MICROSOFT-RESPONSE.md)
   is recorded; no case ID was supplied. No package has been uploaded or submitted
   for certification. Prepared listing text is in [LISTING.md](LISTING.md).
+
+Capability review occurs during the ordinary Partner Center submission and
+certification process. None of these entries requires advance permission to
+upload the current candidate. The original allowElevation inquiry is historical.
 
 ## Store device targeting
 

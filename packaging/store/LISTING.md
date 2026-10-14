@@ -58,10 +58,21 @@ save user variables. Intentional environment changes persist after uninstall.
 Import/export uses files selected by the user; the app is not limited solely to
 registry writes and its file operations must not be described as such.
 
-Before copying these notes, reconcile them with the final manifest and attach
-the signed-deployment evidence. The registry virtualization capability is still
-under investigation; this draft deliberately does not assert it is necessary.
-Disclose any capability retained in the final candidate separately.
+The current candidate additionally declares unvirtualizedResources, with a
+Windows 11 exclusion limited to HKEY_CURRENT_USER\Environment. User environment
+edits must reach the actual Windows environment for other applications to use
+them, and remain after the editor is uninstalled. A private per-package copy
+would not perform the advertised editing function. The app does not request a
+global registry or filesystem virtualization exemption. Other registry locations
+and filesystem locations retain the package's default virtualization behavior.
+
+This configuration has passed development-package registry diagnostics and
+actual x64 GUI user-save tests. Normally installed, test-signed runtime
+validation is still incomplete because the CI runner's administrator/logon
+configuration blocked normal-user activation. Do not claim those tests passed.
+The capability will be reviewed as part of this submission; no separate
+advance approval is requested. Reconcile these notes with the final manifest
+if further testing establishes that the extra declaration can be removed.
 
 ## Remaining listing materials
 
