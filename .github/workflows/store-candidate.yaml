@@ -1,0 +1,49 @@
+name: Store candidate
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Validate unsigned Store candidates
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Prepare published assets and package
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STORE_IDENTITY_NAME: ${{ vars.STORE_IDENTITY_NAME }}
+          STORE_PUBLISHER: ${{ vars.STORE_PUBLISHER }}
+        run: |
+          if (-not $env:STORE_IDENTITY_NAME -or -not $env:STORE_PUBLISHER) {
+            throw 'Configure exact Partner Center STORE_IDENTITY_NAME and STORE_PUBLISHER variables.'
+          }
+          $version = (Get-Content VERSION -Raw).Trim()
+          ./scripts/New-DistributionPackages.ps1 -Version $version
+          $sdkBin = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10/bin'
+          $makeappx = Get-ChildItem $sdkBin -Filter MakeAppx.exe -Recurse |
+            Where-Object FullName -Match '[\\/]x64[\\/]makeappx.exe$' |
+            Sort-Object { [version]$_.Directory.Parent.Name } -Descending |
+            Select-Object -First 1
+          if (-not $makeappx) { throw 'Windows SDK MakeAppx.exe was not found.' }
+          foreach ($arch in @('x64', 'arm64')) {
+            $publish = "out/store-input/$arch"
+            Expand-Archive "out/distribution/downloads/WinEnvEdit-$arch.zip" $publish -Force
+            ./scripts/New-StorePackage.ps1 -PublishDirectory $publish -Architecture $arch -IdentityName $env:STORE_IDENTITY_NAME -Publisher $env:STORE_PUBLISHER -MakeAppxPath $makeappx.FullName
+          }
+      - name: Validate normally installed runFullTrust-only runtime
+        shell: pwsh
+        run: ./scripts/Validate-StoreRuntime.ps1
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: unsigned-store-candidates
+          path: |
+            out/store/*.msix
+            out/store-runtime/report.json
