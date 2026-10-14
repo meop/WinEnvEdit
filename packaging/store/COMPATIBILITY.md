@@ -1,6 +1,6 @@
 # WinEnvEdit MSIX compatibility evidence
 
-Updated 2026-10-09. Product type is MSIX/PWA; the application uses MSIX.
+Updated 2026-10-13. Product type is MSIX/PWA; the application uses MSIX.
 Store ID 9PF2J3W4WRGH, identity meop.WinEnvEdit, publisher
 CN=4BA5B680-8485-42FF-9312-B49D5A71292B, PFN
 meop.WinEnvEdit_wjhcw1q5ncdmj, publisher display name meop.
@@ -48,9 +48,10 @@ certificate was installed for it and Developer Mode was already enabled.
   actual app; development launch and Core diagnostics do not cover these flows.
 - Signed-install, upgrade and uninstall checks in a clean Windows environment.
   Development registration does not prove signed package deployment behavior.
-- Microsoft restricted-capability approval and full Store certification. Publisher
-  confirmed sending [APPROVAL-REQUEST.md](APPROVAL-REQUEST.md) on 2026-10-09;
-  response/case ID pending. No package has been submitted for certification.
+- Microsoft restricted-capability review and full Store certification. The
+  [response to the historical allowElevation request](MICROSOFT-RESPONSE.md)
+  is recorded; no case ID was supplied. No package has been uploaded or submitted
+  for certification. Prepared listing text is in [LISTING.md](LISTING.md).
 
 ## Store device targeting
 

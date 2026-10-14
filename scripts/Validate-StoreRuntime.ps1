@@ -14,6 +14,9 @@ $name = 'WINENVEDIT_MSIX_SMOKE_' + [Guid]::NewGuid().ToString('N')
 $report = Join-Path $work 'report.json'
 $identity = 'Test.WinEnvEdit.RuntimeProbe'
 $cert = $null
+$testUser = $null
+$child = $null
+$standardWork = $null
 New-Item -ItemType Directory -Force -Path $work | Out-Null
 $sdkBin = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10/bin'
 $sdk = Get-ChildItem $sdkBin -Filter MakeAppx.exe -Recurse |
@@ -46,30 +49,39 @@ try {
   Import-Certificate -FilePath $publicCert -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
   & (Join-Path $sdk.Directory.FullName 'signtool.exe') sign /fd SHA256 /sha1 $cert.Thumbprint /s My $package | Out-Null
   if ($LASTEXITCODE -ne 0) { throw 'Probe signature failed.' }
-  Add-AppxPackage -Path $package
-  $installed = Get-AppxPackage -Name $identity
-  if (-not $installed -or $installed.InstallLocation -notlike '*\WindowsApps\*') { throw 'Probe was not deployed to WindowsApps.' }
-  Add-Type -Path (Join-Path $repoRoot 'packaging/store/UnelevatedProcess.cs')
-  $probeExe = Join-Path $installed.InstallLocation 'RuntimeProbe.exe'
-  $commandLine = "`"$probeExe`" `"$name`" `"$report`""
-  [UnelevatedProcess]::Run($probeExe, $commandLine, $work)
-  $deadline = (Get-Date).AddSeconds(30)
-  while (-not (Test-Path -LiteralPath $report)) {
-    if ((Get-Date) -ge $deadline) { throw 'Probe activation timed out.' }
-    Start-Sleep -Milliseconds 200
+  $username = 'WEEProbe_' + [Guid]::NewGuid().ToString('N').Substring(0, 8)
+  $password = ConvertTo-SecureString ('aA!9' + [Guid]::NewGuid().ToString('N')) -AsPlainText -Force
+  $testUser = New-LocalUser -Name $username -Password $password -AccountNeverExpires -PasswordNeverExpires
+  Add-LocalGroupMember -SID 'S-1-5-32-545' -Member $testUser.Name
+  $credential = New-Object Management.Automation.PSCredential("$env:COMPUTERNAME\$username", $password)
+  $standardWork = Join-Path $env:PUBLIC ('WinEnvEditRuntime_' + [Guid]::NewGuid().ToString('N'))
+  New-Item -ItemType Directory -Path $standardWork | Out-Null
+  $acl = Get-Acl -LiteralPath $standardWork
+  $rule = New-Object Security.AccessControl.FileSystemAccessRule($testUser.SID, 'Modify', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
+  $acl.AddAccessRule($rule)
+  Set-Acl -LiteralPath $standardWork -AclObject $acl
+  Copy-Item -LiteralPath $package -Destination (Join-Path $standardWork 'probe.msix')
+  $controller = Join-Path $standardWork 'Invoke-StoreRuntimeAsUser.ps1'
+  Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Invoke-StoreRuntimeAsUser.ps1') -Destination $controller
+  $standardReport = Join-Path $standardWork 'report.json'
+  $arguments = "-NoProfile -File `"$controller`" -PackagePath `"$standardWork\probe.msix`" -ReportPath `"$standardReport`" -VariableName $name"
+  $child = Start-Process -FilePath "$env:WINDIR/System32/WindowsPowerShell/v1.0/powershell.exe" -ArgumentList $arguments -Credential $credential -LoadUserProfile -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $work 'controller-output.txt') -RedirectStandardError (Join-Path $work 'controller-error.txt')
+  if (-not $child.WaitForExit(90000)) { throw 'Standard-user controller timed out.' }
+  if (Test-Path -LiteralPath $standardReport) { Copy-Item -LiteralPath $standardReport -Destination $report -Force }
+  if ($child.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $report)) {
+    Get-Content -LiteralPath (Join-Path $work 'controller-error.txt')
+    throw 'Standard-user runtime controller failed.'
   }
   $result = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
-  if (-not $result.success -or $result.isAdministrator) { throw "Normal-user probe failed: $($result.error)" }
-  if ((Get-Item 'HKCU:\Environment').GetValue($name) -ne 'signed-package-value') { throw 'User-environment write was virtualized.' }
-  Remove-AppxPackage -Package $installed.PackageFullName
-  if ((Get-Item 'HKCU:\Environment').GetValue($name) -ne 'signed-package-value') { throw 'User-environment write did not persist after package removal.' }
-  $result | Add-Member -NotePropertyName deployedToWindowsApps -NotePropertyValue $true
-  $result | Add-Member -NotePropertyName externalWriteAndPersistenceVerified -NotePropertyValue $true
-  $result | ConvertTo-Json | Set-Content -LiteralPath $report
-  'Signed runFullTrust-only normal-user environment test passed.'
+  if (-not $result.success -or -not $result.standardUserController -or -not $result.externalWriteAndPersistenceVerified -or $result.isAdministrator) { throw "Standard-user probe failed: $($result.error)" }
+  'Signed runFullTrust-only standard-user environment test passed.'
 } finally {
-  Get-AppxPackage -Name $identity | Remove-AppxPackage
-  Remove-ItemProperty 'HKCU:\Environment' -Name $name -ErrorAction SilentlyContinue
+  if ($child -and -not $child.HasExited) { $child.Kill(); $child.WaitForExit() }
+  if ($standardWork -and (Test-Path -LiteralPath (Join-Path $standardWork 'report.json'))) { Copy-Item -LiteralPath (Join-Path $standardWork 'report.json') -Destination $report -Force }
+  if ($testUser) {
+    Get-AppxPackage -User $testUser.SID.Value -Name $identity | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+    Remove-LocalUser -SID $testUser.SID
+  }
   if ($cert) {
     $trusted = "Cert:\LocalMachine\TrustedPeople\$($cert.Thumbprint)"
     if (Test-Path -LiteralPath $trusted) { Remove-Item -LiteralPath $trusted }
