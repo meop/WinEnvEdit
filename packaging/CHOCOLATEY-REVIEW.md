@@ -17,10 +17,14 @@ evidence of an MSI installation failure on supported Windows 11.
 Keep the Windows 11 guard. Re-uploading an identical package or simply rerunning
 on the same Server 2019 image cannot resolve the mismatch. Request moderator
 review and a verifier exemption, or verification on a supported Windows 11 image.
-Approval is the moderators' decision; no exemption has been requested or granted
-yet. Normal release-driven package generation and submission remain configured.
+Approval is the moderators' decision. The publisher authorized the request and
+it was posted on October 13, 2026 at 10:45 PM Pacific (October 14 05:45 UTC).
+The page confirmed changes were saved and now says "Maintainer responded,
+waiting for review/Maintainer update." The exemption is requested, not granted.
+No verification rerun or rejection was selected. Normal release-driven package
+generation and submission remain configured.
 
-## Prepared moderator comment (not sent)
+## Posted moderator comment
 
 Please review an OS-related Package Verifier exemption for winenvedit 1.1.1,
 or run verification on a supported Windows 11 image if available.
