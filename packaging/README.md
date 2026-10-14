@@ -29,6 +29,11 @@ CHOCOLATEY_API_KEY in the chocolatey environment to enable submission. Configure
 environment protection if publication should require review. Chocolatey moderation
 remains external. Never put credentials in package files or logs.
 
+The first 1.1.1 submission passed metadata validation but its Windows 11 guard
+rejected the verifier's Windows Server 2019 image. See the
+[verification follow-up and prepared moderator request](CHOCOLATEY-REVIEW.md).
+Keep the OS requirement; an unsupported verifier host needs moderator review.
+
 The reusable distribution workflow runs after successful stable releases, and
 workflow_dispatch can package an already published release. Calling it directly
 from the release pipeline handles releases created with GitHub's default token,
