@@ -21,6 +21,26 @@ scoop install meop/winenvedit
 
 The publisher's bucket supports Windows 11 x64 and ARM64.
 
+To update the Scoop installation:
+
+```powershell
+scoop update
+scoop update winenvedit
+```
+
+The [Chocolatey package](https://community.chocolatey.org/packages/winenvedit)
+has been submitted for moderation. Once approved, install or update it with:
+
+```powershell
+choco install winenvedit
+choco upgrade winenvedit
+```
+
+Chocolatey uses the Windows 11 x64 or ARM64 MSI installer. Scoop and Chocolatey
+updates are published automatically after stable releases created by this
+project's GitHub Actions pipeline. Chocolatey versions must pass its review
+process before becoming available on the normal feed.
+
 ## Features
 
 - **Dual-Pane Interface**: Side-by-side management of System and User variables.
