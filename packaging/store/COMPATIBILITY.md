@@ -22,7 +22,7 @@ meop.WinEnvEdit_wjhcw1q5ncdmj, publisher display name meop.
 | Normal launch privilege | Passed for packaged diagnostic | Actual package-activated diagnostic reports isAdministrator=false before user-directed elevation |
 | File export / import | Passed for Core service | Actual packaged FileService exports/imports a TOML variable and deletes the disposable file. GUI file-picker interaction remains untested |
 | x64 GUI user edits / Save / Undo / Redo | Passed in development package | Actual WinEnvEdit UI created and edited a unique disposable user variable; both saves confirmed outside the app in real HKCU. Undo/Redo observed; variable removed and cleanup verified |
-| x64 GUI file pickers / export / import | Passed in development package | Real Save As/Open dialogs exported a local TOML backup and imported a matching fixture with one synthetic addition. Addition appeared as pending UI state and was not written to HKCU; Refresh discarded it |
+| x64 GUI file pickers / export / import | Passed in development package | Real Save As/Open dialogs exported a local TOML backup and imported a matching fixture with one synthetic addition. Addition appeared as pending UI state and was not written to HKCU. Test process closed and private export/fixture files removed |
 | Fresh application prebuild / build / unit tests | Passed with build warning | Isolated .NET SDK 10.0.401: Prebuild completed, Debug build succeeded, 180/180 tests passed. MSB3785 SDK-discovery warning remains because SDK is not installed systemwide |
 
 Registry/file tests are integration diagnostics outside the application unit-test
@@ -33,9 +33,9 @@ and export file were removed. The source service files used by the probe are
 unchanged from v1.1.1.
 
 For continued interactive checks, the real-identity x64 app remains registered
-in development mode from the earlier generated staging directory. The new
-unsigned candidate omits allowElevation; the earlier development registration
-has not been replaced with that candidate.
+in development mode from stage-b64eb0f39c104491a5d7d422bdd84a51. The older
+registration was replaced on 2026-10-13. The current registration and unsigned
+candidate omit allowElevation and retain the scoped HKCU registry exclusion.
 The diagnostic StoreProbe and FullTrustOnly registrations were removed after
 the 2026-10-13 comparison. The obsolete Test.WinEnvEdit registration was also
 removed. The remaining real-identity registration is a local development
