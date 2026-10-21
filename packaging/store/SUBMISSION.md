@@ -15,7 +15,11 @@ Submission 1's live Store presence shows last modified October 19, 2026.
   https://meop.github.io/WinEnvEdit/support.html,
   https://meop.github.io/WinEnvEdit/privacy.html.
 - Capabilities: runFullTrust and unvirtualizedResources; no allowElevation.
-- Initial English listing has one screenshot; replace with more useful views.
+- Submission 2 (1152921505702187820) was submitted October 20, 2026 local time
+  (October 21 in Partner Center). It replaces the initial screenshot with the
+  three publisher-provided feature screenshots and captions in [LISTING.md](LISTING.md).
+  Partner Center confirms **In certification**; publishing starts automatically
+  after approval. Packages, properties, pricing and submission options are unchanged.
 
 Submission was sent October 13, 2026. The current publication confirms that the
 normal certification process completed. The old permission-email drafts and
@@ -23,8 +27,7 @@ exploratory capability comparison have been removed; Git history retains them.
 
 ## Remaining publishing work
 
-- Replace initial screenshot with the publisher's feature screenshots through a
-  listing-only update. No new binaries or application version needed.
+- Await certification/publication of the screenshot-only listing update.
 - Configure release-driven Store updates with Partner Center / Entra credentials.
 - Complete the remaining runtime coverage in [COMPATIBILITY.md](COMPATIBILITY.md).
 

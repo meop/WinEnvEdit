@@ -24,6 +24,18 @@ and does not send environment-variable values to the publisher.
 
 Requires a Windows 11 desktop PC.
 
+## Screenshots
+
+Shared originals are in [docs/images](../../docs/images), also used by the README
+and GitHub Pages gallery. Display in this order:
+
+1. `environment-and-path.png`: View system and user environment variables side by side, with individual PATH entries expanded for editing.
+2. `search.png`: Search variable names and values across both system and user scopes.
+3. `add-variable.png`: Add standard or expandable variables with input validation before saving.
+
+All three publisher-provided PNGs are 2538 x 1430 pixels. Replace the initial
+placeholder screenshot rather than retaining it in the listing.
+
 ## Links and properties
 
 - Website: https://meop.github.io/WinEnvEdit/

@@ -2,6 +2,18 @@
 
 Modern Windows 11 environment editor built with WinUI 3 and .NET 10.
 
+![System and user environment variables with an expanded PATH list](docs/images/environment-and-path.png)
+
+## Screenshots
+
+Search variable names and values across both scopes:
+
+![Filtering system and user variables for Git](docs/images/search.png)
+
+Add standard or expandable variables with input validation:
+
+![Add-variable dialog showing the required-name validation](docs/images/add-variable.png)
+
 ## Installation
 
 Install from the [Microsoft Store](https://apps.microsoft.com/detail/9PF2J3W4WRGH),

@@ -41,6 +41,8 @@ or add screenshots and captions, then submit the listing update for review. Keep
 the existing packages when no binaries have changed; no app version bump needed.
 
 Use actual app screenshots with sample data and no private environment values.
+The current three originals are shared from [docs/images](../../docs/images);
+their Store ordering and captions are in [LISTING.md](LISTING.md).
 Aim for 4–6 useful views: populated main screen, expanded PATH editing, validation,
 and light/dark themes. PNG, at least 1366 x 768, under 50 MB each; captions up to
 200 characters. The current Partner Center Desktop upload control advertises 30 files.
