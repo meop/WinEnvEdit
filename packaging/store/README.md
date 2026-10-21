@@ -28,10 +28,11 @@ Capabilities are runFullTrust and unvirtualizedResources. The latter excludes on
 HKCU\Environment from registry write virtualization. The UI runs normally without
 admin rights; a requested system save uses a short-lived runas/UAC helper.
 
-The manually dispatched Store candidate workflow creates unsigned packages and
-attempts a runtime diagnostic. Its hosted standard-user diagnostic is unresolved;
-it does not publish. Release-driven Store submission still needs implementation
-and Partner Center / Entra credentials. Scoop, Chocolatey and WinGet automation
+Stable releases call the [Store automation workflow](AUTOMATION.md), which prepares
+one bundle from both released architectures. Submission still needs Partner Center /
+Entra credentials and enablement. The older manually dispatched Store candidate
+workflow attempts a separate runtime diagnostic; its hosted standard-user check
+is unresolved and it does not publish. Scoop, Chocolatey and WinGet automation
 are separate.
 
 ## Listing-only updates

@@ -28,7 +28,7 @@ exploratory capability comparison have been removed; Git history retains them.
 ## Remaining publishing work
 
 - Await certification/publication of the screenshot-only listing update.
-- Configure release-driven Store updates with Partner Center / Entra credentials.
+- Configure credentials and enable the prepared [release automation](AUTOMATION.md).
 - Complete the remaining runtime coverage in [COMPATIBILITY.md](COMPATIBILITY.md).
 
 [Public listing](https://apps.microsoft.com/detail/9PF2J3W4WRGH) ·

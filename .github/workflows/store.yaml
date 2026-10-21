@@ -1,0 +1,97 @@
+name: Microsoft Store
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published stable version matching this source revision (without v)
+        required: true
+        type: string
+      operation:
+        description: Prepare only, check publishing access, or submit for certification
+        type: choice
+        options: [prepare, check, submit]
+        default: prepare
+
+permissions:
+  contents: read
+
+concurrency:
+  group: microsoft-store
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare Store bundle
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Package published release binaries
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: ./scripts/New-StoreRelease.ps1 -Version $env:RELEASE_VERSION
+      - uses: actions/upload-artifact@v7
+        with:
+          name: store-${{ inputs.version }}
+          path: out/store-upload/*.msixbundle
+          if-no-files-found: error
+
+  submit:
+    name: Submit Store update
+    needs: prepare
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      ((github.event_name == 'workflow_dispatch' && inputs.operation == 'check') ||
+      (vars.STORE_PUBLISH_ENABLED == 'true' &&
+      (github.event_name != 'workflow_dispatch' || inputs.operation == 'submit')))
+    environment: microsoft-store
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: store-${{ inputs.version }}
+          path: store-upload
+      - uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
+        with:
+          version: 'v0.4.3'
+      - name: Configure publishing credentials
+        shell: pwsh
+        env:
+          STORE_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+          STORE_CLIENT_ID: ${{ secrets.AZURE_AD_APPLICATION_CLIENT_ID }}
+          STORE_CLIENT_SECRET: ${{ secrets.AZURE_AD_APPLICATION_SECRET }}
+          STORE_SELLER_ID: ${{ secrets.SELLER_ID }}
+        run: |
+          foreach ($name in @('STORE_TENANT_ID', 'STORE_CLIENT_ID', 'STORE_CLIENT_SECRET', 'STORE_SELLER_ID')) {
+            if (-not [Environment]::GetEnvironmentVariable($name)) { throw "Missing $name in microsoft-store environment." }
+          }
+          msstore reconfigure --tenantId $env:STORE_TENANT_ID --sellerId $env:STORE_SELLER_ID --clientId $env:STORE_CLIENT_ID --clientSecret $env:STORE_CLIENT_SECRET
+          if ($LASTEXITCODE -ne 0) { throw 'Store authentication configuration failed.' }
+      - name: Verify product access
+        shell: pwsh
+        run: |
+          $appJson = msstore apps get 9PF2J3W4WRGH
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read the Store product with publishing credentials.' }
+          $app = ($appJson -join "`n") | ConvertFrom-Json
+          if ($app.id -ne '9PF2J3W4WRGH') { throw 'Store product identity mismatch.' }
+          'Publishing credentials can access WinEnvEdit.' >> $env:GITHUB_STEP_SUMMARY
+      - name: Submit bundle for Microsoft certification
+        if: github.event_name != 'workflow_dispatch' || inputs.operation == 'submit'
+        shell: pwsh
+        run: |
+          $appJson = msstore apps get 9PF2J3W4WRGH
+          if ($LASTEXITCODE -ne 0) { throw 'Could not check for an existing submission.' }
+          $app = ($appJson -join "`n") | ConvertFrom-Json
+          if ($app.id -ne '9PF2J3W4WRGH' -or -not $app.lastPublishedApplicationSubmission.id) { throw 'Expected the existing published WinEnvEdit product.' }
+          if ($app.pendingApplicationSubmission.id) { throw 'A Store submission already exists. Finish it in Partner Center before publishing another update.' }
+          $bundles = @(Get-ChildItem store-upload -Filter *.msixbundle)
+          if ($bundles.Count -ne 1) { throw 'Expected exactly one Store bundle.' }
+          msstore publish $bundles[0].FullName -id 9PF2J3W4WRGH --uploadTimeout 600
+          if ($LASTEXITCODE -ne 0) { throw 'Store submission failed; inspect Partner Center before retrying.' }
+          'Submitted for certification. This does not confirm Store approval or publication.' >> $env:GITHUB_STEP_SUMMARY
