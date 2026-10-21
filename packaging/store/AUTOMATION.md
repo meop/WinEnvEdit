@@ -64,11 +64,38 @@ personal Outlook address with "You can't sign in here with a personal account.
 Use your work or school account instead", even when the existing tenant is
 selected through Sign-in options. Azure CLI successfully authenticating the
 personal account does not complete Partner Center's tenant association. A
-directory-native setup user in the existing tenant is the next setup requirement;
-there is no need to create another tenant or buy a Microsoft 365 mailbox.
-Creating an administrator requires the account owner's approval. If a temporary
-directory administrator is used, remove its elevated role after account setup;
-the publishing app receives only Partner Center Manager, not a directory admin role.
+directory-native setup user in the existing tenant is a possible bootstrap path,
+not a verified fix for this account. No additional user or administrator role
+has been created.
+
+The missing step is **Partner Center tenant association**, followed by granting
+the publishing app its Store role. Azure CLI authentication, directory membership,
+app registration and GitHub secrets do not perform that association.
+
+Research checked October 21, 2026:
+
+- The existing personal-account-backed directory user already has **Global
+  Administrator**, verified through Microsoft Graph. This is an identity/sign-in
+  mismatch at the association page, not a missing Entra administrator role.
+- Individual Store registration correctly uses a personal account; Microsoft's
+  [individual onboarding guide](https://learn.microsoft.com/en-us/windows/apps/publish/partner-center/open-a-developer-account?tabs=individual)
+  requires it. Keep the existing publisher and Store product.
+- Microsoft's [tenant-association instructions](https://learn.microsoft.com/en-us/windows/apps/publish/partner-center/associate-existing-azure-ad-tenant-with-partner-center-account)
+  explicitly say Global Administrator is **not** required for association. Do
+  not grant a new user that role merely to test tenant linking.
+- The application-management page linked above separately documents Manager plus
+  Global Administrator for managing Entra applications. That later requirement
+  must not be confused with tenant association or the publishing app's own role.
+- A [September 14, 2026 firsthand report](https://learn.microsoft.com/en-gb/answers/questions/6002797/personal-account-windows-publisher-cant-associate)
+  describes the same individual-publisher/API association dead end. It has no
+  posted resolution as checked today; it confirms a matching report, not a fix.
+
+The least-privilege next test would use an ordinary directory-native sign-in to
+associate the existing tenant, then assess application-management access
+separately. Creating that additional credential still needs the owner's choice;
+the earlier temporary-Global-Administrator proposal is not an established
+prerequisite. Do not create a new tenant, convert the publisher to Company, or
+buy a Microsoft 365 mailbox based on this sign-in error.
 
 ### Create or reuse the publishing application through the CLI
 
