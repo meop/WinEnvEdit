@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
   [string]$Version,
+  [string]$ChocolateyVersion,
   [string]$AssetsDirectory,
   [string]$OutputDirectory
 )
@@ -20,6 +21,10 @@ $release = $releaseJson | ConvertFrom-Json
 $Version = $release.tag_name -replace '^v', ''
 if ($release.draft -or $release.prerelease -or $Version -notmatch '^\d+\.\d+\.\d+$') {
   throw 'Distribution packages require a published stable three-part version.'
+}
+if (-not $ChocolateyVersion) { $ChocolateyVersion = $Version }
+if ($ChocolateyVersion -ne $Version -and $ChocolateyVersion -notmatch ('^' + [regex]::Escape($Version) + '\.\d{8}$')) {
+  throw 'Chocolatey version must match the app release, optionally followed by a YYYYMMDD package-fix revision.'
 }
 
 function Get-Asset {
@@ -89,12 +94,13 @@ $nuspec = @"
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>$($config.id)</id>
-    <version>$Version</version>
+    <version>$ChocolateyVersion</version>
     <title>$($config.product)</title>
     <authors>Marshall Porter</authors>
     <owners>meop</owners>
     <copyright>$copyright</copyright>
     <projectUrl>https://github.com/$($config.repository)</projectUrl>
+    <iconUrl>$($config.iconUrl)</iconUrl>
     <packageSourceUrl>https://github.com/$($config.repository)/tree/HEAD/packaging</packageSourceUrl>
     <licenseUrl>https://github.com/$($config.repository)/blob/HEAD/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>

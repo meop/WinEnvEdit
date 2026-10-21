@@ -2,6 +2,7 @@
   "product": "WinEnvEdit",
   "id": "winenvedit",
   "repository": "meop/WinEnvEdit",
+  "iconUrl": "https://cdn.jsdelivr.net/gh/meop/WinEnvEdit@b5d9a9c82e8e8a6bc7ed3b8a6eb6009b7599ad3c/scripts/App.png",
   "description": "Edit Windows user and system environment variables with path management, import/export and undo history.",
   "portableAsset": "WinEnvEdit-{arch}.zip",
   "installerAsset": "WinEnvEdit-{arch}.msi",

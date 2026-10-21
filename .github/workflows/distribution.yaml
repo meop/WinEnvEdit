@@ -5,6 +5,10 @@ on:
       version:
         required: true
         type: string
+      chocolatey_version:
+        required: false
+        type: string
+        default: ''
     secrets:
       SCOOP_BUCKET_SSH_KEY:
         required: true
@@ -15,6 +19,10 @@ on:
       version:
         description: Published stable version to package (without v)
         required: true
+        type: string
+      chocolatey_version:
+        description: Optional Chocolatey-only package-fix version (app version.YYYYMMDD)
+        required: false
         type: string
 
 permissions:
@@ -31,7 +39,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           DISTRIBUTION_VERSION: ${{ inputs.version }}
-        run: ./scripts/New-DistributionPackages.ps1 -Version $env:DISTRIBUTION_VERSION
+          CHOCOLATEY_VERSION: ${{ inputs.chocolatey_version }}
+        run: ./scripts/New-DistributionPackages.ps1 -Version $env:DISTRIBUTION_VERSION -ChocolateyVersion $env:CHOCOLATEY_VERSION
       - name: Pack Chocolatey package
         shell: pwsh
         run: |
