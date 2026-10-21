@@ -10,5 +10,19 @@
   "executable": "WinEnvEdit.exe",
   "chocolateyMode": "msi",
   "minimumWindowsVersion": "11",
-  "webview2": false
+  "webview2": false,
+  "screenshots": [
+    {
+      "url": "https://meop.github.io/WinEnvEdit/images/environment-and-path.png",
+      "caption": "View system and user environment variables side by side, with individual PATH entries expanded for editing."
+    },
+    {
+      "url": "https://meop.github.io/WinEnvEdit/images/search.png",
+      "caption": "Search variable names and values across both system and user scopes."
+    },
+    {
+      "url": "https://meop.github.io/WinEnvEdit/images/add-variable.png",
+      "caption": "Add standard or expandable variables with input validation before saving."
+    }
+  ]
 }

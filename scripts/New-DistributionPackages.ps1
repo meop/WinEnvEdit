@@ -89,6 +89,12 @@ $description = [Security.SecurityElement]::Escape($config.description)
 $chocolateyDescription = if ($config.PSObject.Properties['chocolateyDescription']) {
   [Security.SecurityElement]::Escape($config.chocolateyDescription)
 } else { $description }
+if ($config.PSObject.Properties['screenshots']) {
+  $gallery = foreach ($screenshot in $config.screenshots) {
+    "$($screenshot.caption)`n`n![$($screenshot.caption)]($($screenshot.url))"
+  }
+  $chocolateyDescription += [Security.SecurityElement]::Escape("`n`n### Screenshots`n`n" + ($gallery -join "`n`n"))
+}
 $copyrightLine = @(Get-Content (Join-Path $repoRoot 'LICENSE') | Where-Object { $_ -match '^Copyright ' })
 if ($copyrightLine.Count -ne 1) { throw 'Expected one copyright line in LICENSE.' }
 $copyright = [Security.SecurityElement]::Escape($copyrightLine[0])
