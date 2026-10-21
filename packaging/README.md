@@ -31,7 +31,7 @@ remains external. Never put credentials in package files or logs.
 
 The first 1.1.1 submission passed metadata validation but its Windows 11 guard
 rejected the verifier's Windows Server 2019 image. See the
-[verification follow-up and prepared moderator request](CHOCOLATEY-REVIEW.md).
+[verification follow-up and submitted moderator request](CHOCOLATEY-REVIEW.md).
 Keep the OS requirement; an unsupported verifier host needs moderator review.
 
 The reusable distribution workflow runs after successful stable releases, and

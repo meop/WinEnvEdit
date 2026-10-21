@@ -4,6 +4,9 @@ Modern Windows 11 environment editor built with WinUI 3 and .NET 10.
 
 ## Installation
 
+Install from the [Microsoft Store](https://apps.microsoft.com/detail/9PF2J3W4WRGH),
+or use WinGet:
+
 ```bash
 winget install meop.WinEnvEdit
 ```

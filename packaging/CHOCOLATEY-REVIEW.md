@@ -24,25 +24,16 @@ waiting for review/Maintainer update." The exemption is requested, not granted.
 No verification rerun or rejection was selected. Normal release-driven package
 generation and submission remain configured.
 
-## Posted moderator comment
+Rechecked October 20, 2026: no moderator reply after the posted exemption request;
+status remains Maintainer responded, waiting for review/Maintainer update. The
+Windows 11 minimum is also declared in the application project, not just this
+package guard. Server 2019 runtime compatibility has not been tested.
 
-Please review an OS-related Package Verifier exemption for winenvedit 1.1.1,
-or run verification on a supported Windows 11 image if available.
+Direct exemption precedents verified October 20:
 
-The verifier report at
-https://gist.github.com/choco-bot/ad5534179c1ce98f96522b0c99a02ff3
-identifies Windows Server 2019, build 10.0.17763.0. Installation stops at the
-intentional Windows 11 minimum-build guard (22000), before download or MSI
-execution, with "WinEnvEdit requires Windows 11 or later."
+- [Slack 4.52.178](https://community.chocolatey.org/packages/slack/4.52.178):
+  Verification Testing Exemption, reason "Requires Windows 11."
+- [ElevenClock](https://community.chocolatey.org/packages/elevenclock): verifier
+  exemption because the application is intended for Windows 10 and 11.
 
-WinEnvEdit is a Windows 11 desktop application. Removing this guard would offer
-installation on an unsupported OS. Package metadata validation has passed.
-The same generated 1.1.1 Chocolatey package was tested on Windows 11 x64 on
-October 13, 2026 with Chocolatey 2.7.4: silent MSI installation, application
-launch, forced same-version reinstall, and Chocolatey's MSI auto-uninstall all
-passed. ARM64 runtime and upgrades between different app versions are not
-claimed as tested.
-
-Release assets and checksums are unchanged. The package uses /qn /norestart
-and accepts MSI exit codes 0, 1641 and 3010. Please advise if any additional
-evidence is required for the OS exemption.
+These support the pending request; they do not grant WinEnvEdit an exemption.
