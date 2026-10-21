@@ -2,9 +2,9 @@
 
 Modern Windows 11 environment editor built with WinUI 3 and .NET 10.
 
-![System and user environment variables with an expanded PATH list](docs/images/environment-and-path.png)
-
 ## Screenshots
+
+![System and user environment variables with an expanded PATH list](docs/images/environment-and-path.png)
 
 Search variable names and values across both scopes:
 
