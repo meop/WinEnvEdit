@@ -39,7 +39,11 @@ credentials. If your account belongs to multiple tenants, use
 `az login --tenant <tenant-id> --allow-no-subscriptions --output none` to choose
 the tenant associated with Partner Center. `az login` does not create a tenant
 or associate one with Partner Center. A personal Microsoft account alone is not
-the publishing application's directory.
+the publishing application's directory. If initial tenant discovery fails with
+AADSTS50076 despite working personal-account MFA, a tenant-specific normal login
+can obtain the required session. This is a documented CLI workaround, not a
+permanent account-side fix; do not disable MFA or change tenant security settings
+to work around it.
 
 ### Associate the directory in Partner Center
 
@@ -54,6 +58,17 @@ Azure resource access. Microsoft's [application-management instructions](https:/
 require a Partner Center Manager account with Global Administrator permissions
 in the tenant to manage these applications. Those are setup-user permissions;
 do not grant the publishing application Global Administrator.
+
+On this account, the Partner Center association sign-in explicitly rejects the
+personal Outlook address with "You can't sign in here with a personal account.
+Use your work or school account instead", even when the existing tenant is
+selected through Sign-in options. Azure CLI successfully authenticating the
+personal account does not complete Partner Center's tenant association. A
+directory-native setup user in the existing tenant is the next setup requirement;
+there is no need to create another tenant or buy a Microsoft 365 mailbox.
+Creating an administrator requires the account owner's approval. If a temporary
+directory administrator is used, remove its elevated role after account setup;
+the publishing app receives only Partner Center Manager, not a directory admin role.
 
 ### Create or reuse the publishing application through the CLI
 
@@ -88,7 +103,8 @@ role, not an Entra directory role. Azure CLI app creation alone does not grant
 Store access.
 
 Also obtain the **Seller ID** from Partner Center's **Account settings >
-Developer settings / Identifiers**. It is the publisher account identifier,
+Legal info > Developer > Publisher IDs** (verified against the actual portal).
+It is the publisher account identifier,
 not Store product ID `9PF2J3W4WRGH`, the app's publisher certificate string, or
 an Azure subscription ID. Azure CLI does not expose the Store seller ID.
 
@@ -133,8 +149,23 @@ Alternatively, add the four values manually under
 [Settings > Environments > microsoft-store](https://github.com/meop/WinEnvEdit/settings/environments).
 The third secret is the client secret **value**, not its identifier. Do not
 paste secrets into chat or commit them. Leave `STORE_PUBLISH_ENABLED=false`
-until the access check below succeeds. The CLI steps above have been checked
-against documentation; authenticated execution remains pending account setup.
+until the access check below succeeds.
+
+### Current setup status (October 21, 2026)
+
+- Azure CLI 2.91.0 authenticates the existing account normally after a
+  tenant-specific initial sign-in. The current Azure access token confirms MFA.
+- Publishing registration `WinEnvEdit GitHub publishing` is created in the
+  existing `meoporteroutlook.onmicrosoft.com` tenant. Client ID:
+  `1062f6d1-547a-4bb1-b90d-decc4b69db59`.
+- All four environment secrets are configured in GitHub's `microsoft-store`
+  environment; the client secret was transferred directly without logging its
+  value. It expires **April 21, 2027 at 08:45 UTC**. Rotate before that date.
+- Partner Center currently has no tenant association. Its association sign-in
+  rejects the personal account; no directory-native users were found.
+- Tenant linking and assigning the publishing app Partner Center Manager remain
+  incomplete. The authenticated Store access check has not run.
+- `STORE_PUBLISH_ENABLED` remains `false`. No Store submission was created.
 
 ## Check access and enable
 
