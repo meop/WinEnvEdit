@@ -37,3 +37,10 @@ Direct exemption precedents verified October 20:
   exemption because the application is intended for Windows 10 and 11.
 
 These support the pending request; they do not grant WinEnvEdit an exemption.
+
+The pending 1.1.1 package was replaced October 20 with the real app icon and
+copyright metadata through successful
+[Distribution](https://github.com/meop/WinEnvEdit/actions/runs/39537691297).
+The package page confirms the iconUrl. Application binaries/version and the
+Windows 11 guard are unchanged. Replacing a pending version restarts automated
+checks; the earlier exemption request is still part of the review conversation.
