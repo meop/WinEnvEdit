@@ -4,6 +4,7 @@
   "repository": "meop/WinEnvEdit",
   "iconUrl": "https://cdn.jsdelivr.net/gh/meop/WinEnvEdit@b5d9a9c82e8e8a6bc7ed3b8a6eb6009b7599ad3c/scripts/App.png",
   "description": "Edit Windows user and system environment variables with path management, import/export and undo history.",
+  "chocolateyDescription": "WinEnvEdit is a free, open-source Windows 11 environment-variable editor for x64 and ARM64 PCs. View user and system variables side by side, expand PATH lists to edit individual entries, search names and values, and review pending changes with undo and redo. Import and export TOML backups. User-variable saves do not require administrator rights; saving system-variable changes requests consent through Windows UAC. The Chocolatey package installs the architecture-specific MSI. Existing processes may need to restart to see saved changes. [Documentation and screenshots](https://meop.github.io/WinEnvEdit/) and [volunteer support](https://github.com/meop/WinEnvEdit/issues) are available online.",
   "portableAsset": "WinEnvEdit-{arch}.zip",
   "installerAsset": "WinEnvEdit-{arch}.msi",
   "executable": "WinEnvEdit.exe",

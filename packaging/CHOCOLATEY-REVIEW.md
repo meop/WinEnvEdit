@@ -44,3 +44,10 @@ copyright metadata through successful
 The package page confirms the iconUrl. Application binaries/version and the
 Windows 11 guard are unchanged. Replacing a pending version restarts automated
 checks; the earlier exemption request is still part of the review conversation.
+
+The generator also has a fuller Chocolatey-specific description, matching the
+improvement requested for PSNWDL's approved package. It explains supported PCs,
+editing/backup features, UAC behavior, MSI packaging, and documentation/support.
+This description is prepared for the next package upload; the current pending
+submission has not been replaced again for this wording-only change. Copyright
+and icons were already included in both projects' October 20 uploads.
