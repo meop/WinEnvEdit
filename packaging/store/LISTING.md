@@ -1,7 +1,7 @@
 # Microsoft Store listing
 
 Product: WinEnvEdit. Store ID: 9PF2J3W4WRGH. Free, no in-app purchases.
-The listing is live. See [publication settings](SUBMISSION.md).
+Product configuration and package publishing are in [README.md](README.md).
 
 ## Description
 
@@ -33,8 +33,25 @@ and GitHub Pages gallery. Display in this order:
 2. `search.png`: Search variable names and values across both system and user scopes.
 3. `add-variable.png`: Add standard or expandable variables with input validation before saving.
 
-All three publisher-provided PNGs are 2538 x 1430 pixels. Replace the initial
-placeholder screenshot rather than retaining it in the listing.
+All three publisher-provided PNGs are 2538 x 1430 pixels.
+
+Requirements: PNG, at least 1366 x 768, under 50 MB each, captions up to 200
+characters. Microsoft's
+[documentation](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msix/screenshots-and-images)
+says 10 desktop screenshots per language while the Partner Center upload control
+advertises 30; use the portal's limit. Four to six views are enough for this app:
+populated main screen, expanded PATH editing, validation, and light/dark themes.
+Use real screenshots with sample data and no private environment values.
+
+## Listing-only updates
+
+Text and screenshot changes need no new package or version bump. In Partner
+Center choose **Start update**, edit the English listing, replace or add
+screenshots and captions, keep the existing packages, and submit for review.
+
+Automation does not touch listing content — the Store workflow only submits
+packages, so edits here stay manual. Finish any listing update before a package
+submission, since the workflow refuses to submit while a draft is pending.
 
 ## Links and properties
 

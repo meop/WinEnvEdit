@@ -2,7 +2,7 @@
 
 Guidance for coding agents working with WinEnvEdit.
 
-**See also:** [docs/xaml.md](docs/xaml.md), [docs/mvvm.md](docs/mvvm.md), [docs/deployment.md](docs/deployment.md), [docs/aot.md](docs/aot.md) for WinUI, MVVM, deployment, and Native AOT patterns.
+**See also:** [docs/xaml.md](docs/xaml.md), [docs/mvvm.md](docs/mvvm.md), [docs/deployment.md](docs/deployment.md), [docs/aot.md](docs/aot.md) for WinUI, MVVM, deployment, and Native AOT patterns. For shipping: [packaging/store/README.md](packaging/store/README.md) (Microsoft Store) and [packaging/README.md](packaging/README.md) (Scoop, Chocolatey, WinGet).
 
 > This app ships as self-contained Native AOT. Several common WinUI patterns fail **silently** under AOT (`x:Bind`/`x:Load` in templates, `DataTemplateSelector`, in-template event handlers, lists nested in a `DataTemplate`). Read [docs/aot.md](docs/aot.md) before touching `Resources/VariableTemplates.xaml` or adding bound/templated UI.
 
@@ -64,6 +64,8 @@ Solution: `WinEnvEdit.slnx`
 | **publish**  | main only      | Builds MSI for all platforms (if version changed)     |
 | **release**  | main only      | Creates GitHub release with MSIs, ZIPs, and signed checksums |
 | **package**  | main only      | Submits WinGet update PR via wingetcreate             |
+
+**Publishing:** after a stable release the pipeline calls `store.yaml` (Microsoft Store) and `distribution.yaml` (Scoop, Chocolatey). Both are gated by repository variables and environment secrets, and both can be dispatched manually against an already published version. See [packaging/store/README.md](packaging/store/README.md).
 
 Always run `Prebuild.ps1` locally and commit before pushing — the validate job fails if it produces uncommitted changes.
 

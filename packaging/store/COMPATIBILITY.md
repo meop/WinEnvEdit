@@ -1,8 +1,8 @@
 # MSIX runtime test coverage
 
-Historical tests performed October 13, 2026. Publication was subsequently
-confirmed in Partner Center on October 20; see [submission settings](SUBMISSION.md).
-Certification does not imply that every local test below has been completed.
+What has and has not been exercised on a real MSIX build, as of October 2026.
+Store certification does not imply any of the local tests below were performed,
+so keep the two apart when judging whether a change is safe.
 
 ## Verified
 
