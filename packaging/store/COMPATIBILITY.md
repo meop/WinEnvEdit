@@ -28,9 +28,9 @@ constraints. It must not be described as passed. Development-package testing is
 distinct from normal signed deployment. Diagnostic source is retained under
 packaging/store/probe and scripts; failed CI history remains available in Actions.
 
-## TODO: ARM64 launch investigation
+## TODO: ARM64 runtime check
 
-Open, needs an interactive session on ARM64 hardware. Evidence gathered
+Open, needs an interactive desktop session on ARM64 hardware. Evidence gathered
 October 24, 2026 on a Windows ARM64 machine (build 26300) over SSH:
 
 | Build | Where | Result |
@@ -51,15 +51,33 @@ Exception code: 0xc0000602
 Windows App SDK bootstrapper fail-fasts hunting for an installed runtime. Both
 ARM64 attempts fail identically, so this is not a regression since 1.1.1.
 
-**What is not yet known:** whether this is architecture-specific or simply that
-WinUI 3 cannot initialize in a non-interactive SSH session. The notepad control
-only shows that classic Win32 GUI apps survive there, which WinUI's input stack
-may not. No x64 machine was reachable over SSH to complete the comparison, so the
-confound is unresolved.
+Unresolved: whether this is architecture-specific, or simply that WinUI 3 cannot
+initialize in a non-interactive SSH session. The notepad control only shows that
+classic Win32 GUI apps survive there, which WinUI's input stack may not, and no
+x64 machine was reachable over SSH to complete the comparison. An SSH-session
+result is therefore neither a pass nor a failure of the application.
 
-**Next step:** launch the ARM64 build from an interactive desktop session on that
-machine and record the outcome. If it runs, the SSH result is an environment
-artifact and the remaining ARM64 item is only the GUI checks; if it crashes the
-same way, the shipped ARM64 build does not start and that is a release blocker.
+### Continue on the ARM64 machine
 
-Do not record an SSH-session result as a pass or a failure of the application.
+It already has .NET SDK 10.0.402, Visual Studio 18, Windows Kits and this repo at
+`C:\code\meop\WinEnvEdit`, so it can build natively. A current-main ARM64 publish
+is also staged at `%TEMP%\weetest\WinEnvEdit.exe` if you would rather skip a build.
+
+1. `git fetch` then `git switch todo/arm64-runtime-coverage`.
+2. From an interactive desktop session — not SSH — launch each and note whether a
+   window appears and the app is usable:
+   - `%TEMP%\weetest\WinEnvEdit.exe` (current main, ARM64)
+   - `C:\Program Files\WinEnvEdit\WinEnvEdit.exe` (shipped 1.1.1, winget MSI)
+3. On a crash, read the fault module:
+   `Get-WinEvent -FilterHashtable @{LogName='Application'; ProviderName='Application Error'} -MaxEvents 5`
+4. To rebuild rather than use the staged copy:
+   `./scripts/Publish.ps1 -Platform ARM64 -Runtime win-arm64`
+5. Replace the SSH verdicts in the table above with the interactive result and
+   commit on this branch.
+
+Still open on ARM64 beyond launch: GUI system-save through UAC, and a clean
+Store-signed install, upgrade and uninstall as a standard user. The Store package
+installs with `winget install --id 9PF2J3W4WRGH --source msstore`, but note the
+machine already carries the winget MSI of the same product id, so winget reports
+"an existing package already installed" and attempts an upgrade instead — remove
+that install first, or the Store path is not actually exercised.
