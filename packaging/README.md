@@ -64,3 +64,38 @@ Published is not the same as exercised. For MSIX specifically, see
 - True upgrades between different application versions. Only forced same-version
   reinstalls and the native MSI lifecycle have been tested.
 - Installation on a clean machine without preinstalled prerequisites.
+
+## Local build prerequisites
+
+Hosted runners supply all of this; a developer machine does not. Beyond the .NET
+SDK matching `global.json`-free `net10.0-windows10.0.26100.0` and PowerShell 7:
+
+| Need | For | Source |
+|---|---|---|
+| MSVC Build Tools for x64/x86 (Latest) | Native AOT link step | Visual Studio Installer, Individual components |
+| MSVC Build Tools for ARM64/ARM64EC (Latest) | Cross-linking `win-arm64` | same |
+| Windows 11 SDK (10.0.26100.x) | AOT native libraries, and `MakeAppx.exe` for Store packages | same |
+
+Install those as individual components rather than the "Desktop development with
+C++" workload, which adds CMake, ATL/MFC and graphics tooling this project never
+uses. WiX arrives as the `WixToolset.Sdk` MSBuild SDK over NuGet, xstyler as a
+local dotnet tool, and the Windows App SDK is bundled by `SelfContained`, so none
+of those need installing.
+
+An ordinary PowerShell session is enough; a Developer PowerShell for VS is not
+required, because the AOT link step loads the VC environment itself through the
+ILCompiler package's `findvcvarsall.bat`.
+
+One environment caveat, for agents and hardened CI rather than developers: that
+chain reaches `VsDevCmd.bat`, which runs `vswhere.exe` by bare name after a
+`pushd` into the VS Installer directory. A shell setting
+`NoDefaultCurrentDirectoryInExePath=1` disables current-directory lookup, and
+because only stdout is redirected the resulting stderr is captured into the linker
+command line, failing the build as `MSB3073 ... exited with code 123` as though
+`link.exe` were at fault. Fix it in the shell — clear that variable or put
+`%ProgramFiles(x86)%\Microsoft Visual Studio\Installer` on `PATH` — not in the
+build scripts.
+
+Two `MSB3774` warnings about `Microsoft.VCLibs` are expected with this component
+set and are harmless: Store packages are assembled from published binaries with
+`MakeAppx` and a manifest template, not through MSIX tooling.

@@ -88,7 +88,7 @@ Always run `Prebuild.ps1` locally and commit before pushing — the validate job
 5. **Initialization**: Simple types inline, complex types/collections in constructors (see [docs/mvvm.md](docs/mvvm.md))
 6. **Style**: 2-space indent, LF line endings, UTF-8 without BOM, K&R braces, trailing commas
 7. **Tests**: Pure unit tests only (no registry, OS APIs, file system access)
-8. **CLI-first**: All tasks must work without Visual Studio
+8. **CLI-first**: All tasks must work without the Visual Studio IDE. Native AOT publishing still needs the MSVC build tools and a Windows SDK — see [packaging/README.md](packaging/README.md)
 
 ---
 
