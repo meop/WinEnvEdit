@@ -21,6 +21,11 @@ Submission requires `STORE_PUBLISH_ENABLED` to be `true` and the four
 `microsoft-store` environment secrets to be present. Preparation works without
 credentials. No application version bump is needed to configure any of this.
 
+One of those secrets is a client secret that expires, and Microsoft sends no
+warning before it does — see
+[rotating the client secret](SETUP.md#rotating-the-client-secret). A lapsed
+secret does not fail until the next release tries to submit.
+
 Package updates keep the existing listing, screenshots and pricing. The workflow
 does not synchronize listing text or website changes into the Store.
 

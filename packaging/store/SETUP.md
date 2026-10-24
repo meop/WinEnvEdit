@@ -237,9 +237,43 @@ a working configuration from `msstore reconfigure` and retrieves the product.
 Only then set the repository variable `STORE_PUBLISH_ENABLED` to `true`. Stable
 releases submit automatically from that point.
 
-## Maintenance
+## Rotating the client secret
 
-- Rotate the client secret before it expires; step 5's command is re-runnable and
-  `--append` keeps the old credential alive until you remove it.
+**The client secret expires, and nothing warns you.** Microsoft Entra sends no
+expiry email for application client secrets — unlike SAML signing certificates,
+which do have built-in notifications. The portal carries a "Renew expiring
+application credentials" recommendation with a fixed 30-day threshold, but it is
+a panel someone has to look at, not an alert. Treat the expiry date as a
+self-managed commitment: put it in a calendar, not in your memory.
+
+When it lapses, nothing breaks until the next stable release, and then
+publishing fails at `Configure publishing credentials` with an authentication
+error. The release itself still succeeds — only the Store submission is lost —
+so it fails quietly at the moment you least want to debug it.
+
+Check the current expiry at any time:
+
+```powershell
+az ad app credential list --id $storeClientId --query '[].{keyId:keyId,displayName:displayName,endDateTime:endDateTime}' --output table
+```
+
+To rotate, re-run the credential block in step 5. It is written to be
+re-runnable: `--append` adds a new secret without disturbing the existing one, so
+the old credential keeps working until the GitHub secret has been replaced. Once
+the next `check` run passes, delete the superseded credential by its key ID:
+
+```powershell
+az ad app credential delete --id $storeClientId --key-id <old-key-id>
+```
+
+Six months is the interval used here, chosen to be short enough that rotation
+stays a practiced routine. A longer `--end-date` reduces how often you do it and
+increases how long a leaked secret stays valid.
+
+## Other maintenance
+
 - The setup user is only needed to manage the application or the association. It
   is not used by the workflow and never appears in a secret.
+- Partner Center roles are per-application. Changing the application's role, or
+  adding a second application, needs the associated tenant's credentials again,
+  not the owner's personal account.
