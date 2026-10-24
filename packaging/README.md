@@ -41,3 +41,26 @@ which do not trigger a second release-event workflow. WinGet remains separate.
 
 Validation does not install packages or change environment variables. Native
 smoke tests remain a publication gate; artifact creation is not a public listing.
+
+## Channels and deferrals
+
+WinEnvEdit follows WinDirStat's distribution footprint and stays Windows-only.
+
+| Channel | State | Reasoning |
+|---|---|---|
+| GitHub releases | Published | Windows x64 and ARM64, MSI and ZIP |
+| WinGet | Published | Update PRs submitted automatically by the release pipeline |
+| Microsoft Store | Published | Submission automated; see [store/README.md](store/README.md) |
+| Scoop | Published | Shared meop bucket; public Extras inclusion deferred until established usage or an accepted exception |
+| Chocolatey | Awaiting moderation | Metadata validation passed; the automated verifier rejects the package's Windows 11 requirement. See [CHOCOLATEY-REVIEW.md](CHOCOLATEY-REVIEW.md) |
+
+## Untested coverage
+
+Published is not the same as exercised. For MSIX specifically, see
+[store/COMPATIBILITY.md](store/COMPATIBILITY.md). Across the other channels:
+
+- ARM64 native runtime. Package contents and asset hashes are verified; launching
+  the ARM64 binary from an installed package is not.
+- True upgrades between different application versions. Only forced same-version
+  reinstalls and the native MSI lifecycle have been tested.
+- Installation on a clean machine without preinstalled prerequisites.
