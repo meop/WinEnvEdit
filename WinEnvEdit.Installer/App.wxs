@@ -18,6 +18,9 @@
 
     <Icon Id="AppIcon" SourceFile="$(var.SourceDir)\Assets\App.ico" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://meop.github.io/WinEnvEdit/" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/meop/WinEnvEdit/issues" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/meop/WinEnvEdit/releases" />
 
     <WixVariable Id="WixUIBannerBmp" Value="Assets\Banner.bmp" />
     <WixVariable Id="WixUIDialogBmp" Value="Assets\Dialog.bmp" />
