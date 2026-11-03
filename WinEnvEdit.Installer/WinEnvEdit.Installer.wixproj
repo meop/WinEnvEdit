@@ -12,7 +12,8 @@
     <DefineConstants>Version=$(Version);SourceDir=$(SourceDir)</DefineConstants>
     <OutputName>WinEnvEdit-$(Platform)</OutputName>
     <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
-    <SuppressIces>ICE03</SuppressIces>
+    <!-- ICE61 warns on AllowSameVersionUpgrades, which RC-to-final upgrades need: both share a numeric version. -->
+    <SuppressIces>ICE03;ICE61</SuppressIces>
   </PropertyGroup>
 
   <ItemGroup>
