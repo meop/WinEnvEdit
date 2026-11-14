@@ -112,6 +112,8 @@ $nuspec = @"
     <iconUrl>$($config.iconUrl)</iconUrl>
     <packageSourceUrl>https://github.com/$($config.repository)/tree/HEAD/packaging</packageSourceUrl>
     <licenseUrl>https://github.com/$($config.repository)/blob/HEAD/LICENSE</licenseUrl>
+    <docsUrl>https://meop.github.io/WinEnvEdit/</docsUrl>
+    <bugTrackerUrl>https://github.com/$($config.repository)/issues</bugTrackerUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$chocolateyDescription</description>
     <summary>$description</summary>
