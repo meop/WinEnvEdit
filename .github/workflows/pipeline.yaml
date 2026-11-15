@@ -74,9 +74,25 @@ jobs:
         run: dotnet test WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug
           -p:Platform=x64 --verbosity normal
 
+  # The tests again on Windows ARM64, the other platform WinEnvEdit ships for;
+  # x64 runs them in Validate.
+  test-arm64:
+    name: Test ARM64
+    runs-on: windows-11-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run Tests
+        run: dotnet test WinEnvEdit.Tests/WinEnvEdit.Tests.csproj -c Debug
+          -p:Platform=ARM64 --verbosity normal
+
   publish:
     name: Publish
-    needs: [version, validate]
+    needs: [version, validate, test-arm64]
     if: github.ref == 'refs/heads/main' && needs.version.outputs.changed == 'true'
     runs-on: windows-latest
     strategy:
